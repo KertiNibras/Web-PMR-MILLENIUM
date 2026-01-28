@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rekap Absensi | PMR Millenium</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-size: cover;
+      background-repeat: no-repeat;
+    }
+
+    header {
+      background: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: fixed;
+      width: 100%;
+      z-index: 1000;
+      animation: fadeSlideUp 1s ease-out;
+    }
+
+    .navbar {
+      max-width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      opacity: 0;
+      transform: translateY(-20px);
+      animation: fadeInDown 1s ease forwards;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: bold;
+      color: #000000;
+      font-size: 18px;
+    }
+
+    .logo img {
+      height: 40px;
+    }
+
+    @keyframes fadeInDown {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Tombol hamburger */
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      color: #d90429;
+    }
+
+    /* Layout utama */
+    .dashboard-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background: #ffffff;
+      padding-top: 75px;
+      box-shadow: 2px 0 6px rgba(0,0,0,0.05);
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .sidebar li {
+      padding: 15px 20px;
+      cursor: pointer;
+      color: #444;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: 0.3s;
+      width: 100%;
+    }
+
+    .sidebar li:hover,
+    .sidebar li.active {
+      background: #d90429;
+      color: white;
+    }
+
+    .sidebar a {
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Main content */
+    .main-content {
+      flex: 1;
+      padding: 100px;
+    }
+
+    .main-content h1 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+      color: #d90429;
+    }
+
+    /* Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .data-table th, .data-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    .data-table th {
+      background: #d90429;
+      color: white;
+    }
+
+    .hadir {
+      color: green;
+      font-weight: 600;
+    }
+
+    .tidak-hadir {
+      color: red;
+      font-weight: 600;
+    }
+
+    /* Tombol Absensi Wajah */
+    .face-attendance-btn {
+      background-color: #d90429;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background-color 0.3s;
+    }
+
+    .face-attendance-btn:hover {
+      background-color: #c00424;
+    }
+
+    /* Modal Absensi Wajah */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: white;
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+
+    .modal-header {
+      margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+      color: #d90429;
+      margin-bottom: 10px;
+    }
+
+    .camera-container {
+      width: 100%;
+      margin: 20px 0;
+      position: relative;
+    }
+
+    #video {
+      width: 100%;
+      max-width: 500px;
+      border-radius: 8px;
+      background-color: #f5f5f5;
+    }
+
+    .capture-btn {
+      background-color: #d90429;
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      margin: 10px 5px;
+      transition: background-color 0.3s;
+    }
+
+    .capture-btn:hover {
+      background-color: #c00424;
+    }
+
+    .close-btn {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      margin: 10px 5px;
+      transition: background-color 0.3s;
+    }
+
+    .close-btn:hover {
+      background-color: #5a6268;
+    }
+
+    .result-container {
+      margin-top: 20px;
+      display: none;
+    }
+
+    #captured-image {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .success-message {
+      color: green;
+      font-weight: 600;
+      margin: 15px 0;
+    }
+
+    /* Responsif */
+    @media (max-width: 768px) {
+      .menu-toggle {
+        display: block;
+      }
+
+      .dashboard-container {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        position: absolute;
+        top: 0px;
+        left: 0;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        transform: translateY(-120%);
+        z-index: 999;
+      }
+
+      .sidebar.active {
+        transform: translateY(0);
+      }
+
+      .sidebar li {
+        text-align: center;
+        padding: 12px;
+      }
+
+      .main-content {
+        padding: 80px 20px;
+      }
+      
+      .modal-content {
+        padding: 20px;
+      }
+    }
+    
+    /* ============================= */
+    /* Tombol Back (mode mobile saja) */
+    /* ============================= */
+    .back-btn {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: #e60000;
+      cursor: pointer;
+    }
+
+    /* Atur posisi di mobile */
+    @media (max-width: 768px) {
+      .back-btn {
+        display: block;
+        position: absolute;
+        left: 15px;
+        top: 20px;
+        z-index: 1001;
+      }
+
+      .logo {
+        margin: 0 auto; /* biar logo tetap di tengah */
+      }
+
+      .menu-toggle {
+        position: absolute;
+        right: 15px;
+        top: 18px;
+      }
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <nav class="navbar">
+      <!-- tombol back (hanya muncul di mobile) -->
+      <button class="back-btn" onclick="goBack()">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
+
+      <div class="logo">
+        <img src="../Gambar/logpmi.png" alt="Logo">
+        <span>PMR MILLENIUM</span>
+      </div>
+
+      <!-- tombol hamburger -->
+      <button class="menu-toggle"><i class="fa-solid fa-bars"></i></button>
+    </nav>
+  </header>
+
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <ul>
+        <li><a href="../Dashboard Anggota/anggota.php"><i class="fa-solid fa-house"></i> Dashboard</a></li>
+        <li class="active"><a href="absensi.html"><i class="fa-solid fa-calendar-check"></i> Rekap Absensi</a></li>
+        <li><a href="../Dashboard Anggota/perpus.html"><i class="fa-solid fa-book"></i> Perpustakaan Digital</a></li>
+        <li><a href=""><i class="fa-solid fa-gamepad"></i> Quiz</a></li>
+        <li><a href="../logout.php"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <h1>Rekap Absensi</h1>
+      <p class="subtitle">Lihat Riwayat Absen anda.</p>
+      
+      <!-- Tombol Absensi Wajah -->
+      <button class="face-attendance-btn" id="openFaceAttendance">
+        <i class="fa-solid fa-camera"></i> Absensi Wajah
+      </button>
+      
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Kegiatan</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>10 Okt 2025</td><td>Latihan P3K</td><td class="hadir">Hadir</td></tr>
+          <tr><td>12 Okt 2025</td><td>Simulasi Evakuasi</td><td class="tidak-hadir">Tidak Hadir</td></tr>
+          <tr><td>15 Okt 2025</td><td>Pelatihan Kepemimpinan</td><td class="hadir">Hadir</td></tr>
+        </tbody>
+      </table>
+    </main>
+  </div>
+  
+  <!-- Modal Absensi Wajah -->
+  <div class="modal" id="faceAttendanceModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Absensi Wajah</h2>
+        <p>Silakan posisikan wajah Anda di depan kamera</p>
+      </div>
+      
+      <div class="camera-container">
+        <video id="video" autoplay playsinline></video>
+      </div>
+      
+      <div class="controls">
+        <button class="capture-btn" id="captureBtn">
+          <i class="fa-solid fa-camera"></i> Ambil Foto
+        </button>
+        <button class="close-btn" id="closeModal">
+          <i class="fa-solid fa-times"></i> Tutup
+        </button>
+      </div>
+      
+      <div class="result-container" id="resultContainer">
+        <canvas id="canvas" style="display: none;"></canvas>
+        <img id="captured-image" src="" alt="Foto yang diambil">
+        <p class="success-message" id="successMessage">Absensi berhasil! Terima kasih.</p>
+        <button class="capture-btn" id="retryBtn">
+          <i class="fa-solid fa-rotate-right"></i> Ulangi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const menuToggle = document.querySelector(".menu-toggle");
+    const sidebar = document.querySelector(".sidebar");
+    const faceAttendanceModal = document.getElementById("faceAttendanceModal");
+    const openFaceAttendanceBtn = document.getElementById("openFaceAttendance");
+    const closeModalBtn = document.getElementById("closeModal");
+    const captureBtn = document.getElementById("captureBtn");
+    const retryBtn = document.getElementById("retryBtn");
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const capturedImage = document.getElementById("captured-image");
+    const resultContainer = document.getElementById("resultContainer");
+    const successMessage = document.getElementById("successMessage");
+
+    let stream = null;
+
+    // Toggle sidebar di mobile
+    menuToggle.addEventListener("click", () => {
+      sidebar.classList.toggle("active");
+    });
+
+    // Fungsi kembali
+    function goBack() {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = "../index.html";
+      }
+    }
+
+    // Buka modal absensi wajah
+    openFaceAttendanceBtn.addEventListener("click", () => {
+      faceAttendanceModal.style.display = "flex";
+      startCamera();
+    });
+
+    // Tutup modal absensi wajah
+    closeModalBtn.addEventListener("click", () => {
+      faceAttendanceModal.style.display = "none";
+      stopCamera();
+      resetCameraUI();
+    });
+
+    // Ambil foto dari kamera
+    captureBtn.addEventListener("click", () => {
+      captureImage();
+    });
+
+    // Ulangi pengambilan foto
+    retryBtn.addEventListener("click", () => {
+      resetCameraUI();
+      startCamera();
+    });
+
+    // Mulai kamera
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: { ideal: 640 }, 
+            height: { ideal: 480 },
+            facingMode: "user" // Gunakan kamera depan
+          } 
+        });
+        video.srcObject = stream;
+      } catch (err) {
+        console.error("Error mengakses kamera: ", err);
+        alert("Tidak dapat mengakses kamera. Pastikan Anda memberikan izin akses kamera.");
+      }
+    }
+
+    // Hentikan kamera
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    }
+
+    // Ambil gambar dari video
+    function captureImage() {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Konversi canvas ke data URL untuk ditampilkan
+      capturedImage.src = canvas.toDataURL('image/png');
+      
+      // Tampilkan hasil dan sembunyikan video
+      resultContainer.style.display = "block";
+      video.style.display = "none";
+      captureBtn.style.display = "none";
+      
+      // Simulasi proses pengenalan wajah (dalam implementasi nyata, ini akan memanggil API)
+      setTimeout(() => {
+        successMessage.style.display = "block";
+        // Di sini Anda akan mengirim gambar ke server untuk verifikasi
+        // Contoh: sendImageToServer(canvas.toDataURL('image/png'));
+      }, 1500);
+    }
+
+    // Reset UI kamera ke keadaan awal
+    function resetCameraUI() {
+      video.style.display = "block";
+      captureBtn.style.display = "inline-block";
+      resultContainer.style.display = "none";
+      successMessage.style.display = "none";
+    }
+
+    // Tutup modal jika klik di luar konten modal
+    window.addEventListener("click", (event) => {
+      if (event.target === faceAttendanceModal) {
+        faceAttendanceModal.style.display = "none";
+        stopCamera();
+        resetCameraUI();
+      }
+    });
+  </script>
+</body>
+</html>

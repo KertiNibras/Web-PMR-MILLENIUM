@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Pendaftaran PMR</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #c62828;
+            --primary-light: #ff5f52;
+            --primary-dark: #8e0000;
+            --secondary-color: #2e7d32;
+            --light-gray: #f5f5f5;
+            --medium-gray: #e0e0e0;
+            --dark-gray: #424242;
+            --text-color: #333;
+            --white: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f9f9f9;
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), 
+                              url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNjNjI4MjgiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0LjUxOEMzNy40NCAzMi44NCAzOCAzMC41NiAzOCAyOGMwLTUuNTIzLTQuNDc3LTEwLTEwLTEwUzE4IDIyLjQ3NyAxOCAyOGMwIDIuNTYuNTYgNC44NCAyIDYuNTE4VjQ0aDE2VjM0LjUxOHpNMjggMzJjLTIuMjA5IDAtNC0xLjc5MS00LTQgMC0yLjIwOSAxLjc5MS00IDQtNHM0IDEuNzkxIDQgNGMwIDIuMjA5LTEuNzkxIDQtNCA0eiIvPjwvZz48L2c+PC9zdmc+');
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+        
+        .logo {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: white;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .form-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .form-section {
+            background-color: var(--white);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+        
+        .section-title {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-light);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            font-size: 1.3rem;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-gray);
+        }
+        
+        .required::after {
+            content: " *";
+            color: var(--primary-color);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--medium-gray);
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.1);
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            transform: scale(1.2);
+        }
+        
+        .other-input {
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .other-input.show {
+            display: block;
+        }
+        
+        .submit-section {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .btn-submit {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            box-shadow: 0 4px 8px rgba(198, 40, 40, 0.3);
+        }
+        
+        .btn-submit:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+        
+        .note {
+            font-size: 0.9rem;
+            color: var(--dark-gray);
+            margin-top: 15px;
+            font-style: italic;
+        }
+        
+        .required-note {
+            text-align: left;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: var(--dark-gray);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--medium-gray);
+        }
+        
+        .error-message {
+            color: var(--primary-color);
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        @media (max-width: 480px) {
+            .checkbox-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-section {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-hand-holding-medical"></i>
+            </div>
+            <h1>FORM PENDAFTARAN PMR MILLENIUM</h1>
+            
+        </header>
+        
+        <form id="registrationForm" class="form-container">
+            <!-- Data Pribadi -->
+            <div class="form-section">
+                
+                
+                <div class="form-group">
+                    <label for="fullName" class="required">Nama Lengkap</label>
+                    <input type="text" id="fullName" name="fullName" placeholder="Masukkan nama lengkap" required>
+                    <div class="error-message" id="nameError">Nama lengkap harus diisi</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="class" class="required">Kelas</label>
+                    <select id="class" name="class" required>
+                        <option value="">Pilih Kelas</option>
+                        <option value="10">Kelas 10</option>
+                        <option value="11">Kelas 11</option>
+                        <option value="12">Kelas 12</option>
+                    </select>
+                    <div class="error-message" id="classError">Kelas harus dipilih</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="school" class="required">Asal Sekolah</label>
+                    <input type="text" id="school" name="school" placeholder="Nama sekolah asal" required>
+                    <div class="error-message" id="schoolError">Asal sekolah harus diisi</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone" class="required">No. Telepon/HP</label>
+                    <input type="tel" id="phone" name="phone" placeholder="Contoh: 081234567890" required>
+                    <div class="error-message" id="phoneError">Nomor telepon harus diisi dengan format yang benar</div>
+                </div>
+                <div class="form-group">
+                    <label for="reason" class="required">Alasan Mengikuti Ekstrakurikuler PMR</label>
+                    <textarea id="reason" name="reason" placeholder="Tuliskan alasan Anda ingin mengikuti ekstrakurikuler PMR" required></textarea>
+                    <div class="error-message" id="reasonError">Alasan harus diisi</div>
+                </div>
+            </div>
+            
+            <!-- Data Ekstrakurikuler -->
+            <div class="form-section">
+                
+                
+                
+                
+                <div class="form-group">
+                    <label for="otherActivities" class="required">Ekstrakurikuler Lain yang Diikuti</label>
+                    <p class="note">Pilih satu atau lebih ekstrakurikuler lain yang Anda ikuti:</p>
+                    
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="pramuka" name="otherActivities" value="Pramuka">
+                            <label for="pramuka">Pramuka</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="paskibra" name="otherActivities" value="Paskibra">
+                            <label for="paskibra">Paskibra</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="voli" name="otherActivities" value="Voli">
+                            <label for="voli">Voli</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="basket" name="otherActivities" value="Basket">
+                            <label for="basket">Basket</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="badminton" name="otherActivities" value="Badminton">
+                            <label for="badminton">Badminton</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="futsal" name="otherActivities" value="Futsal">
+                            <label for="futsal">Futsal</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="hockey" name="otherActivities" value="Hockey">
+                            <label for="hockey">Hockey</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="silat" name="otherActivities" value="Silat">
+                            <label for="silat">Silat</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="karate" name="otherActivities" value="Karate">
+                            <label for="karate">Karate</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="taekwondo" name="otherActivities" value="Taekwondo">
+                            <label for="taekwondo">Taekwondo</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="tari" name="otherActivities" value="Tari">
+                            <label for="tari">Tari</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="englishClub" name="otherActivities" value="English Club">
+                            <label for="englishClub">English Club</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="japaneseClub" name="otherActivities" value="Japanese Club">
+                            <label for="japaneseClub">Japanese Club</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="rohaniIslam" name="otherActivities" value="Rohani Islam">
+                            <label for="rohaniIslam">Rohani Islam</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="rohaniKristen" name="otherActivities" value="Rohani Kristen">
+                            <label for="rohaniKristen">Rohani Kristen</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="marawis" name="otherActivities" value="Marawis">
+                            <label for="marawis">Marawis</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="korpsMusik" name="otherActivities" value="Korps Musik">
+                            <label for="korpsMusik">Korps Musik</label>
+                        </div>
+                        
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="other" name="otherActivities" value="Other">
+                            <label for="other">Lainnya</label>
+                        </div>
+                    </div>
+                    
+                    <div class="other-input" id="otherInputContainer">
+                        <input type="text" id="otherInput" placeholder="Tuliskan ekstrakurikuler lainnya">
+                    </div>
+                    
+                    <div class="error-message" id="activitiesError">Pilih minimal satu ekstrakurikuler lain</div>
+                </div>
+                
+                <p class="required-note"><span style="color: var(--primary-color);">*</span> Menandakan field wajib diisi</p>
+            </div>
+            
+            <!-- Submit Section -->
+            <div class="submit-section">
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-paper-plane"></i> Kirim Pendaftaran
+                </button>
+                <p class="note">Pastikan data yang Anda isi sudah benar sebelum mengirimkan formulir.</p>
+            </div>
+        </form>
+        
+        <footer>
+            <p></p>
+            <p>© 2025 PMR Millenium. All Right Reserved.</p>
+        </footer>
+    </div>
+    
+    <!-- Success Modal -->
+    <div id="successModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background-color: white; padding: 40px; border-radius: 10px; text-align: center; max-width: 500px; width: 90%;">
+            <div style="font-size: 4rem; color: var(--secondary-color); margin-bottom: 20px;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 style="color: var(--secondary-color); margin-bottom: 15px;">Pendaftaran Berhasil!</h2>
+            <p style="margin-bottom: 25px;">Terima kasih telah mendaftar untuk mengikuti ekstrakurikuler PMR. Data Anda telah berhasil disimpan. Kami akan menghubungi Anda melalui nomor telepon yang telah didaftarkan.</p>
+            <button id="closeModal" style="background-color: var(--secondary-color); color: white; border: none; padding: 12px 30px; font-size: 1rem; border-radius: 6px; cursor: pointer;">Tutup</button>
+        </div>
+    </div>
+
+    <script>
+        // Toggle input untuk pilihan "Lainnya"
+        document.getElementById('other').addEventListener('change', function() {
+            const otherInputContainer = document.getElementById('otherInputContainer');
+            if (this.checked) {
+                otherInputContainer.classList.add('show');
+                document.getElementById('otherInput').setAttribute('required', 'required');
+            } else {
+                otherInputContainer.classList.remove('show');
+                document.getElementById('otherInput').removeAttribute('required');
+            }
+        });
+        
+        // Validasi form
+        document.getElementById('registrationForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Reset error messages
+            document.querySelectorAll('.error-message').forEach(error => {
+                error.style.display = 'none';
+            });
+            
+            let isValid = true;
+            
+            // Validasi Nama Lengkap
+            const fullName = document.getElementById('fullName').value.trim();
+            if (!fullName) {
+                document.getElementById('nameError').style.display = 'block';
+                isValid = false;
+            }
+            
+            // Validasi Kelas
+            const classSelect = document.getElementById('class').value;
+            if (!classSelect) {
+                document.getElementById('classError').style.display = 'block';
+                isValid = false;
+            }
+            
+            // Validasi Asal Sekolah
+            const school = document.getElementById('school').value.trim();
+            if (!school) {
+                document.getElementById('schoolError').style.display = 'block';
+                isValid = false;
+            }
+            
+            // Validasi Telepon
+            const phone = document.getElementById('phone').value.trim();
+            const phoneRegex = /^[0-9]{10,13}$/;
+            if (!phone || !phoneRegex.test(phone)) {
+                document.getElementById('phoneError').style.display = 'block';
+                isValid = false;
+            }
+            
+            // Validasi Alasan
+            const reason = document.getElementById('reason').value.trim();
+            if (!reason) {
+                document.getElementById('reasonError').style.display = 'block';
+                isValid = false;
+            }
+            
+            // Validasi Ekstrakurikuler Lain
+            const checkedActivities = document.querySelectorAll('input[name="otherActivities"]:checked');
+            if (checkedActivities.length === 0) {
+                document.getElementById('activitiesError').style.display = 'block';
+                isValid = false;
+            }
+            
+            // Validasi input "Lainnya" jika dipilih
+            if (document.getElementById('other').checked) {
+                const otherInput = document.getElementById('otherInput').value.trim();
+                if (!otherInput) {
+                    document.getElementById('activitiesError').textContent = 'Harap isi ekstrakurikuler lainnya';
+                    document.getElementById('activitiesError').style.display = 'block';
+                    isValid = false;
+                }
+            }
+            
+            // Jika semua valid, tampilkan modal sukses
+            if (isValid) {
+                // Simpan data form (bisa dikirim ke server di sini)
+                const formData = {
+                    fullName: fullName,
+                    class: classSelect,
+                    school: school,
+                    phone: phone,
+                    reason: reason,
+                    otherActivities: Array.from(checkedActivities).map(cb => {
+                        return cb.value === 'Other' ? document.getElementById('otherInput').value.trim() : cb.value;
+                    })
+                };
+                
+                // Tampilkan data di console (untuk keperluan demo)
+                console.log('Data Pendaftaran:', formData);
+                
+                // Tampilkan modal sukses
+                document.getElementById('successModal').style.display = 'flex';
+                
+                // Reset form setelah 3 detik
+                setTimeout(() => {
+                    document.getElementById('registrationForm').reset();
+                    document.getElementById('otherInputContainer').classList.remove('show');
+                }, 3000);
+            }
+        });
+        
+        // Tutup modal sukses
+        document.getElementById('closeModal').addEventListener('click', function() {
+            document.getElementById('successModal').style.display = 'none';
+        });
+        
+        // Validasi real-time untuk telepon
+        document.getElementById('phone').addEventListener('input', function() {
+            const phone = this.value.trim();
+            const phoneError = document.getElementById('phoneError');
+            
+            if (!phone) {
+                phoneError.textContent = 'Nomor telepon harus diisi';
+            } else if (!/^[0-9]{10,13}$/.test(phone)) {
+                phoneError.textContent = 'Nomor telepon harus terdiri dari 10-13 digit angka';
+            } else {
+                phoneError.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

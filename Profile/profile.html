@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - PMR Millenium</title>
+  <link rel="stylesheet" href="profile.css">
+  <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+  <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="kegiatan-page">
+  <header>
+  <nav class="navbar">
+    <div class="logo">
+      <img src="../Gambar/logpmi.png" alt="Logo PMR">
+      <span>PMR MILLENIUM</span>
+    </div>
+
+    <ul class="nav-links" id="nav-links">
+      <li><a href="../Halaman Utama/index.html" class="btn-header"><i class="fas fa-home"></i> Beranda</a></li>
+    </ul>
+  </nav>
+</header>
+  <section class="pengurus-section">
+    <h2 class="section-title" data-aos="fade-down">Pengurus PMR</h2>
+    <p class="kegiatan-desc" data-aos="fade-down">
+      Berikut adalah Struktur Jabatan Di <b>PMR Millenium</b> Di SMKN 1 Cibinong tahun 2025.
+    </p>
+
+
+    <div class="pengurus-gridatas" data-aos="fade-up">
+    <div class="card">
+  <img src="../Gambar/hanip.jpg" data-full="../Gambar/hanip.jpg" alt="Ketua PMR" onclick="openFull(this)">
+  <h3>Mochammad Naufal Hanif</h3>
+    <span class="kelas">
+      XI RPL 1
+      <img src="../Gambar/rpl.png" alt="Logo RPL">
+    </span> 
+    <p class="jabatan">
+    Ketua PMR 
+  </p>
+</div>
+
+
+    <div class="card">
+      <img src="../Gambar/zaki.jpg" data-full="../Gambar/zaki.jpg" alt="Wakil Ketua" onclick="openFull(this)">
+      <h3>Muhammad Zaky Arrasyid</h3>
+    <span class="kelas">
+      XI DKV 4
+      <img src="../Gambar/dkv.png" alt="Logo DKV">
+    </span> 
+    <p class="jabatan">
+    Wakil Ketua
+  </p>
+    </div>
+  </div>
+
+    <div class="pengurus-grid" data-aos="fade-up">
+      <div class="card">
+        <img src="../Gambar/bintangemon.jpg" data-full="../Gambar/bintangemon.jpg" alt="Wakil Ketua" onclick="openFull(this)">
+        <h3>Bintang Athallah Sopyan</h3>
+        <span class="kelas">
+      XI TFLM 2
+      <img src="../Gambar/tflm.png" alt="Logo TFLM">
+    </span> 
+    <p class="jabatan">
+    Sekretaris 1 
+  </p>
+      </div>
+
+      <div class="card">
+        <img src="../Gambar/repan.jpg" data-full="../Gambar/repan.jpg" alt="Bendahara" onclick="openFull(this)">
+        <h3>Revan Oknanda</h3>
+        <span class="kelas">
+      XI TKR 3
+      <img src="../Gambar/tkr.png" alt="Logo TKR">
+    </span> 
+    <p class="jabatan">
+    Sekretaris 1
+  </p>
+      </div>
+
+      <div class="card">
+        <img src="../Gambar/kemala.jpg" data-full="../Gambar/kemala.jpg" alt="Sekretaris" onclick="openFull(this)">
+        <h3>Kemala Putri Oktaviani</h3>
+        <span class="kelas">
+      XI TKJ 1
+      <img src="../Gambar/tkj.png" alt="Logo TKJ">
+    </span> 
+    <p class="jabatan">
+    Bendahara 1
+  </p>
+      </div>
+
+      <div class="card">
+        <img src="../Gambar/rafa.jpg" data-full="../Gambar/rafa.jpg" alt="Anggota" onclick="openFull(this)">
+        <h3>Rafa Zulfahmi</h3>
+        <span class="kelas">
+      XI TKP 1
+      <img src="../Gambar/tkp.jpg" alt="Logo TKP">
+    </span> 
+    <p class="jabatan">
+    Bendahara 2
+  </p>
+      </div>
+    </div>
+  </section>
+
+
+
+  <!-- Modal full preview -->
+  <div id="fullPreview" class="modal">
+    <span class="close-btn" onclick="closeFull()">×</span>
+    <img id="fullImg" alt="Preview">
+  </div>
+
+
+
+  <section class="kegiatan-wrapper">
+    <div class="kegiatan-left">
+      <h1 class="section-title-left">Kegiatan PMR</h1>
+      <p class="kegiatan-desc">
+        Berikut adalah struktur Foto-foto kegiatan <b>PMR Millenium</b> Di tahun 2025.
+      </p>
+    </div>
+
+    <div class="kegiatan-right" data-aos="fade-up">
+      <div class="card-kegiatan">
+        <img src="../Gambar/kegiatan1.jpg" alt="Ketua PMR" onclick="openFull(this)">
+        <h3>Pelatihan Pertolongan Pertama</h3>
+        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Itaque labore dolores ipsum voluptas praesentium vel, excepturi provident voluptates quo illo recusandae corporis numquam esse voluptatum. Vero rem quis perspiciatis amet!</p>
+      </div>
+
+      <div class="card-kegiatan">
+        <img src="../Gambar/kegiatan2.jpg" alt="Wakil Ketua" onclick="openFull(this)">
+        <h3>Pelatihan Pertolongan Darurat</h3>
+        <p>Lorem ipsum, dolor sit amet consectetur adipisicing elit. Ducimus consectetur, deleniti tenetur, temporibus cupiditate accusantium officia aperiam repellat tempore nihil ad perferendis error iusto, saepe fugit natus perspiciatis laudantium dignissimos.</p>
+      </div>
+
+      <div class="card-kegiatan">
+        <img src="../Gambar/kegiatan3.jpeg" alt="Bendahara" onclick="openFull(this)">
+        <h3>Pelatihan Pertolongan P3K</h3>
+        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Exercitationem eaque, explicabo unde cupiditate qui voluptas praesentium, facere est numquam beatae natus sunt aliquam ducimus culpa perferendis incidunt nostrum deserunt voluptatum?</p>
+      </div>
+    </div>
+    <section class="kegiatan-wrapper">
+      <div class="kegiatan-left" data-aos="fade-down">
+        <h1 class="section-title-left">Lomba PMR</h1>
+        <p class="kegiatan-desc">
+          Berikut adalah struktur Foto-foto kegiatan <b>PMR Millenium</b> Di tahun 2025.
+        </p>
+      </div>
+
+      <div class="kegiatan-right" data-aos="fade-down">
+        <div class="card-kegiatan">
+          <img src="../Gambar/kegiatan1.jpg" alt="Ketua PMR" onclick="openFull(this)">
+          <h3>Juara 1</h3>
+          <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Consequuntur amet provident repellat quisquam voluptate magni dolores ipsam inventore temporibus adipisci rem, ea culpa natus quas tenetur autem molestias maiores! Vero.</p>
+        </div>
+
+        <div class="card-kegiatan">
+          <img src="../Gambar/kegiatan2.jpg" alt="Wakil Ketua" onclick="openFull(this)">
+          <h3>Juara 2</h3>
+          <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Illo recusandae nobis repellat non eaque aperiam dicta maxime voluptas temporibus provident cumque placeat fugiat, porro corrupti dolore quidem cum ducimus dolorem.</p>
+        </div>
+
+        <div class="card-kegiatan">
+          <img src="../Gambar/kegiatan3.jpeg" alt="Bendahara" onclick="openFull(this)">
+          <h3>Juara 3</h3>
+          <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolore possimus molestias est qui dolorum, facere cupiditate earum nisi sed maiores, nulla quibusdam velit delectus magni modi impedit eos voluptas quis!</p>
+        </div>
+    </section>
+
+
+</body>
+<script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script>
+  AOS.init({
+    duration: 500,
+    once: true
+  });
+  function openFull(img) {
+    const modal = document.getElementById("fullPreview");
+    const fullImg = document.getElementById("fullImg");
+
+    // ambil URL gambar asli dari data-full
+    const fullSrc = img.getAttribute("data-full") || img.src;
+
+    fullImg.src = fullSrc;
+    modal.style.display = "flex";
+  }
+
+  function closeFull() {
+    document.getElementById("fullPreview").style.display = "none";
+  }
+  
+
+  // fungsi supaya klik area hitam juga menutup modal
+  document.getElementById("fullPreview").addEventListener("click", function (e) {
+    const fullImg = document.getElementById("fullImg");
+    // cek kalau yang diklik bukan gambar
+    if (e.target !== fullImg) {
+      closeFull();
+    }
+  });
+</script>
+
+<footer class="footer">
+  <div class="footer-content" >
+    <div class="social-icons">
+      <a href="https://www.instagram.com/pmrmillenium" target="_blank" aria-label="Instagram">
+        <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/instagram.svg" alt="Instagram">
+      </a>
+      <a href="https://www.youtube.com/" target="_blank" aria-label="YouTube">
+        <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/youtube.svg" alt="YouTube">
+      </a>
+      <a href="https://www.facebook.com/" target="_blank" aria-label="Facebook">
+        <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/facebook.svg" alt="Facebook">
+      </a>
+    </div>
+    <p>© 2025 PMR Millenium. All Right Reserved.</p>
+  </div>
+</footer>
+
+
+</html>
