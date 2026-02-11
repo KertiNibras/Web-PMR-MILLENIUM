@@ -7,6 +7,24 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
   <style>
+    /* --- CSS VARIABLES (Sama Persis dengan Kelola Absensi/Pengurus) --- */
+    :root {
+      --primary-color: #d90429; /* PMR Red */
+      --primary-hover: #ef233c;
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --text-muted: #6c757d;
+      --border-color: #e9ecef;
+      --success-color: #27ae60;
+      --warning-color: #f39c12;
+      --danger-color: #e74c3c;
+      --info-color: #17a2b8;
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.08);
+      --radius: 10px;
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -14,11 +32,13 @@
     }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-size: cover;
-      background-repeat: no-repeat;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
     }
 
+    /* --- HEADER (SAMA PERSIS) --- */
     header {
       background: #fff;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -53,35 +73,36 @@
     }
 
     @keyframes fadeInDown {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Tombol hamburger */
     .menu-toggle {
       display: none;
       background: none;
       border: none;
       font-size: 22px;
       cursor: pointer;
-      color: #d90429;
+      color: var(--primary-color);
     }
 
-    /* Layout utama */
+    /* --- LAYOUT UTAMA --- */
     .dashboard-container {
       display: flex;
       min-height: 100vh;
+      padding-top: 70px;
     }
 
-    /* Sidebar */
+    /* --- SIDEBAR (SAMA PERSIS) --- */
     .sidebar {
-      width: 220px;
+      width: 250px;
       background: #ffffff;
-      padding-top: 75px;
-      box-shadow: 2px 0 6px rgba(0,0,0,0.05);
+      padding-top: 20px;
+      border-right: 1px solid var(--border-color);
       transition: transform 0.3s ease;
+      height: calc(100vh - 70px);
+      position: sticky;
+      top: 70px;
+      overflow-y: auto;
     }
 
     .sidebar ul {
@@ -91,20 +112,27 @@
     }
 
     .sidebar li {
-      padding: 15px 20px;
+      padding: 14px 25px;
       cursor: pointer;
-      color: #444;
+      color: var(--text-color);
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       transition: 0.3s;
       width: 100%;
+      font-weight: 500;
+      border-left: 4px solid transparent;
     }
 
-    .sidebar li:hover,
+    .sidebar li:hover {
+      background-color: #fff0f3;
+      color: var(--primary-color);
+    }
+
     .sidebar li.active {
-      background: #d90429;
-      color: white;
+      background-color: #fff0f3;
+      color: var(--primary-color);
+      border-left-color: var(--primary-color);
     }
 
     .sidebar a {
@@ -113,73 +141,131 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      width: 100%;
     }
 
-    /* Main content */
+    /* --- MAIN CONTENT --- */
     .main-content {
       flex: 1;
-      padding: 100px;
+      padding: 30px;
+      width: calc(100% - 250px);
     }
 
-    .main-content h1 {
-      font-size: 1.8rem;
-      margin-bottom: 10px;
-      color: #d90429;
+    .page-title h1 {
+      font-size: 1.5rem;
+      color: var(--primary-color);
+      margin-bottom: 5px;
     }
 
-    /* Table */
+    .page-title p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 25px;
+    }
+
+    /* --- BUTTON & ACTIONS --- */
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+      text-decoration: none;
+    }
+
+    .btn-primary { background-color: var(--primary-color); color: white; }
+    .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
+
+    .action-bar {
+      background: white;
+      padding: 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 25px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* --- FILTER SECTION --- */
+    .filter-group {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .filter-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .filter-control {
+      width: 100%;
+      padding: 10px 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+
+    /* --- TABLE SECTION --- */
+    .table-container {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 20px;
+      overflow-x: auto;
+    }
+
     .data-table {
       width: 100%;
       border-collapse: collapse;
-      background: white;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    .data-table th, .data-table td {
-      padding: 12px 15px;
-      text-align: left;
-      border-bottom: 1px solid #eee;
+      min-width: 600px;
     }
 
     .data-table th {
-      background: #d90429;
+      background-color: var(--primary-color);
       color: white;
-    }
-
-    .hadir {
-      color: green;
+      text-align: left;
+      padding: 15px;
       font-weight: 600;
     }
 
-    .tidak-hadir {
-      color: red;
+    .data-table td {
+      padding: 15px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+
+    .data-table tr:hover {
+      background-color: #fafafa;
+    }
+
+    /* Status Badges (Read Only) */
+    .status-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
       font-weight: 600;
+      text-align: center;
+      min-width: 80px;
     }
 
-    /* Tombol Absensi Wajah */
-    .face-attendance-btn {
-      background-color: #d90429;
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      transition: background-color 0.3s;
-    }
+    .status-hadir { background-color: rgba(39, 174, 96, 0.1); color: var(--success-color); }
+    .status-izin { background-color: rgba(243, 156, 18, 0.1); color: var(--warning-color); }
+    .status-sakit { background-color: rgba(23, 162, 184, 0.1); color: var(--info-color); }
+    .status-alpha { background-color: rgba(231, 76, 60, 0.1); color: var(--danger-color); }
 
-    .face-attendance-btn:hover {
-      background-color: #c00424;
-    }
-
-    /* Modal Absensi Wajah */
+    /* --- MODAL (Absensi Wajah) --- */
     .modal {
       display: none;
       position: fixed;
@@ -189,27 +275,48 @@
       height: 100%;
       background-color: rgba(0, 0, 0, 0.7);
       z-index: 2000;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
+      padding: 20px;
     }
 
     .modal-content {
       background-color: white;
-      padding: 30px;
-      border-radius: 12px;
-      width: 90%;
+      border-radius: var(--radius);
+      width: 100%;
       max-width: 600px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-      text-align: center;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
     }
 
     .modal-header {
-      margin-bottom: 20px;
+      padding: 20px 25px;
+      background-color: var(--primary-color);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    .modal-header h2 {
-      color: #d90429;
-      margin-bottom: 10px;
+    .modal-header h3 { font-size: 1.25rem; }
+    
+    .close-modal {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 25px;
+      text-align: center;
     }
 
     .camera-container {
@@ -220,145 +327,66 @@
 
     #video {
       width: 100%;
-      max-width: 500px;
+      max-width: 100%;
       border-radius: 8px;
-      background-color: #f5f5f5;
-    }
-
-    .capture-btn {
-      background-color: #d90429;
-      color: white;
-      border: none;
-      padding: 12px 25px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
-      margin: 10px 5px;
-      transition: background-color 0.3s;
-    }
-
-    .capture-btn:hover {
-      background-color: #c00424;
-    }
-
-    .close-btn {
-      background-color: #6c757d;
-      color: white;
-      border: none;
-      padding: 12px 25px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
-      margin: 10px 5px;
-      transition: background-color 0.3s;
-    }
-
-    .close-btn:hover {
-      background-color: #5a6268;
-    }
-
-    .result-container {
-      margin-top: 20px;
-      display: none;
+      background-color: #000;
+      transform: scaleX(-1); /* Mirror effect */
     }
 
     #captured-image {
       max-width: 100%;
       border-radius: 8px;
       margin-bottom: 15px;
+      transform: scaleX(-1);
     }
 
-    .success-message {
-      color: green;
-      font-weight: 600;
-      margin: 15px 0;
+    .modal-footer {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      padding-bottom: 15px;
     }
 
-    /* Responsif */
-    @media (max-width: 768px) {
-      .menu-toggle {
-        display: block;
-      }
-
-      .dashboard-container {
-        flex-direction: column;
-      }
-
+    /* --- RESPONSIVE --- */
+    @media (max-width: 992px) {
+      .main-content { width: 100%; padding: 20px; }
+      
       .sidebar {
-        width: 100%;
-        position: absolute;
-        top: 0px;
-        left: 0;
-        background: #fff;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        transform: translateY(-120%);
+        width: 250px;
+        position: fixed;
+        top: 70px;
+        left: -250px;
+        height: calc(100vh - 70px);
         z-index: 999;
-      }
-
-      .sidebar.active {
-        transform: translateY(0);
-      }
-
-      .sidebar li {
-        text-align: center;
-        padding: 12px;
-      }
-
-      .main-content {
-        padding: 80px 20px;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
       }
       
-      .modal-content {
-        padding: 20px;
-      }
-    }
-    
-    /* ============================= */
-    /* Tombol Back (mode mobile saja) */
-    /* ============================= */
-    .back-btn {
-      display: none;
-      background: none;
-      border: none;
-      font-size: 20px;
-      color: #e60000;
-      cursor: pointer;
-    }
+      .sidebar.active { left: 0; }
+      .menu-toggle { display: block; }
 
-    /* Atur posisi di mobile */
-    @media (max-width: 768px) {
+      .action-bar { flex-direction: column; align-items: stretch; }
+      
       .back-btn {
         display: block;
         position: absolute;
         left: 15px;
         top: 20px;
         z-index: 1001;
+        background: none; border: none; font-size: 20px; color: var(--primary-color); cursor: pointer;
       }
 
-      .logo {
-        margin: 0 auto; /* biar logo tetap di tengah */
-      }
+      .logo { margin: 0 auto; }
+      .menu-toggle { position: absolute; right: 15px; top: 18px; }
+    }
 
-      .menu-toggle {
-        position: absolute;
-        right: 15px;
-        top: 18px;
-      }
-    }
-    .subtitle {
-      color: #666;
-      margin-bottom: 30px;
-      font-size: 1rem;
-    }
+    .back-btn { display: none; }
   </style>
 </head>
-
 <body>
+
+  <!-- HEADER -->
   <header>
     <nav class="navbar">
-      <!-- tombol back (hanya muncul di mobile) -->
       <button class="back-btn" onclick="goBack()">
         <i class="fa-solid fa-arrow-left"></i>
       </button>
@@ -368,199 +396,280 @@
         <span>PMR MILLENIUM</span>
       </div>
 
-      <!-- tombol hamburger -->
       <button class="menu-toggle"><i class="fa-solid fa-bars"></i></button>
     </nav>
   </header>
 
   <div class="dashboard-container">
-    <!-- Sidebar -->
+    <!-- SIDEBAR (Anggota) -->
     <aside class="sidebar">
       <ul>
-        <li><a href="../Dashboard Anggota/anggota.php"><i class="fa-solid fa-house"></i> Dashboard</a></li>
+        <li><a href="anggota.php"><i class="fa-solid fa-house"></i> Dashboard</a></li>
         <li class="active"><a href="absensi.html"><i class="fa-solid fa-calendar-check"></i> Rekap Absensi</a></li>
-        <li><a href="../Dashboard Anggota/perpus.html"><i class="fa-solid fa-book"></i> Perpustakaan Digital</a></li>
+        <li><a href="perpus.html"><i class="fa-solid fa-book"></i> Perpustakaan Digital</a></li>
         <li><a href=""><i class="fa-solid fa-gamepad"></i> Quiz</a></li>
         <li><a href="../logout.php"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
       </ul>
     </aside>
 
-    <!-- Main Content -->
+    <!-- MAIN CONTENT -->
     <main class="main-content">
-      <h1>Rekap Absensi</h1>
-      <p class="subtitle">Lihat Riwayat Absen anda.</p>
-      
-      <!-- Tombol Absensi Wajah -->
-      <button class="face-attendance-btn" id="openFaceAttendance">
-        <i class="fa-solid fa-camera"></i> Absensi Wajah
-      </button>
-      
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Tanggal</th>
-            <th>Kegiatan</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>10 Okt 2025</td><td>Latihan P3K</td><td class="hadir">Hadir</td></tr>
-          <tr><td>12 Okt 2025</td><td>Simulasi Evakuasi</td><td class="tidak-hadir">Tidak Hadir</td></tr>
-          <tr><td>15 Okt 2025</td><td>Pelatihan Kepemimpinan</td><td class="hadir">Hadir</td></tr>
-        </tbody>
-      </table>
+      <div class="page-title">
+        <h1>Rekap Absensi</h1>
+        <p>Lihat riwayat kehadiran Anda dan lakukan absensi wajah.</p>
+      </div>
+
+      <!-- Action Bar (Absensi Wajah & Filter) -->
+      <section class="action-bar">
+        <div style="flex: 1;">
+           <button class="btn btn-primary" id="openFaceAttendance">
+            <i class="fa-solid fa-camera"></i> Absensi Wajah
+          </button>
+        </div>
+        
+        <div class="filter-group">
+          <label for="filterBulan">Bulan</label>
+          <select id="filterBulan" class="filter-control">
+            <option value="">Semua Bulan</option>
+            <option value="10">Oktober</option>
+            <option value="11">November</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Table Section -->
+      <section class="table-container">
+        <h3 style="margin-bottom: 20px; color: var(--text-color); font-size: 1.1rem;">Riwayat Kehadiran</h3>
+        
+        <table class="data-table" id="absensiTable">
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Kegiatan</th>
+              <th>Jam Masuk</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <!-- Data populated by JS -->
+          </tbody>
+        </table>
+      </section>
     </main>
   </div>
-  
+
   <!-- Modal Absensi Wajah -->
   <div class="modal" id="faceAttendanceModal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Absensi Wajah</h2>
-        <p>Silakan posisikan wajah Anda di depan kamera</p>
+        <h3>Absensi Wajah</h3>
+        <button class="close-modal" id="closeModal">&times;</button>
       </div>
-      
-      <div class="camera-container">
-        <video id="video" autoplay playsinline></video>
-      </div>
-      
-      <div class="controls">
-        <button class="capture-btn" id="captureBtn">
-          <i class="fa-solid fa-camera"></i> Ambil Foto
-        </button>
-        <button class="close-btn" id="closeModal">
-          <i class="fa-solid fa-times"></i> Tutup
-        </button>
-      </div>
-      
-      <div class="result-container" id="resultContainer">
-        <canvas id="canvas" style="display: none;"></canvas>
-        <img id="captured-image" src="" alt="Foto yang diambil">
-        <p class="success-message" id="successMessage">Absensi berhasil! Terima kasih.</p>
-        <button class="capture-btn" id="retryBtn">
-          <i class="fa-solid fa-rotate-right"></i> Ulangi
-        </button>
+      <div class="modal-body">
+        <p style="color: #666; margin-bottom: 15px;">Posisikan wajah Anda di dalam bingkai.</p>
+        
+        <div class="camera-container">
+          <video id="video" autoplay playsinline></video>
+          <canvas id="canvas" style="display: none;"></canvas>
+          <img id="captured-image" src="" alt="Hasil Foto" style="display: none;">
+        </div>
+
+        <div class="modal-footer" id="cameraControls">
+          <button class="btn btn-primary" id="captureBtn">
+            <i class="fa-solid fa-camera"></i> Ambil Foto
+          </button>
+        </div>
+
+        <div id="resultSuccess" style="display: none; text-align: center; margin-top: 20px;">
+          <div style="color: var(--success-color); font-size: 3rem; margin-bottom: 10px;">
+            <i class="fa-solid fa-check-circle"></i>
+          </div>
+          <h4 style="color: var(--text-color);">Absensi Berhasil!</h4>
+          <p style="color: var(--text-muted);">Terima kasih, kehadiran Anda telah tercatat.</p>
+          <button class="btn btn-primary" id="finishBtn" style="margin-top: 15px;">Tutup</button>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
-    const menuToggle = document.querySelector(".menu-toggle");
-    const sidebar = document.querySelector(".sidebar");
-    const faceAttendanceModal = document.getElementById("faceAttendanceModal");
-    const openFaceAttendanceBtn = document.getElementById("openFaceAttendance");
-    const closeModalBtn = document.getElementById("closeModal");
-    const captureBtn = document.getElementById("captureBtn");
-    const retryBtn = document.getElementById("retryBtn");
-    const video = document.getElementById("video");
-    const canvas = document.getElementById("canvas");
-    const capturedImage = document.getElementById("captured-image");
-    const resultContainer = document.getElementById("resultContainer");
-    const successMessage = document.getElementById("successMessage");
+    // --- DATA DUMMY (Simulasi Database Anggota) ---
+    const myAttendanceData = [
+      { id: 1, tanggal: "2023-10-15", kegiatan: "Latihan P3K", jam: "16:00", status: "hadir" },
+      { id: 2, tanggal: "2023-10-12", kegiatan: "Simulasi Evakuasi", jam: "15:30", status: "alpha" },
+      { id: 3, tanggal: "2023-10-10", kegiatan: "Rapat Rutin", jam: "15:00", status: "hadir" },
+      { id: 4, tanggal: "2023-10-05", kegiatan: "Pelatihan Kepemimpinan", jam: "16:00", status: "hadir" },
+    ];
+
+    // --- DOM ELEMENTS ---
+    const tableBody = document.getElementById('tableBody');
+    const modal = document.getElementById('faceAttendanceModal');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const capturedImage = document.getElementById('captured-image');
+    const cameraControls = document.getElementById('cameraControls');
+    const resultSuccess = document.getElementById('resultSuccess');
 
     let stream = null;
 
-    // Toggle sidebar di mobile
-    menuToggle.addEventListener("click", () => {
-      sidebar.classList.toggle("active");
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+      renderTable(myAttendanceData);
+
+      // Event Listeners
+      document.getElementById('openFaceAttendance').addEventListener('click', openModal);
+      document.getElementById('closeModal').addEventListener('click', closeModal);
+      document.getElementById('captureBtn').addEventListener('click', captureImage);
+      document.getElementById('finishBtn').addEventListener('click', closeModal);
+      document.getElementById('filterBulan').addEventListener('change', filterTable);
+      
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
     });
 
-    // Fungsi kembali
-    function goBack() {
-      if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        window.location.href = "../index.html";
+    // --- RENDER TABLE ---
+    function renderTable(data) {
+      tableBody.innerHTML = '';
+      
+      if (data.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 30px; color: #999;">Belum ada riwayat absensi.</td></tr>`;
+        return;
       }
+
+      data.forEach((item, index) => {
+        const row = document.createElement('tr');
+        
+        const dateObj = new Date(item.tanggal);
+        const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+        
+        // Status Badge Class
+        const statusClass = {
+          'hadir': 'status-hadir',
+          'izin': 'status-izin',
+          'sakit': 'status-sakit',
+          'alpha': 'status-alpha'
+        };
+        
+        const statusLabel = {
+          'hadir': 'Hadir',
+          'izin': 'Izin',
+          'sakit': 'Sakit',
+          'alpha': 'Tidak Hadir'
+        };
+
+        row.innerHTML = `
+          <td style="font-weight: 500;">${dateStr}</td>
+          <td>${item.kegiatan}</td>
+          <td>${item.jam}</td>
+          <td>
+            <span class="status-badge ${statusClass[item.status]}">
+              ${statusLabel[item.status]}
+            </span>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
     }
 
-    // Buka modal absensi wajah
-    openFaceAttendanceBtn.addEventListener("click", () => {
-      faceAttendanceModal.style.display = "flex";
+    // --- CAMERA FUNCTIONS ---
+    function openModal() {
+      modal.style.display = 'flex';
+      resetModalUI();
       startCamera();
-    });
+    }
 
-    // Tutup modal absensi wajah
-    closeModalBtn.addEventListener("click", () => {
-      faceAttendanceModal.style.display = "none";
+    function closeModal() {
+      modal.style.display = 'none';
       stopCamera();
-      resetCameraUI();
-    });
+    }
 
-    // Ambil foto dari kamera
-    captureBtn.addEventListener("click", () => {
-      captureImage();
-    });
-
-    // Ulangi pengambilan foto
-    retryBtn.addEventListener("click", () => {
-      resetCameraUI();
-      startCamera();
-    });
-
-    // Mulai kamera
     async function startCamera() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ 
           video: { 
             width: { ideal: 640 }, 
             height: { ideal: 480 },
-            facingMode: "user" // Gunakan kamera depan
+            facingMode: "user" 
           } 
         });
         video.srcObject = stream;
       } catch (err) {
-        console.error("Error mengakses kamera: ", err);
-        alert("Tidak dapat mengakses kamera. Pastikan Anda memberikan izin akses kamera.");
+        console.error("Error accessing camera:", err);
+        alert("Tidak dapat mengakses kamera. Pastikan izin kamera diberikan.");
       }
     }
 
-    // Hentikan kamera
     function stopCamera() {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
     }
 
-    // Ambil gambar dari video
     function captureImage() {
       const context = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
+      
+      // Draw image (Note: CSS handles the mirror for display, canvas keeps original unless flipped via context)
+      // For consistency with preview, we should mirror the context draw
+      context.translate(canvas.width, 0);
+      context.scale(-1, 1);
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       
-      // Konversi canvas ke data URL untuk ditampilkan
+      // Convert to image
       capturedImage.src = canvas.toDataURL('image/png');
       
-      // Tampilkan hasil dan sembunyikan video
-      resultContainer.style.display = "block";
-      video.style.display = "none";
-      captureBtn.style.display = "none";
-      
-      // Simulasi proses pengenalan wajah (dalam implementasi nyata, ini akan memanggil API)
+      // UI Switch
+      video.style.display = 'none';
+      capturedImage.style.display = 'block';
+      cameraControls.style.display = 'none';
+
+      // Simulate processing delay
       setTimeout(() => {
-        successMessage.style.display = "block";
-        // Di sini Anda akan mengirim gambar ke server untuk verifikasi
-        // Contoh: sendImageToServer(canvas.toDataURL('image/png'));
-      }, 1500);
+        resultSuccess.style.display = 'block';
+      }, 1000);
     }
 
-    // Reset UI kamera ke keadaan awal
-    function resetCameraUI() {
-      video.style.display = "block";
-      captureBtn.style.display = "inline-block";
-      resultContainer.style.display = "none";
-      successMessage.style.display = "none";
+    function resetModalUI() {
+      video.style.display = 'block';
+      capturedImage.style.display = 'none';
+      capturedImage.src = '';
+      cameraControls.style.display = 'flex';
+      resultSuccess.style.display = 'none';
     }
 
-    // Tutup modal jika klik di luar konten modal
-    window.addEventListener("click", (event) => {
-      if (event.target === faceAttendanceModal) {
-        faceAttendanceModal.style.display = "none";
-        stopCamera();
-        resetCameraUI();
+    function filterTable() {
+      const monthVal = document.getElementById('filterBulan').value;
+      if(!monthVal) {
+        renderTable(myAttendanceData);
+        return;
+      }
+
+      const filtered = myAttendanceData.filter(item => {
+        const d = new Date(item.tanggal);
+        return (d.getMonth() + 1).toString() === monthVal;
+      });
+      renderTable(filtered);
+    }
+
+    // --- SIDEBAR & NAV ---
+    const menuToggle = document.querySelector('.menu-toggle');
+    const sidebar = document.querySelector('.sidebar');
+
+    menuToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
+
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 992) {
+        if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+          sidebar.classList.remove('active');
+        }
       }
     });
+
+    function goBack() {
+      window.history.back();
+    }
   </script>
 </body>
 </html>

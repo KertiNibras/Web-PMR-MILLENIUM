@@ -7,6 +7,25 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
   <style>
+    /* --- CSS VARIABLES (Sama Persis dengan Perpustakaan/Dashboard) --- */
+    :root {
+      --primary-color: #d90429; /* PMR Red */
+      --primary-hover: #ef233c;
+      --secondary-color: #2b2d42;
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --text-muted: #6c757d;
+      --border-color: #e9ecef;
+      --success-color: #27ae60;
+      --warning-color: #f39c12;
+      --danger-color: #e74c3c;
+      --info-color: #17a2b8;
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.08);
+      --radius: 10px;
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -14,11 +33,13 @@
     }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-size: cover;
-      background-repeat: no-repeat;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
     }
 
+    /* --- HEADER (SAMA PERSIS) --- */
     header {
       background: #fff;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -53,35 +74,36 @@
     }
 
     @keyframes fadeInDown {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Tombol hamburger */
     .menu-toggle {
       display: none;
       background: none;
       border: none;
       font-size: 22px;
       cursor: pointer;
-      color: #d90429;
+      color: var(--primary-color);
     }
 
-    /* Layout utama */
+    /* --- LAYOUT UTAMA --- */
     .dashboard-container {
       display: flex;
       min-height: 100vh;
+      padding-top: 70px;
     }
 
-    /* Sidebar */
+    /* --- SIDEBAR (SAMA PERSIS) --- */
     .sidebar {
-      width: 220px;
+      width: 250px;
       background: #ffffff;
-      padding-top: 75px;
-      box-shadow: 2px 0 6px rgba(0,0,0,0.05);
+      padding-top: 20px;
+      border-right: 1px solid var(--border-color);
       transition: transform 0.3s ease;
+      height: calc(100vh - 70px);
+      position: sticky;
+      top: 70px;
+      overflow-y: auto;
     }
 
     .sidebar ul {
@@ -91,20 +113,27 @@
     }
 
     .sidebar li {
-      padding: 15px 20px;
+      padding: 14px 25px;
       cursor: pointer;
-      color: #444;
+      color: var(--text-color);
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       transition: 0.3s;
       width: 100%;
+      font-weight: 500;
+      border-left: 4px solid transparent;
     }
 
-    .sidebar li:hover,
+    .sidebar li:hover {
+      background-color: #fff0f3;
+      color: var(--primary-color);
+    }
+
     .sidebar li.active {
-      background: #d90429;
-      color: white;
+      background-color: #fff0f3;
+      color: var(--primary-color);
+      border-left-color: var(--primary-color);
     }
 
     .sidebar a {
@@ -113,73 +142,153 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      width: 100%;
     }
 
-    /* Main content */
+    /* --- MAIN CONTENT --- */
     .main-content {
       flex: 1;
-      padding: 100px;
+      padding: 30px;
+      width: calc(100% - 250px);
     }
 
-    .main-content h1 {
-      font-size: 1.8rem;
-      margin-bottom: 10px;
-      color: #d90429;
+    .page-title h1 {
+      font-size: 1.5rem;
+      color: var(--primary-color);
+      margin-bottom: 5px;
     }
 
-    /* Table */
+    .page-title p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 25px;
+    }
+
+    /* --- FILTER & BUTTONS --- */
+    .content-header {
+      background: white;
+      padding: 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 25px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: flex-end;
+    }
+
+    .filter-group {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .filter-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .filter-control {
+      width: 100%;
+      padding: 10px 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+    }
+
+    .btn-primary { background-color: var(--primary-color); color: white; }
+    .btn-primary:hover { background-color: var(--primary-hover); }
+
+    .btn-success { background-color: var(--success-color); color: white; }
+    .btn-success:hover { background-color: #219653; }
+
+    .btn-danger { background-color: var(--danger-color); color: white; }
+    .btn-danger:hover { background-color: #c0392b; }
+
+    .btn-secondary { background-color: #95a5a6; color: white; }
+    .btn-secondary:hover { background-color: #7f8c8d; }
+
+    /* --- TABLE SECTION --- */
+    .table-container {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 20px;
+      overflow-x: auto;
+    }
+
     .data-table {
       width: 100%;
       border-collapse: collapse;
-      background: white;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    .data-table th, .data-table td {
-      padding: 12px 15px;
-      text-align: left;
-      border-bottom: 1px solid #eee;
+      min-width: 800px;
     }
 
     .data-table th {
-      background: #d90429;
+      background-color: var(--primary-color);
       color: white;
-    }
-
-    .hadir {
-      color: green;
+      text-align: left;
+      padding: 15px;
       font-weight: 600;
     }
 
-    .tidak-hadir {
-      color: red;
-      font-weight: 600;
+    .data-table td {
+      padding: 15px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
     }
 
-    /* Tombol Absensi Wajah */
-    .face-attendance-btn {
-      background-color: #d90429;
-      color: white;
-      border: none;
-      padding: 12px 20px;
+    .data-table tr:hover {
+      background-color: #fafafa;
+    }
+
+    /* Photo Thumbnail */
+    .photo-thumb {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 16px;
+      border: 2px solid var(--border-color);
+      transition: 0.3s;
+    }
+
+    .photo-thumb:hover {
+      transform: scale(1.1);
+      border-color: var(--primary-color);
+    }
+
+    /* Status Badge & Select */
+    .status-select {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
       font-weight: 600;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      transition: background-color 0.3s;
+      cursor: pointer;
+      width: auto;
+      min-width: 100px;
     }
 
-    .face-attendance-btn:hover {
-      background-color: #c00424;
-    }
+    .status-h { color: var(--success-color); background: rgba(39, 174, 96, 0.1); border-color: var(--success-color); }
+    .status-i { color: var(--warning-color); background: rgba(243, 156, 18, 0.1); border-color: var(--warning-color); }
+    .status-s { color: var(--info-color); background: rgba(23, 162, 184, 0.1); border-color: var(--info-color); }
+    .status-a { color: var(--danger-color); background: rgba(231, 76, 60, 0.1); border-color: var(--danger-color); }
 
-    /* Modal Absensi Wajah */
+    /* --- MODAL PHOTO --- */
     .modal {
       display: none;
       position: fixed;
@@ -189,558 +298,119 @@
       height: 100%;
       background-color: rgba(0, 0, 0, 0.7);
       z-index: 2000;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
+      padding: 20px;
     }
 
     .modal-content {
-      background-color: white;
-      padding: 30px;
-      border-radius: 12px;
-      width: 90%;
+      background: white;
+      border-radius: var(--radius);
       max-width: 600px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-      text-align: center;
+      width: 100%;
+      overflow: hidden;
+      animation: modalPop 0.3s ease;
+    }
+
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
     }
 
     .modal-header {
-      margin-bottom: 20px;
+      padding: 15px 20px;
+      background: var(--bg-color);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    .modal-header h2 {
-      color: #d90429;
-      margin-bottom: 10px;
+    .modal-body {
+      padding: 20px;
+      text-align: center;
     }
 
-    .camera-container {
-      width: 100%;
-      margin: 20px 0;
-      position: relative;
-    }
-
-    #video {
-      width: 100%;
-      max-width: 500px;
-      border-radius: 8px;
-      background-color: #f5f5f5;
-    }
-
-    .capture-btn {
-      background-color: #d90429;
-      color: white;
-      border: none;
-      padding: 12px 25px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
-      margin: 10px 5px;
-      transition: background-color 0.3s;
-    }
-
-    .capture-btn:hover {
-      background-color: #c00424;
-    }
-
-    .close-btn {
-      background-color: #6c757d;
-      color: white;
-      border: none;
-      padding: 12px 25px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
-      margin: 10px 5px;
-      transition: background-color 0.3s;
-    }
-
-    .close-btn:hover {
-      background-color: #5a6268;
-    }
-
-    .result-container {
-      margin-top: 20px;
-      display: none;
-    }
-
-    #captured-image {
+    .modal-body img {
       max-width: 100%;
       border-radius: 8px;
-      margin-bottom: 15px;
     }
 
-    .success-message {
-      color: green;
-      font-weight: 600;
-      margin: 15px 0;
-    }
-
-    /* Responsif */
-    @media (max-width: 768px) {
-      .menu-toggle {
-        display: block;
-      }
-
-      .dashboard-container {
-        flex-direction: column;
-      }
-
-      .sidebar {
-        width: 100%;
-        position: absolute;
-        top: 0px;
-        left: 0;
-        background: #fff;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        transform: translateY(-120%);
-        z-index: 999;
-      }
-
-      .sidebar.active {
-        transform: translateY(0);
-      }
-
-      .sidebar li {
-        text-align: center;
-        padding: 12px;
-      }
-
-      .main-content {
-        padding: 80px 20px;
-      }
-      
-      .modal-content {
-        padding: 20px;
-      }
-    }
-    
-    /* ============================= */
-    /* Tombol Back (mode mobile saja) */
-    /* ============================= */
-    .back-btn {
-      display: none;
+    .close-modal {
       background: none;
       border: none;
-      font-size: 20px;
-      color: #e60000;
+      font-size: 1.5rem;
       cursor: pointer;
+      color: var(--text-muted);
     }
 
-    /* Atur posisi di mobile */
-    @media (max-width: 768px) {
+    /* --- TOAST NOTIFICATION --- */
+    .toast {
+      position: fixed;
+      top: 90px;
+      right: 20px;
+      background: white;
+      color: var(--text-color);
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 300px;
+      border-left: 5px solid var(--primary-color);
+      transform: translateX(120%);
+      transition: transform 0.3s ease-out;
+      z-index: 9999;
+    }
+
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left-color: var(--success-color); }
+    .toast.info { border-left-color: var(--info-color); }
+    .toast i { font-size: 1.2rem; }
+    .toast.success i { color: var(--success-color); }
+    .toast.info i { color: var(--info-color); }
+
+    /* --- RESPONSIVE --- */
+    @media (max-width: 992px) {
+      .main-content { width: 100%; padding: 20px; }
+      
+      .sidebar {
+        width: 250px;
+        position: fixed;
+        top: 70px;
+        left: -250px;
+        height: calc(100vh - 70px);
+        z-index: 999;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      }
+      
+      .sidebar.active { left: 0; }
+      .menu-toggle { display: block; }
+
+      .content-header { flex-direction: column; align-items: stretch; }
+      
       .back-btn {
         display: block;
         position: absolute;
         left: 15px;
         top: 20px;
         z-index: 1001;
+        background: none; border: none; font-size: 20px; color: var(--primary-color); cursor: pointer;
       }
 
-      .logo {
-        margin: 0 auto; /* biar logo tetap di tengah */
-      }
-
-      .menu-toggle {
-        position: absolute;
-        right: 15px;
-        top: 18px;
-      }
+      .logo { margin: 0 auto; }
+      .menu-toggle { position: absolute; right: 15px; top: 18px; }
     }
-    .subtitle {
-      color: #666;
-      margin-bottom: 30px;
-      font-size: 1rem;
-    }
-    
 
-
-    :root {
-            --primary: #ec1414;
-            --primary-dark: #d43a3a;
-            --success: #06d614;
-            --warning: #ffd166;
-            --danger: #ee1212;
-            --info: #b21111;
-            --light: #f8f9fa;
-            --dark: #212529;
-            --gray: #6c757d;
-            --light-gray: #e9ecef;
-            --border-radius: 8px;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            --transition: all 0.3s ease;
-        }
-        
-
-        /* Filter Section */
-        .filter-section {
-            background: white;
-            padding: 20px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            margin-bottom: 30px;
-        }
-
-        .filter-section h2 {
-            margin-bottom: 20px;
-            color: var(--dark);
-            font-size: 1.4rem;
-        }
-
-        .filter-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-bottom: 15px;
-        }
-
-        .filter-group {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--gray);
-        }
-
-        input, select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid var(--light-gray);
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            transition: var(--transition);
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
-        }
-
-        .filter-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .btn-secondary {
-            background-color: var(--light-gray);
-            color: var(--dark);
-        }
-
-        .btn-secondary:hover {
-            background-color: #dde0e5;
-        }
-
-        .btn-success {
-            background-color: var(--success);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background-color: #05c293;
-        }
-
-        .btn-danger {
-            background-color: var(--danger);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background-color: #e63e65;
-        }
-
-        /* Table Section */
-        .table-section {
-            background: white;
-            padding: 20px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            margin-bottom: 30px;
-            overflow-x: auto;
-        }
-
-        .table-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .table-header h2 {
-            font-size: 1.4rem;
-            color: var(--dark);
-        }
-
-        .export-options {
-            display: flex;
-            gap: 10px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1000px;
-        }
-
-        th {
-            background-color: var(--primary);
-            color: white;
-            text-align: left;
-            padding: 15px;
-            font-weight: 600;
-        }
-
-        th:first-child {
-            border-top-left-radius: 8px;
-        }
-
-        th:last-child {
-            border-top-right-radius: 8px;
-        }
-
-        td {
-            padding: 15px;
-            border-bottom: 1px solid var(--light-gray);
-            vertical-align: middle;
-        }
-
-        tr:hover {
-            background-color: #f9fafc;
-        }
-
-        .photo-cell {
-            width: 80px;
-        }
-
-        .photo-thumbnail {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: var(--transition);
-            border: 2px solid var(--light-gray);
-        }
-
-        .photo-thumbnail:hover {
-            transform: scale(1.05);
-            border-color: var(--primary);
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-align: center;
-            min-width: 80px;
-        }
-
-        .status-hadir {
-            background-color: rgba(6, 214, 160, 0.15);
-            color: #05a87d;
-        }
-
-        .status-izin {
-            background-color: rgba(255, 209, 102, 0.15);
-            color: #e6b238;
-        }
-
-        .status-sakit {
-            background-color: rgba(17, 138, 178, 0.15);
-            color: var(--info);
-        }
-
-        .status-alpha {
-            background-color: rgba(239, 71, 111, 0.15);
-            color: var(--danger);
-        }
-
-        .status-select {
-            padding: 6px 10px;
-            border-radius: 6px;
-            border: 1px solid var(--light-gray);
-            font-weight: 600;
-            cursor: pointer;
-            min-width: 100px;
-            transition: var(--transition);
-        }
-
-        .status-select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .status-select.hadir {
-            color: #05a87d;
-            border-color: rgba(6, 214, 160, 0.3);
-        }
-
-        .status-select.izin {
-            color: #e6b238;
-            border-color: rgba(255, 209, 102, 0.3);
-        }
-
-        .status-select.sakit {
-            color: var(--info);
-            border-color: rgba(17, 138, 178, 0.3);
-        }
-
-        .status-select.alpha {
-            color: var(--danger);
-            border-color: rgba(239, 71, 111, 0.3);
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: var(--border-radius);
-            max-width: 700px;
-            width: 90%;
-            max-height: 90vh;
-            overflow: hidden;
-            position: relative;
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid var(--light-gray);
-        }
-
-        .modal-header h3 {
-            font-size: 1.5rem;
-            color: var(--dark);
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.8rem;
-            color: var(--gray);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .modal-close:hover {
-            color: var(--danger);
-        }
-
-        .modal-body {
-            padding: 20px;
-            text-align: center;
-        }
-
-        .modal-body img {
-            max-width: 100%;
-            max-height: 60vh;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .modal-footer {
-            padding: 15px 20px;
-            border-top: 1px solid var(--light-gray);
-            text-align: right;
-        }
-
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 20px;
-            color: var(--gray);
-            font-size: 0.9rem;
-            border-top: 1px solid var(--light-gray);
-            margin-top: 20px;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .filter-row {
-                flex-direction: column;
-            }
-            
-            .filter-group {
-                min-width: 100%;
-            }
-            
-            .table-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .export-options {
-                width: 100%;
-                justify-content: flex-start;
-            }
-            
-        }
+    .back-btn { display: none; }
   </style>
 </head>
-
 <body>
+
+  <!-- HEADER -->
   <header>
     <nav class="navbar">
-      <!-- tombol back (hanya muncul di mobile) -->
       <button class="back-btn" onclick="goBack()">
         <i class="fa-solid fa-arrow-left"></i>
       </button>
@@ -750,446 +420,308 @@
         <span>PMR MILLENIUM</span>
       </div>
 
-      <!-- tombol hamburger -->
       <button class="menu-toggle"><i class="fa-solid fa-bars"></i></button>
     </nav>
   </header>
 
   <div class="dashboard-container">
-    <!-- Sidebar -->
+    <!-- SIDEBAR -->
     <aside class="sidebar">
       <ul>
         <li><a href="../Dashboard Pengurus/pengurus.php"><i class="fa-solid fa-house"></i> Dashboard</a></li>
-        <li class="active"><a href="absensi.html"><i class="fa-solid fa-calendar-check"></i> Kelola Absensi</a></li>
-        <li><a href="../Dashboard Pengurus/kelolaperpus.html"><i class="fa-solid fa-book"></i>Kelola Perpustakaan Digital</a></li>
+        <li class="active"><a href="kelolaabsen.html"><i class="fa-solid fa-calendar-check"></i> Kelola Absensi</a></li>
+        <li><a href="kelolaperpus.html"><i class="fa-solid fa-book"></i> Kelola Perpustakaan Digital</a></li>
         <li><a href=""><i class="fa-solid fa-users"></i> Kelola Akun</a></li>
         <li><a href=""><i class="fa-solid fa-gamepad"></i> Kelola Quiz</a></li>
-        <li><a href="../Dashboard Pengurus/kelolaabsen.html"><i class="fa-solid fa-pen-to-square"></i> Edit Beranda</a></li>
+        <li><a href=""><i class="fa-solid fa-pen-to-square"></i> Edit Beranda</a></li>
         <li><a href="../logout.php"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
       </ul>
     </aside>
 
-    <!-- Main Content -->
+    <!-- MAIN CONTENT -->
     <main class="main-content">
-      <h1>Kelola Absensi</h1>
-      <p class="subtitle">Lihat Riwayat Absen anggota.</p>
-          <!-- Filter Section -->
-        <section class="filter-section">
-            <h2>Filter Data Absensi</h2>
-            <div class="filter-row">
-                <div class="filter-group">
-                    <label for="filterTanggal">Tanggal</label>
-                    <input type="date" id="filterTanggal">
-                </div>
-                <div class="filter-group">
-                    <label for="filterKegiatan">Nama Kegiatan</label>
-                    <select id="filterKegiatan">
-                        <option value="">Semua Kegiatan</option>
-                        <option value="rapat">Rapat Rutin</option>
-                        <option value="pelatihan">Pelatihan Anggota</option>
-                        <option value="kerja_bakti">Kerja Bakti</option>
-                        <option value="seminar">Seminar</option>
-                        <option value="olahraga">Olahraga Bersama</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="filterStatus">Status Kehadiran</label>
-                    <select id="filterStatus">
-                        <option value="">Semua Status</option>
-                        <option value="hadir">Hadir</option>
-                        <option value="izin">Izin</option>
-                        <option value="sakit">Sakit</option>
-                        <option value="alpha">Alpha</option>
-                    </select>
-                </div>
-            </div>
-            <div class="filter-actions">
-                <button class="btn btn-secondary" id="resetFilter">
-                    <i class="fas fa-redo"></i> Reset Filter
-                </button>
-                <button class="btn btn-primary" id="applyFilter">
-                    <i class="fas fa-filter"></i> Terapkan Filter
-                </button>
-            </div>
-        </section>
+      <div class="page-title">
+        <h1>Kelola Absensi</h1>
+        <p>Lihat dan kelola riwayat kehadiran anggota PMR.</p>
+      </div>
 
-        <!-- Table Section -->
-        <section class="table-section">
-            <div class="table-header">
-                <h2>Daftar Absensi</h2>
-                <div class="export-options">
-                    <button class="btn btn-success" id="exportExcel">
-                        <i class="fas fa-file-excel"></i> Export Excel
-                    </button>
-                    <button class="btn btn-danger" id="exportPDF">
-                        <i class="fas fa-file-pdf"></i> Export PDF
-                    </button>
-                </div>
-            </div>
-            
-            <table id="absensiTable">
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Nama Anggota</th>
-                        <th>Tanggal</th>
-                        <th>Kegiatan</th>
-                        <th>Foto Bukti</th>
-                        <th>Status Kehadiran</th>
-                        <th>Keterangan</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <!-- Data akan diisi oleh JavaScript -->
-                </tbody>
-            </table>
-        </section>
+      <!-- Filter Section -->
+      <section class="content-header">
+        <div class="filter-group">
+          <label for="filterTanggal">Tanggal</label>
+          <input type="date" id="filterTanggal" class="filter-control">
+        </div>
+        <div class="filter-group">
+          <label for="filterKegiatan">Nama Kegiatan</label>
+          <select id="filterKegiatan" class="filter-control">
+            <option value="">Semua Kegiatan</option>
+            <option value="Rapat Rutin">Rapat Rutin</option>
+            <option value="Pelatihan Anggota">Pelatihan Anggota</option>
+            <option value="Kerja Bakti">Kerja Bakti</option>
+            <option value="Seminar">Seminar</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filterStatus">Status</label>
+          <select id="filterStatus" class="filter-control">
+            <option value="">Semua Status</option>
+            <option value="hadir">Hadir</option>
+            <option value="izin">Izin</option>
+            <option value="sakit">Sakit</option>
+            <option value="alpha">Alpha</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-secondary" id="resetFilter"><i class="fas fa-redo"></i> Reset</button>
+          <button class="btn btn-primary" id="applyFilter"><i class="fas fa-filter"></i> Filter</button>
+        </div>
+      </section>
 
-        <!-- Modal untuk Foto -->
-        <div class="modal" id="photoModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Bukti Kehadiran</h3>
-                    <button class="modal-close" id="closeModal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <img id="modalImage" src="" alt="Foto Bukti Kehadiran">
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" id="closeModalBtn">Tutup</button>
-                </div>
-            </div>
-        
+      <!-- Table Section -->
+      <section class="table-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="color: var(--text-color);">Data Kehadiran</h3>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-success" id="exportExcel" style="padding: 8px 15px; font-size: 0.85rem;">
+              <i class="fas fa-file-excel"></i> Excel
+            </button>
+            <button class="btn btn-danger" id="exportPDF" style="padding: 8px 15px; font-size: 0.85rem;">
+              <i class="fas fa-file-pdf"></i> PDF
+            </button>
+          </div>
+        </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script>
-        // Data contoh absensi
-        const absensiData = [
-            { id: 1, nama: "Ahmad Fauzi", tanggal: "2023-10-15", kegiatan: "Rapat Rutin", foto: "https://images.unsplash.com/photo-1589652717521-10c0d092dea9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80", status: "hadir", keterangan: "Hadir tepat waktu" },
-            { id: 2, nama: "Siti Nurhaliza", tanggal: "2023-10-15", kegiatan: "Rapat Rutin", foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80", status: "hadir", keterangan: "Hadir tepat waktu" },
-            { id: 3, nama: "Budi Santoso", tanggal: "2023-10-15", kegiatan: "Rapat Rutin", foto: "https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80", status: "izin", keterangan: "Ijin keluarga" },
-            { id: 4, nama: "Dewi Anggraini", tanggal: "2023-10-16", kegiatan: "Pelatihan Anggota", foto: "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80", status: "hadir", keterangan: "Hadir tepat waktu" },
-            { id: 5, nama: "Rizky Maulana", tanggal: "2023-10-16", kegiatan: "Pelatihan Anggota", foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80", status: "sakit", keterangan: "Demam tinggi" },
-        ];
+        <table class="data-table" id="absensiTable">
+          <thead>
+            <tr>
+              <th width="50">No</th>
+              <th>Nama Anggota</th>
+              <th>Tanggal</th>
+              <th>Kegiatan</th>
+              <th>Foto</th>
+              <th>Status</th>
+              <th>Keterangan</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <!-- Data populated by JS -->
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
 
-        
-            
-            // Set tanggal default ke hari ini
-            const today = new Date().toISOString().split('T')[0];
-            $('#filterTanggal').val(today);
-            
-            // Render tabel dengan data awal
-            renderTable(absensiData);
-            
-            // Event listeners
-            document.getElementById('applyFilter').addEventListener('click', applyFilter);
-            document.getElementById('resetFilter').addEventListener('click', resetFilter);
-            document.getElementById('exportExcel').addEventListener('click', exportToExcel);
-            document.getElementById('exportPDF').addEventListener('click', exportToPDF);
-            document.getElementById('closeModal').addEventListener('click', closeModal);
-            document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-            document.getElementById('photoModal').addEventListener('click', function(e) {
-                if (e.target === this) closeModal();
-            });
-        
+  <!-- Modal Preview Foto -->
+  <div class="modal" id="photoModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 1.1rem; color: var(--text-color);">Bukti Kehadiran</h3>
+        <button class="close-modal" id="closeModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <img id="modalImage" src="" alt="Foto">
+      </div>
+    </div>
+  </div>
 
-        // Fungsi untuk merender tabel
-        function renderTable(data) {
-            const tableBody = document.getElementById('tableBody');
-            tableBody.innerHTML = '';
-            
-            data.forEach((item, index) => {
-                const row = document.createElement('tr');
-                
-                // Format tanggal
-                const formattedDate = new Date(item.tanggal).toLocaleDateString('id-ID', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                
-                // Status badge
-                const statusText = {
-                    'hadir': 'Hadir',
-                    'izin': 'Izin',
-                    'sakit': 'Sakit',
-                    'alpha': 'Alpha'
-                };
-                
-                row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${item.nama}</td>
-                    <td>${formattedDate}</td>
-                    <td>${item.kegiatan}</td>
-                    <td class="photo-cell">
-                        <img src="${item.foto}" alt="Foto ${item.nama}" class="photo-thumbnail" onclick="showPhoto('${item.foto}', '${item.nama}')">
-                    </td>
-                    <td>
-                        <select class="status-select ${item.status}" onchange="updateStatus(${item.id}, this.value)" data-id="${item.id}">
-                            <option value="hadir" ${item.status === 'hadir' ? 'selected' : ''}>Hadir</option>
-                            <option value="izin" ${item.status === 'izin' ? 'selected' : ''}>Izin</option>
-                            <option value="sakit" ${item.status === 'sakit' ? 'selected' : ''}>Sakit</option>
-                            <option value="alpha" ${item.status === 'alpha' ? 'selected' : ''}>Alpha</option>
-                        </select>
-                    </td>
-                    <td>${item.keterangan}</td>
-                `;
-                
-                tableBody.appendChild(row);
-            });
-        }
+  <!-- Toast Container -->
+  <div id="toastContainer"></div>
 
-        // Fungsi untuk memperbarui status
-        function updateStatus(id, newStatus) {
-            // Cari data berdasarkan ID
-            const index = absensiData.findIndex(item => item.id === id);
-            if (index !== -1) {
-                // Update status di data
-                absensiData[index].status = newStatus;
-                
-                // Update class select untuk styling
-                const selectElement = document.querySelector(`select[data-id="${id}"]`);
-                selectElement.className = `status-select ${newStatus}`;
-                
-                // Simulasi update ke server
-                console.log(`Status absensi ID ${id} diperbarui menjadi: ${newStatus}`);
-                
-                // Tampilkan notifikasi
-                showNotification(`Status ${absensiData[index].nama} diperbarui menjadi: ${newStatus}`, 'success');
-            }
-        }
+  <!-- Libraries -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-        // Fungsi untuk menerapkan filter
-        function applyFilter() {
-            const filterTanggal = document.getElementById('filterTanggal').value;
-            const filterKegiatan = document.getElementById('filterKegiatan').value;
-            const filterStatus = document.getElementById('filterStatus').value;
-            
-            let filteredData = [...absensiData];
-            
-            // Filter berdasarkan tanggal
-            if (filterTanggal) {
-                filteredData = filteredData.filter(item => item.tanggal === filterTanggal);
-            }
-            
-            // Filter berdasarkan kegiatan
-            if (filterKegiatan) {
-                filteredData = filteredData.filter(item => item.kegiatan.toLowerCase().includes(filterKegiatan.toLowerCase()));
-            }
-            
-            // Filter berdasarkan status
-            if (filterStatus) {
-                filteredData = filteredData.filter(item => item.status === filterStatus);
-            }
-            
-            // Render tabel dengan data yang telah difilter
-            renderTable(filteredData);
-            
-            // Tampilkan notifikasi
-            showNotification(`Menampilkan ${filteredData.length} data absensi`, 'info');
-        }
-
-        // Fungsi untuk mereset filter
-        function resetFilter() {
-            document.getElementById('filterTanggal').value = '';
-            document.getElementById('filterKegiatan').value = '';
-            document.getElementById('filterStatus').value = '';
-            
-            // Reset dropdown Select2
-            $('#filterKegiatan').val('').trigger('change');
-            $('#filterStatus').val('').trigger('change');
-            
-            // Render tabel dengan semua data
-            renderTable(absensiData);
-            
-            // Tampilkan notifikasi
-            showNotification('Filter telah direset', 'info');
-        }
-
-        // Fungsi untuk menampilkan foto dalam modal
-        function showPhoto(photoUrl, nama) {
-            const modal = document.getElementById('photoModal');
-            const modalImage = document.getElementById('modalImage');
-            
-            modalImage.src = photoUrl;
-            modalImage.alt = `Foto bukti kehadiran ${nama}`;
-            modal.style.display = 'flex';
-            
-            // Update judul modal
-            document.querySelector('.modal-header h3').textContent = `Bukti Kehadiran - ${nama}`;
-        }
-
-        // Fungsi untuk menutup modal
-        function closeModal() {
-            document.getElementById('photoModal').style.display = 'none';
-        }
-
-        // Fungsi untuk export ke Excel
-        function exportToExcel() {
-            // Data untuk export
-            const exportData = absensiData.map(item => ({
-                'Nama Anggota': item.nama,
-                'Tanggal': new Date(item.tanggal).toLocaleDateString('id-ID'),
-                'Kegiatan': item.kegiatan,
-                'Status': item.status === 'hadir' ? 'Hadir' : 
-                         item.status === 'izin' ? 'Izin' : 
-                         item.status === 'sakit' ? 'Sakit' : 'Alpha',
-                'Keterangan': item.keterangan
-            }));
-            
-            // Buat worksheet
-            const worksheet = XLSX.utils.json_to_sheet(exportData);
-            
-            // Buat workbook
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Absensi");
-            
-            // Export ke file Excel
-            XLSX.writeFile(workbook, `Laporan_Absensi_${new Date().toISOString().split('T')[0]}.xlsx`);
-            
-            // Tampilkan notifikasi
-            showNotification('Data berhasil diexport ke Excel', 'success');
-        }
-
-        // Fungsi untuk export ke PDF
-        function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            // Judul
-            doc.setFontSize(18);
-            doc.text("LAPORAN ABSENSI", 105, 20, { align: "center" });
-            
-            // Tanggal generate
-            doc.setFontSize(10);
-            doc.text(`Dibuat pada: ${new Date().toLocaleDateString('id-ID')}`, 105, 30, { align: "center" });
-            
-            // Data untuk tabel
-            const tableData = absensiData.map(item => [
-                item.nama,
-                new Date(item.tanggal).toLocaleDateString('id-ID'),
-                item.kegiatan,
-                item.status === 'hadir' ? 'Hadir' : 
-                item.status === 'izin' ? 'Izin' : 
-                item.status === 'sakit' ? 'Sakit' : 'Alpha',
-                item.keterangan
-            ]);
-            
-            // Buat tabel
-            doc.autoTable({
-                head: [['Nama Anggota', 'Tanggal', 'Kegiatan', 'Status', 'Keterangan']],
-                body: tableData,
-                startY: 40,
-                theme: 'grid',
-                styles: { fontSize: 9 },
-                headStyles: { fillColor: [67, 97, 238] }
-            });
-            
-            // Simpan PDF
-            doc.save(`Laporan_Absensi_${new Date().toISOString().split('T')[0]}.pdf`);
-            
-            // Tampilkan notifikasi
-            showNotification('Data berhasil diexport ke PDF', 'success');
-        }
-
-        // Fungsi untuk menampilkan notifikasi
-        function showNotification(message, type) {
-            // Hapus notifikasi sebelumnya jika ada
-            const existingNotification = document.querySelector('.notification');
-            if (existingNotification) {
-                existingNotification.remove();
-            }
-            
-            // Buat elemen notifikasi
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.innerHTML = `
-                <span>${message}</span>
-                <button onclick="this.parentElement.remove()">&times;</button>
-            `;
-            
-            // Tambahkan styling untuk notifikasi
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                border-radius: var(--border-radius);
-                color: white;
-                font-weight: 600;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                min-width: 300px;
-                max-width: 500px;
-                z-index: 1001;
-                animation: slideIn 0.3s ease;
-                box-shadow: var(--shadow);
-            `;
-            
-            // Warna berdasarkan jenis notifikasi
-            if (type === 'success') {
-                notification.style.backgroundColor = 'var(--success)';
-            } else if (type === 'danger') {
-                notification.style.backgroundColor = 'var(--danger)';
-            } else {
-                notification.style.backgroundColor = 'var(--info)';
-            }
-            
-            // Tambahkan animasi
-            const styleSheet = document.createElement('style');
-            styleSheet.textContent = `
-                @keyframes slideIn {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-                .notification button {
-                    background: none;
-                    border: none;
-                    color: white;
-                    font-size: 1.5rem;
-                    cursor: pointer;
-                    margin-left: 15px;
-                }
-            `;
-            document.head.appendChild(styleSheet);
-            
-            // Tambahkan notifikasi ke body
-            document.body.appendChild(notification);
-            
-            // Hapus notifikasi setelah 5 detik
-            setTimeout(() => {
-                if (notification.parentElement) {
-                    notification.remove();
-                }
-            }, 5000);
-        }
-    </script>
-
-      
   <script>
-    
+    // --- DATA CONTROLLER ---
+    const absensiData = [
+      { id: 1, nama: "Ahmad Fauzi", tanggal: "2023-10-15", kegiatan: "Rapat Rutin", foto: "https://images.unsplash.com/photo-1589652717521-10c0d092dea9?auto=format&fit=crop&w=200&q=80", status: "hadir", keterangan: "Hadir tepat waktu" },
+      { id: 2, nama: "Siti Nurhaliza", tanggal: "2023-10-15", kegiatan: "Rapat Rutin", foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80", status: "hadir", keterangan: "Hadir tepat waktu" },
+      { id: 3, nama: "Budi Santoso", tanggal: "2023-10-15", kegiatan: "Rapat Rutin", foto: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=200&q=80", status: "izin", keterangan: "Ijin keluarga" },
+      { id: 4, nama: "Dewi Anggraini", tanggal: "2023-10-16", kegiatan: "Pelatihan Anggota", foto: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80", status: "hadir", keterangan: "Hadir tepat waktu" },
+      { id: 5, nama: "Rizky Maulana", tanggal: "2023-10-16", kegiatan: "Pelatihan Anggota", foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80", status: "sakit", keterangan: "Demam tinggi" }
+    ];
 
-    // Toggle sidebar di mobile
-    menuToggle.addEventListener("click", () => {
-      sidebar.classList.toggle("active");
+    // --- DOM ELEMENTS ---
+    const tableBody = document.getElementById('tableBody');
+    const modal = document.getElementById('photoModal');
+    const modalImg = document.getElementById('modalImage');
+    const toastContainer = document.getElementById('toastContainer');
+
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set default date
+      document.getElementById('filterTanggal').value = new Date().toISOString().split('T')[0];
+      renderTable(absensiData);
+
+      // Event Listeners
+      document.getElementById('applyFilter').addEventListener('click', applyFilter);
+      document.getElementById('resetFilter').addEventListener('click', resetFilter);
+      document.getElementById('exportExcel').addEventListener('click', exportToExcel);
+      document.getElementById('exportPDF').addEventListener('click', exportToPDF);
+      
+      // Modal Events
+      document.getElementById('closeModal').addEventListener('click', () => modal.style.display = 'none');
+      modal.addEventListener('click', (e) => { if(e.target === modal) modal.style.display = 'none'; });
     });
 
-    // Fungsi kembali
-    function goBack() {
-      if (window.history.length > 1) {
-        window.history.back();
-      } else {
-        window.location.href = "../index.html";
+    // --- RENDER TABLE ---
+    function renderTable(data) {
+      tableBody.innerHTML = '';
+      
+      if (data.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 30px; color: #999;">Tidak ada data ditemukan.</td></tr>`;
+        return;
+      }
+
+      data.forEach((item, index) => {
+        const row = document.createElement('tr');
+        
+        // Format Date
+        const dateObj = new Date(item.tanggal);
+        const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+        
+        // Status Class Helper
+        const getStatusClass = (s) => {
+          if(s === 'hadir') return 'status-h';
+          if(s === 'izin') return 'status-i';
+          if(s === 'sakit') return 'status-s';
+          return 'status-a';
+        };
+
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td style="font-weight: 600;">${item.nama}</td>
+          <td>${dateStr}</td>
+          <td>${item.kegiatan}</td>
+          <td>
+            <img src="${item.foto}" class="photo-thumb" onclick="openModal('${item.foto}')">
+          </td>
+          <td>
+            <select class="status-select ${getStatusClass(item.status)}" onchange="updateStatus(${item.id}, this.value)">
+              <option value="hadir" ${item.status === 'hadir' ? 'selected' : ''}>Hadir</option>
+              <option value="izin" ${item.status === 'izin' ? 'selected' : ''}>Izin</option>
+              <option value="sakit" ${item.status === 'sakit' ? 'selected' : ''}>Sakit</option>
+              <option value="alpha" ${item.status === 'alpha' ? 'selected' : ''}>Alpha</option>
+            </select>
+          </td>
+          <td>${item.keterangan}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // --- ACTIONS ---
+    function updateStatus(id, newStatus) {
+      const index = absensiData.findIndex(x => x.id === id);
+      if(index !== -1) {
+        absensiData[index].status = newStatus;
+        
+        // Re-render or just update class (Re-rendering is safer here)
+        renderTable(getCurrentFilteredData());
+        showToast(`Status berhasil diperbarui`, 'success');
       }
     }
 
-    
+    function applyFilter() {
+      const dateVal = document.getElementById('filterTanggal').value;
+      const kegVal = document.getElementById('filterKegiatan').value;
+      const statVal = document.getElementById('filterStatus').value;
+
+      const filtered = absensiData.filter(item => {
+        const matchDate = dateVal ? item.tanggal === dateVal : true;
+        const matchKeg = kegVal ? item.kegiatan === kegVal : true;
+        const matchStat = statVal ? item.status === statVal : true;
+        return matchDate && matchKeg && matchStat;
+      });
+
+      renderTable(filtered);
+      showToast(`${filtered.length} data ditemukan`, 'info');
+    }
+
+    function resetFilter() {
+      document.getElementById('filterTanggal').value = '';
+      document.getElementById('filterKegiatan').value = '';
+      document.getElementById('filterStatus').value = '';
+      renderTable(absensiData);
+      showToast('Filter direset', 'info');
+    }
+
+    // Helper to get current view data (simplification for re-render)
+    function getCurrentFilteredData() {
+      // For simplicity in this demo, return full data. 
+      // In real app, track current filter state.
+      return absensiData; 
+    }
+
+    // --- EXPORT FUNCTIONS ---
+    function exportToExcel() {
+      const ws = XLSX.utils.json_to_sheet(absensiData.map(i => ({
+        Nama: i.nama,
+        Tanggal: i.tanggal,
+        Kegiatan: i.kegiatan,
+        Status: i.status,
+        Keterangan: i.keterangan
+      })));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Absensi");
+      XLSX.writeFile(wb, "Laporan_Absensi.xlsx");
+      showToast('Excel berhasil diunduh', 'success');
+    }
+
+    function exportToPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      doc.text("Laporan Absensi PMR", 14, 20);
+      doc.autoTable({
+        head: [['Nama', 'Tanggal', 'Kegiatan', 'Status', 'Ket']],
+        body: absensiData.map(i => [i.nama, i.tanggal, i.kegiatan, i.status, i.keterangan]),
+        startY: 30,
+      });
+      
+      doc.save("Laporan_Absensi.pdf");
+      showToast('PDF berhasil diunduh', 'success');
+    }
+
+    // --- UI HELPERS ---
+    window.openModal = (src) => {
+      modalImg.src = src;
+      modal.style.display = 'flex';
+    };
+
+    function showToast(msg, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      const icon = type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+      toast.innerHTML = `<i class="fas ${icon}"></i> <span>${msg}</span>`;
+      toastContainer.appendChild(toast);
+      
+      requestAnimationFrame(() => toast.classList.add('show'));
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // --- SIDEBAR & NAV LOGIC ---
+    const menuToggle = document.querySelector('.menu-toggle');
+    const sidebar = document.querySelector('.sidebar');
+
+    menuToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
+
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 992) {
+        if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+          sidebar.classList.remove('active');
+        }
+      }
+    });
+
+    function goBack() {
+      window.history.back();
+    }
   </script>
 </body>
 </html>
