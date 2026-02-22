@@ -2,17 +2,17 @@
 session_start();
 // Cek apakah user sudah login
 if (!isset($_SESSION['nama'])) {
-    // Tampilkan Alert JS dulu, baru redirect
-    echo '<script type="text/javascript">';
-    echo 'alert("Silakan login terlebih dahulu!");';
-    echo 'window.location.href = "../Login/login.php";';
-    echo '</script>';
-    exit;
+  echo '<script type="text/javascript">';
+  echo 'alert("Silakan login terlebih dahulu!");';
+  echo 'window.location.href = "../Login/login.php";';
+  echo '</script>';
+  exit;
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,22 +20,20 @@ if (!isset($_SESSION['nama'])) {
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
   <style>
-    /* --- 1. CSS VARIABLES (Sama Persis dengan Halaman Lain) --- */
+    /* --- CSS VARIABLES --- */
     :root {
-      --primary-color: #d90429; /* PMR Red */
+      --primary-color: #d90429;
       --primary-hover: #c92a2a;
       --bg-color: #f8f9fa;
       --card-bg: #ffffff;
       --text-color: #1e293b;
       --text-muted: #64748b;
       --border-color: #e2e8f0;
-      
       --success-color: #10b981;
       --warning-color: #f59e0b;
       --danger-color: #ef4444;
-
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
-      --shadow-md: 0 4px 6px rgba(0,0,0,0.05);
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
       --radius: 12px;
       --header-height: 70px;
     }
@@ -53,10 +51,16 @@ if (!isset($_SESSION['nama'])) {
       line-height: 1.6;
     }
 
-    a { text-decoration: none; color: inherit; }
-    ul { list-style: none; }
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
 
-    /* --- 2. HEADER & NAVBAR (Konsisten) --- */
+    ul {
+      list-style: none;
+    }
+
+    /* --- HEADER --- */
     header {
       background: #fff;
       box-shadow: var(--shadow-sm);
@@ -85,7 +89,9 @@ if (!isset($_SESSION['nama'])) {
       color: #000;
     }
 
-    .logo img { height: 40px; }
+    .logo img {
+      height: 40px;
+    }
 
     .menu-toggle {
       display: none;
@@ -106,14 +112,13 @@ if (!isset($_SESSION['nama'])) {
       margin-right: 10px;
     }
 
-    /* --- 3. LAYOUT UTAMA --- */
+    /* --- LAYOUT --- */
     .dashboard-container {
       display: flex;
       min-height: 100vh;
       padding-top: var(--header-height);
     }
 
-    /* --- 4. SIDEBAR (Konsisten) --- */
     .sidebar {
       width: 250px;
       background: #fff;
@@ -128,7 +133,7 @@ if (!isset($_SESSION['nama'])) {
     .sidebar li {
       padding: 14px 25px;
       cursor: pointer;
-      color: var(--text-color); /* Item Hitam/Jelas */
+      color: var(--text-color);
       font-weight: 500;
       display: flex;
       align-items: center;
@@ -137,21 +142,26 @@ if (!isset($_SESSION['nama'])) {
       transition: all 0.2s;
     }
 
-    .sidebar li:hover, .sidebar li.active {
+    .sidebar li:hover,
+    .sidebar li.active {
       background-color: #fff1f1;
       color: var(--primary-color);
       border-left-color: var(--primary-color);
     }
 
-    .sidebar a { display: flex; align-items: center; gap: 10px; width: 100%; }
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
 
-    /* --- 5. MAIN CONTENT --- */
     .main-content {
       flex: 1;
       padding: 30px;
     }
 
-    /* Page Header */
+    /* --- PAGE HEADER --- */
     .page-header {
       margin-bottom: 30px;
     }
@@ -167,30 +177,7 @@ if (!isset($_SESSION['nama'])) {
       font-size: 0.95rem;
     }
 
-    /* --- BUTTON STYLES --- */
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s;
-      font-size: 0.9rem;
-    }
-
-    .btn-primary {
-      background-color: var(--primary-color);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background-color: var(--primary-hover);
-    }
-
-    /* --- FILTER SECTION --- */
+    /* --- FILTER --- */
     .filter-container {
       background: white;
       padding: 20px;
@@ -235,10 +222,10 @@ if (!isset($_SESSION['nama'])) {
       box-shadow: 0 0 0 3px rgba(217, 4, 41, 0.1);
     }
 
-    /* --- MATERIALS GRID --- */
+    /* --- GRID & CARD (DESAIN DISAMAKAN) --- */
     .materials-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: 25px;
       margin-bottom: 40px;
     }
@@ -260,6 +247,7 @@ if (!isset($_SESSION['nama'])) {
       border-color: rgba(217, 4, 41, 0.3);
     }
 
+    /* Card Top */
     .card-top {
       padding: 20px;
       display: flex;
@@ -302,10 +290,13 @@ if (!isset($_SESSION['nama'])) {
       margin: 0;
       line-height: 1.4;
       display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
 
+    /* Card Body */
     .card-body {
       padding: 0 20px 20px 20px;
       flex-grow: 1;
@@ -316,17 +307,28 @@ if (!isset($_SESSION['nama'])) {
       color: var(--text-muted);
       line-height: 1.5;
       display: -webkit-box;
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      -webkit-line-clamp: 3;
     }
 
+    /* Card Footer (TAMBAH TANGGAL) */
     .card-footer {
       padding: 15px 20px;
       border-top: 1px solid var(--border-color);
       background-color: #fafbfc;
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-meta {
+      font-size: 0.8rem;
+      color: #999;
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
 
     .btn-download {
@@ -350,34 +352,49 @@ if (!isset($_SESSION['nama'])) {
 
     /* --- RESPONSIVE --- */
     @media (max-width: 992px) {
-      .main-content { width: 100%; padding: 20px; }
-      
-      .sidebar {
-        position: fixed; top: var(--header-height); left: -260px;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      .main-content {
+        width: 100%;
+        padding: 20px;
       }
-      .sidebar.active { left: 0; }
-      .menu-toggle, .back-btn { display: block; }
-      
-      .filter-container { flex-direction: column; align-items: stretch; }
-      .materials-grid { grid-template-columns: 1fr; }
+
+      .sidebar {
+        position: fixed;
+        top: var(--header-height);
+        left: -260px;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .sidebar.active {
+        left: 0;
+      }
+
+      .menu-toggle,
+      .back-btn {
+        display: block;
+      }
+
+      .filter-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .materials-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <!-- HEADER -->
   <header>
     <nav class="navbar">
-      <button class="back-btn" onclick="goBack()">
-        <i class="fa-solid fa-arrow-left"></i>
-      </button>
-
+      <button class="back-btn" onclick="goBack()"><i class="fa-solid fa-arrow-left"></i></button>
       <div class="logo">
         <img src="../Gambar/logpmi.png" alt="Logo">
         <span>PMR MILLENIUM</span>
       </div>
-
       <button class="menu-toggle"><i class="fa-solid fa-bars"></i></button>
     </nav>
   </header>
@@ -389,11 +406,10 @@ if (!isset($_SESSION['nama'])) {
         <li><a href="anggota.php"><i class="fa-solid fa-house"></i> Dashboard</a></li>
         <li><a href="absensi.php"><i class="fa-solid fa-calendar-check"></i> Rekap Absensi</a></li>
         <li class="active"><a href="perpus.php"><i class="fa-solid fa-book"></i> Perpustakaan Digital</a></li>
-        <!-- LOGOUT: SUDAH DISAMAKAN DENGAN anggota.php -->
         <li style="margin-top: 20px; border-top: 1px solid #eee;">
-            <a href="javascript:void(0)" onclick="confirmLogout()">
-                <i class="fa-solid fa-right-from-bracket"></i> Log Out
-            </a>
+          <a href="javascript:void(0)" onclick="confirmLogout()">
+            <i class="fa-solid fa-right-from-bracket"></i> Log Out
+          </a>
         </li>
       </ul>
     </aside>
@@ -414,7 +430,6 @@ if (!isset($_SESSION['nama'])) {
             <input type="text" id="searchFilter" class="filter-control" placeholder="Ketik judul atau deskripsi..." style="padding-left: 40px;">
           </div>
         </div>
-        
         <div class="filter-item">
           <label for="categoryFilter">Kategori</label>
           <select id="categoryFilter" class="filter-control">
@@ -425,7 +440,6 @@ if (!isset($_SESSION['nama'])) {
             <option value="Kesehatan">Kesehatan</option>
           </select>
         </div>
-        
         <div class="filter-item">
           <label for="sortFilter">Urutkan</label>
           <select id="sortFilter" class="filter-control">
@@ -437,105 +451,86 @@ if (!isset($_SESSION['nama'])) {
       </section>
 
       <!-- Materials Grid -->
-      <section class="materials-grid" id="materialsGrid">
-        <!-- Materi akan di-render lewat JavaScript -->
-      </section>
+      <section class="materials-grid" id="materialsGrid"></section>
     </main>
   </div>
 
   <script>
-    // --- Sidebar Logic (Sama dengan halaman lain) ---
+    // --- Sidebar Logic ---
     const menuToggle = document.querySelector('.menu-toggle');
     const sidebar = document.querySelector('.sidebar');
-    
+
     menuToggle.addEventListener('click', (e) => {
       e.stopPropagation();
       sidebar.classList.toggle('active');
     });
-
     document.addEventListener('click', (e) => {
-      if (window.innerWidth <= 992) {
-        if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
-          sidebar.classList.remove('active');
-        }
-      }
+      if (window.innerWidth <= 992 && !sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active');
     });
 
     function goBack() {
       window.history.back();
     }
 
-    // --- Data Contoh Materi ---
-    const sampleMaterials = [
-      {
-        id: 1,
-        title: "Panduan Lengkap Pertolongan Pertama",
-        description: "Panduan komprehensif untuk melakukan pertolongan pertama dalam berbagai situasi darurat.",
-        category: "P3K",
-        date: "15 Mar 2023",
-        fileName: "panduan_p3k.pdf",
-        fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-      },
-      {
-        id: 2,
-        title: "Sejarah dan Prinsip Palang Merah",
-        description: "Materi tentang sejarah berdirinya PMI, prinsip dasar gerakan kepalangmerahan.",
-        category: "Kepalangmerahan",
-        date: "22 Feb 2023",
-        fileName: "sejarah_pmri.pdf",
-        fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-      },
-      {
-        id: 3,
-        title: "Penanganan Bencana Gempa Bumi",
-        description: "Pedoman penanganan dan mitigasi bencana gempa bumi, langkah evakuasi yang aman.",
-        category: "Pertolongan Bencana",
-        date: "10 Jan 2023",
-        fileName: "penanganan_gempa.pdf",
-        fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-      },
-      {
-        id: 4,
-        title: "Teknik Dasar Perawatan Luka",
-        description: "Materi tentang teknik dasar perawatan luka, membersihkan luka, dan balutan.",
-        category: "P3K",
-        date: "05 Des 2022",
-        fileName: "teknik_luka.pdf",
-        fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-      }
-    ];
+    function confirmLogout() {
+      if (confirm("Yakin keluar?")) window.location.href = "../logout.php";
+    }
 
-    let materials = [...sampleMaterials];
+    // --- DATA & LOGIC ---
+    let materials = [];
     const materialsGrid = document.getElementById('materialsGrid');
 
     document.addEventListener('DOMContentLoaded', function() {
-      renderMaterials();
+      loadMaterials();
       setupEventListeners();
     });
+
+    function loadMaterials() {
+      fetch('get_materi.php')
+        .then(res => res.json())
+        .then(data => {
+          materials = data.map(m => ({
+            id: m.id,
+            title: m.judul,
+            description: m.deskripsi,
+            category: m.kategori,
+            // Format tanggal: "25 Okt 2023"
+            date: new Date(m.created_at).toLocaleDateString('id-ID', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric'
+            }),
+            fileName: m.file_pdf,
+            fileUrl: '../uploads/materi/' + m.file_pdf
+          }));
+          renderMaterials();
+        })
+        .catch(err => {
+          console.error('Gagal memuat materi:', err);
+          materialsGrid.innerHTML = '<p style="color:red; text-align:center;">Gagal memuat data materi.</p>';
+        });
+    }
 
     function renderMaterials(filteredMaterials = null) {
       const materialsToRender = filteredMaterials || materials;
       materialsGrid.innerHTML = '';
-      
+
       if (materialsToRender.length === 0) {
         materialsGrid.innerHTML = `
           <div style="grid-column: 1 / -1; text-align: center; padding: 50px; color: #999;">
             <i class="fas fa-folder-open" style="font-size: 3rem; margin-bottom: 15px; color: #ddd;"></i>
             <h3>Tidak ada materi ditemukan</h3>
-            <p>Coba ubah kata kunci pencarian.</p>
-          </div>
-        `;
+            <p>Belum ada materi yang diunggah atau sesuai pencarian.</p>
+          </div>`;
         return;
       }
-      
+
       materialsToRender.forEach(material => {
         const card = document.createElement('div');
         card.className = 'material-card';
         card.innerHTML = `
           <div class="card-top">
-            <div class="file-icon">
-              <i class="fas fa-file-pdf"></i>
-            </div>
+            <div class="file-icon"><i class="fas fa-file-pdf"></i></div>
             <div class="card-header-content">
               <div class="material-category">${material.category}</div>
               <h3 class="material-title">${material.title}</h3>
@@ -545,11 +540,11 @@ if (!isset($_SESSION['nama'])) {
             <p class="material-description">${material.description}</p>
           </div>
           <div class="card-footer">
-            <a href="${material.fileUrl}" download="${material.fileName}" class="btn-download">
+            <small class="card-meta"><i class="far fa-clock"></i> ${material.date}</small>
+            <a href="${material.fileUrl}" target="_blank" class="btn-download">
               <i class="fas fa-download"></i> Download PDF
             </a>
-          </div>
-        `;
+          </div>`;
         materialsGrid.appendChild(card);
       });
     }
@@ -564,39 +559,19 @@ if (!isset($_SESSION['nama'])) {
       const category = document.getElementById('categoryFilter').value;
       const searchTerm = document.getElementById('searchFilter').value.toLowerCase();
       const sortBy = document.getElementById('sortFilter').value;
-      
-      let filtered = materials;
-      
-      if (category) {
-        filtered = filtered.filter(m => m.category === category);
-      }
-      
-      if (searchTerm) {
-        filtered = filtered.filter(m => 
-          m.title.toLowerCase().includes(searchTerm) || 
-          m.description.toLowerCase().includes(searchTerm)
-        );
-      }
-      
-      if (sortBy === 'newest') {
-        filtered.sort((a, b) => b.id - a.id);
-      } else if (sortBy === 'oldest') {
-        filtered.sort((a, b) => a.id - b.id);
-      } else if (sortBy === 'title') {
-        filtered.sort((a, b) => a.title.localeCompare(b.title));
-      }
-      
+
+      let filtered = [...materials];
+
+      if (category) filtered = filtered.filter(m => m.category === category);
+      if (searchTerm) filtered = filtered.filter(m => m.title.toLowerCase().includes(searchTerm) || m.description.toLowerCase().includes(searchTerm));
+
+      if (sortBy === 'newest') filtered.sort((a, b) => b.id - a.id);
+      else if (sortBy === 'oldest') filtered.sort((a, b) => a.id - b.id);
+      else if (sortBy === 'title') filtered.sort((a, b) => a.title.localeCompare(b.title));
+
       renderMaterials(filtered);
     }
-    // TAMBAHKAN FUNGSI INI:
-  function confirmLogout() {
-    // Tampilkan pesan konfirmasi
-    if (confirm("Apakah Anda yakin ingin keluar dari akun?")) {
-      // Jika user klik 'OK', lempar ke halaman logout
-      window.location.href = "../logout.php";
-    }
-    // Jika 'Cancel', tidak terjadi apa-apa
-  }
   </script>
 </body>
+
 </html>

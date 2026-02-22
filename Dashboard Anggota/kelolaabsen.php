@@ -1,23 +1,28 @@
 <?php
 session_start();
-// Cek Login
+include '../koneksi.php';
+
+// Cek Login & Role
 if (!isset($_SESSION['nama'])) {
-    header("Location: ../Login/login.php");
-    exit;
+  header("Location: ../Login/login.php");
+  exit;
 }
-
-// CEK ROLE: Hanya Pengurus yang boleh akses
 if ($_SESSION['role'] != 'pengurus') {
-    echo '<script>alert("AKSES DITOLAK! Halaman ini khusus Pengurus.");';
-    echo 'window.location.href="../Dashboard Anggota/anggota.php";</script>';
-    exit;
+  echo '<script>alert("AKSES DITOLAK!"); window.location.href="../Dashboard Anggota/anggota.php";</script>';
+  exit;
 }
-// ... lanjutkan kode kamu di bawah ini ...
-?>
 
+// Query Join
+$sql = "SELECT absensi.*, users.nama 
+        FROM absensi 
+        JOIN users ON absensi.user_id = users.id 
+        ORDER BY absensi.tanggal DESC, absensi.jam DESC";
+$result = mysqli_query($koneksi, $sql);
+?>
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,13 +30,11 @@ if ($_SESSION['role'] != 'pengurus') {
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
   <style>
-    /* --- CSS VARIABLES (Sama Persis dengan Perpustakaan/Dashboard) --- */
+    /* CSS Sama persis dengan kode sebelumnya */
     :root {
-      --primary-color: #d90429; /* PMR Red */
+      --primary-color: #d90429;
       --primary-hover: #ef233c;
-      --secondary-color: #2b2d42;
       --bg-color: #f8f9fa;
-      --card-bg: #ffffff;
       --text-color: #333333;
       --text-muted: #6c757d;
       --border-color: #e9ecef;
@@ -39,8 +42,7 @@ if ($_SESSION['role'] != 'pengurus') {
       --warning-color: #f39c12;
       --danger-color: #e74c3c;
       --info-color: #17a2b8;
-      --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
-      --shadow-md: 0 4px 6px rgba(0,0,0,0.08);
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
       --radius: 10px;
     }
 
@@ -57,14 +59,12 @@ if ($_SESSION['role'] != 'pengurus') {
       line-height: 1.6;
     }
 
-    /* --- HEADER (SAMA PERSIS) --- */
     header {
       background: #fff;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       position: fixed;
       width: 100%;
       z-index: 1000;
-      animation: fadeSlideUp 1s ease-out;
     }
 
     .navbar {
@@ -73,9 +73,6 @@ if ($_SESSION['role'] != 'pengurus') {
       justify-content: space-between;
       align-items: center;
       padding: 15px 20px;
-      opacity: 0;
-      transform: translateY(-20px);
-      animation: fadeInDown 1s ease forwards;
     }
 
     .logo {
@@ -91,10 +88,6 @@ if ($_SESSION['role'] != 'pengurus') {
       height: 40px;
     }
 
-    @keyframes fadeInDown {
-      to { opacity: 1; transform: translateY(0); }
-    }
-
     .menu-toggle {
       display: none;
       background: none;
@@ -104,20 +97,16 @@ if ($_SESSION['role'] != 'pengurus') {
       color: var(--primary-color);
     }
 
-    /* --- LAYOUT UTAMA --- */
     .dashboard-container {
       display: flex;
       min-height: 100vh;
       padding-top: 70px;
     }
 
-    /* --- SIDEBAR (SAMA PERSIS) --- */
     .sidebar {
       width: 250px;
       background: #ffffff;
-      padding-top: 0;
       border-right: 1px solid var(--border-color);
-      transition: transform 0.3s ease;
       height: calc(100vh - 70px);
       position: sticky;
       top: 70px;
@@ -126,8 +115,6 @@ if ($_SESSION['role'] != 'pengurus') {
 
     .sidebar ul {
       list-style: none;
-      padding: 0;
-      margin: 0;
     }
 
     .sidebar li {
@@ -138,16 +125,11 @@ if ($_SESSION['role'] != 'pengurus') {
       align-items: center;
       gap: 12px;
       transition: 0.3s;
-      width: 100%;
       font-weight: 500;
       border-left: 4px solid transparent;
     }
 
-    .sidebar li:hover {
-      background-color: #fff0f3;
-      color: var(--primary-color);
-    }
-
+    .sidebar li:hover,
     .sidebar li.active {
       background-color: #fff0f3;
       color: var(--primary-color);
@@ -163,7 +145,6 @@ if ($_SESSION['role'] != 'pengurus') {
       width: 100%;
     }
 
-    /* --- MAIN CONTENT --- */
     .main-content {
       flex: 1;
       padding: 30px;
@@ -182,7 +163,6 @@ if ($_SESSION['role'] != 'pengurus') {
       margin-bottom: 25px;
     }
 
-    /* --- FILTER & BUTTONS --- */
     .content-header {
       background: white;
       padding: 20px;
@@ -227,21 +207,25 @@ if ($_SESSION['role'] != 'pengurus') {
       gap: 8px;
       transition: all 0.3s ease;
       font-size: 0.9rem;
+      color: white;
     }
 
-    .btn-primary { background-color: var(--primary-color); color: white; }
-    .btn-primary:hover { background-color: var(--primary-hover); }
+    .btn-primary {
+      background-color: var(--primary-color);
+    }
 
-    .btn-success { background-color: var(--success-color); color: white; }
-    .btn-success:hover { background-color: #219653; }
+    .btn-secondary {
+      background-color: #95a5a6;
+    }
 
-    .btn-danger { background-color: var(--danger-color); color: white; }
-    .btn-danger:hover { background-color: #c0392b; }
+    .btn-success {
+      background-color: var(--success-color);
+    }
 
-    .btn-secondary { background-color: #95a5a6; color: white; }
-    .btn-secondary:hover { background-color: #7f8c8d; }
+    .btn-danger {
+      background-color: var(--danger-color);
+    }
 
-    /* --- TABLE SECTION --- */
     .table-container {
       background: white;
       border-radius: var(--radius);
@@ -274,7 +258,6 @@ if ($_SESSION['role'] != 'pengurus') {
       background-color: #fafafa;
     }
 
-    /* Photo Thumbnail */
     .photo-thumb {
       width: 50px;
       height: 50px;
@@ -290,23 +273,37 @@ if ($_SESSION['role'] != 'pengurus') {
       border-color: var(--primary-color);
     }
 
-    /* Status Badge & Select */
-    .status-select {
+    .status-badge {
+      display: inline-block;
       padding: 6px 12px;
-      border-radius: 6px;
-      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      font-size: 0.8rem;
       font-weight: 600;
-      cursor: pointer;
-      width: auto;
-      min-width: 100px;
+      text-align: center;
+      min-width: 80px;
+      text-transform: uppercase;
     }
 
-    .status-h { color: var(--success-color); background: rgba(39, 174, 96, 0.1); border-color: var(--success-color); }
-    .status-i { color: var(--warning-color); background: rgba(243, 156, 18, 0.1); border-color: var(--warning-color); }
-    .status-s { color: var(--info-color); background: rgba(23, 162, 184, 0.1); border-color: var(--info-color); }
-    .status-a { color: var(--danger-color); background: rgba(231, 76, 60, 0.1); border-color: var(--danger-color); }
+    .status-h {
+      color: var(--success-color);
+      background: rgba(39, 174, 96, 0.15);
+    }
 
-    /* --- MODAL PHOTO --- */
+    .status-i {
+      color: var(--warning-color);
+      background: rgba(243, 156, 18, 0.15);
+    }
+
+    .status-s {
+      color: var(--info-color);
+      background: rgba(23, 162, 184, 0.15);
+    }
+
+    .status-a {
+      color: var(--danger-color);
+      background: rgba(231, 76, 60, 0.15);
+    }
+
     .modal {
       display: none;
       position: fixed;
@@ -327,12 +324,6 @@ if ($_SESSION['role'] != 'pengurus') {
       max-width: 600px;
       width: 100%;
       overflow: hidden;
-      animation: modalPop 0.3s ease;
-    }
-
-    @keyframes modalPop {
-      from { opacity: 0; transform: scale(0.9); }
-      to { opacity: 1; transform: scale(1); }
     }
 
     .modal-header {
@@ -362,7 +353,6 @@ if ($_SESSION['role'] != 'pengurus') {
       color: var(--text-muted);
     }
 
-    /* --- TOAST NOTIFICATION --- */
     .toast {
       position: fixed;
       top: 90px;
@@ -371,7 +361,7 @@ if ($_SESSION['role'] != 'pengurus') {
       color: var(--text-color);
       padding: 15px 20px;
       border-radius: 8px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
       display: flex;
       align-items: center;
       gap: 12px;
@@ -382,103 +372,131 @@ if ($_SESSION['role'] != 'pengurus') {
       z-index: 9999;
     }
 
-    .toast.show { transform: translateX(0); }
-    .toast.success { border-left-color: var(--success-color); }
-    .toast.info { border-left-color: var(--info-color); }
-    .toast i { font-size: 1.2rem; }
-    .toast.success i { color: var(--success-color); }
-    .toast.info i { color: var(--info-color); }
+    .toast.show {
+      transform: translateX(0);
+    }
 
-    /* --- RESPONSIVE --- */
+    .toast.success {
+      border-left-color: var(--success-color);
+    }
+
+    .toast.info {
+      border-left-color: var(--info-color);
+    }
+
+    .toast i {
+      font-size: 1.2rem;
+    }
+
+    .toast.success i {
+      color: var(--success-color);
+    }
+
+    .toast.info i {
+      color: var(--info-color);
+    }
+
     @media (max-width: 992px) {
-      .main-content { width: 100%; padding: 20px; }
-      
+      .main-content {
+        width: 100%;
+        padding: 20px;
+      }
+
       .sidebar {
         width: 250px;
         position: fixed;
         top: 70px;
-        left: -250px;
+        left: -260px;
         height: calc(100vh - 70px);
         z-index: 999;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
       }
-      
-      .sidebar.active { left: 0; }
-      .menu-toggle { display: block; }
 
-      .content-header { flex-direction: column; align-items: stretch; }
-      
+      .sidebar.active {
+        left: 0;
+      }
+
+      .menu-toggle {
+        display: block;
+      }
+
+      .content-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
       .back-btn {
         display: block;
         position: absolute;
         left: 15px;
         top: 20px;
         z-index: 1001;
-        background: none; border: none; font-size: 20px; color: var(--primary-color); cursor: pointer;
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: var(--primary-color);
+        cursor: pointer;
       }
 
-      .logo { margin: 0 auto; }
-      .menu-toggle { position: absolute; right: 15px; top: 18px; }
+      .logo {
+        margin: 0 auto;
+      }
+
+      .menu-toggle {
+        position: absolute;
+        right: 15px;
+        top: 18px;
+      }
     }
 
-    .back-btn { display: none; }
+    .back-btn {
+      display: none;
+    }
   </style>
 </head>
+
 <body>
 
-  <!-- HEADER -->
+  <!-- HEADER & SIDEBAR (Sama persis) -->
   <header>
     <nav class="navbar">
-      <button class="back-btn" onclick="goBack()">
-        <i class="fa-solid fa-arrow-left"></i>
-      </button>
-
+      <button class="back-btn" onclick="goBack()"><i class="fa-solid fa-arrow-left"></i></button>
       <div class="logo">
         <img src="../Gambar/logpmi.png" alt="Logo">
         <span>PMR MILLENIUM</span>
       </div>
-
       <button class="menu-toggle"><i class="fa-solid fa-bars"></i></button>
     </nav>
   </header>
 
   <div class="dashboard-container">
-    <!-- SIDEBAR -->
     <aside class="sidebar">
       <ul>
         <li><a href="../Dashboard Anggota/anggota.php"><i class="fa-solid fa-house"></i> Dashboard</a></li>
         <li class="active"><a href="kelolaabsen.php"><i class="fa-solid fa-calendar-check"></i> Kelola Absensi</a></li>
         <li><a href="kelolaperpus.php"><i class="fa-solid fa-book"></i> Kelola Perpustakaan Digital</a></li>
-        <li><a href=""><i class="fa-solid fa-users"></i> Kelola Akun</a></li>
-        <!-- <li><a href=""><i class="fa-solid fa-gamepad"></i> Kelola Quiz</a></li> -->
-        <!-- <li><a href=""><i class="fa-solid fa-pen-to-square"></i> Edit Beranda</a></li> -->
-        <li><a href="../logout.php"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
+        <li><a href=""><i class="fa-solid fa-users"></i> Kelola Pendaftaran</a></li>
+        <li style="margin-top: 20px; border-top: 1px solid #eee;">
+          <a href="javascript:void(0)" onclick="confirmLogout()">
+            <i class="fa-solid fa-right-from-bracket"></i> Log Out
+          </a>
+        </li>
       </ul>
     </aside>
 
-    <!-- MAIN CONTENT -->
     <main class="main-content">
       <div class="page-title">
         <h1>Kelola Absensi</h1>
         <p>Lihat dan kelola riwayat kehadiran anggota PMR.</p>
       </div>
 
-      <!-- Filter Section -->
+      <!-- Filter Section (Hapus Kegiatan) -->
       <section class="content-header">
         <div class="filter-group">
           <label for="filterTanggal">Tanggal</label>
           <input type="date" id="filterTanggal" class="filter-control">
         </div>
-        <div class="filter-group">
-          <label for="filterKegiatan">Nama Kegiatan</label>
-          <select id="filterKegiatan" class="filter-control">
-            <option value="">Semua Kegiatan</option>
-            <option value="Rapat Rutin">Rapat Rutin</option>
-            <option value="Pelatihan Anggota">Pelatihan Anggota</option>
-            <option value="Kerja Bakti">Kerja Bakti</option>
-            <option value="Seminar">Seminar</option>
-          </select>
-        </div>
+        <!-- Filter Kegiatan Dihapus -->
         <div class="filter-group">
           <label for="filterStatus">Status</label>
           <select id="filterStatus" class="filter-control">
@@ -514,8 +532,8 @@ if ($_SESSION['role'] != 'pengurus') {
             <tr>
               <th width="50">No</th>
               <th>Nama Anggota</th>
-              <th>Tanggal</th>
-              <th>Kegiatan</th>
+              <th>Waktu Absensi</th>
+              <!-- Kolom Kegiatan Dihapus -->
               <th>Foto</th>
               <th>Status</th>
               <th>Keterangan</th>
@@ -552,77 +570,74 @@ if ($_SESSION['role'] != 'pengurus') {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <script>
-    // --- DATA CONTROLLER ---
-    const absensiData = [
-      { id: 1, nama: "Ahmad Fauzi", tanggal: "2023-10-15", kegiatan: "Rapat Rutin", foto: "https://images.unsplash.com/photo-1589652717521-10c0d092dea9?auto=format&fit=crop&w=200&q=80", status: "hadir", keterangan: "Hadir tepat waktu" },
-      { id: 2, nama: "Siti Nurhaliza", tanggal: "2023-10-15", kegiatan: "Rapat Rutin", foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80", status: "hadir", keterangan: "Hadir tepat waktu" },
-      { id: 3, nama: "Budi Santoso", tanggal: "2023-10-15", kegiatan: "Rapat Rutin", foto: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=200&q=80", status: "izin", keterangan: "Ijin keluarga" },
-      { id: 4, nama: "Dewi Anggraini", tanggal: "2023-10-16", kegiatan: "Pelatihan Anggota", foto: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80", status: "hadir", keterangan: "Hadir tepat waktu" },
-      { id: 5, nama: "Rizky Maulana", tanggal: "2023-10-16", kegiatan: "Pelatihan Anggota", foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80", status: "sakit", keterangan: "Demam tinggi" }
-    ];
+    // Ambil data PHP
+    const absensiData = <?php
+                        $arr = [];
+                        if ($result && mysqli_num_rows($result) > 0) {
+                          while ($row = mysqli_fetch_assoc($result)) {
+                            $row['foto'] = '../uploads/absensi/' . $row['foto'];
+                            $arr[] = $row;
+                          }
+                        }
+                        echo json_encode($arr);
+                        ?>;
 
-    // --- DOM ELEMENTS ---
     const tableBody = document.getElementById('tableBody');
     const modal = document.getElementById('photoModal');
     const modalImg = document.getElementById('modalImage');
     const toastContainer = document.getElementById('toastContainer');
 
-    // --- INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', () => {
-      // Set default date
       document.getElementById('filterTanggal').value = new Date().toISOString().split('T')[0];
       renderTable(absensiData);
 
-      // Event Listeners
       document.getElementById('applyFilter').addEventListener('click', applyFilter);
       document.getElementById('resetFilter').addEventListener('click', resetFilter);
       document.getElementById('exportExcel').addEventListener('click', exportToExcel);
       document.getElementById('exportPDF').addEventListener('click', exportToPDF);
-      
-      // Modal Events
+
       document.getElementById('closeModal').addEventListener('click', () => modal.style.display = 'none');
-      modal.addEventListener('click', (e) => { if(e.target === modal) modal.style.display = 'none'; });
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.style.display = 'none';
+      });
     });
 
-    // --- RENDER TABLE ---
     function renderTable(data) {
       tableBody.innerHTML = '';
-      
+
       if (data.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 30px; color: #999;">Tidak ada data ditemukan.</td></tr>`;
+        // Colspan diubah jadi 6 karena kolom berkurang
+        tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 30px; color: #999;">Tidak ada data ditemukan.</td></tr>`;
         return;
       }
 
       data.forEach((item, index) => {
         const row = document.createElement('tr');
-        
-        // Format Date
         const dateObj = new Date(item.tanggal);
-        const dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-        
-        // Status Class Helper
+        const dateStr = dateObj.toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+        const waktuStr = item.jam ? `${dateStr}, ${item.jam}` : dateStr;
+
         const getStatusClass = (s) => {
-          if(s === 'hadir') return 'status-h';
-          if(s === 'izin') return 'status-i';
-          if(s === 'sakit') return 'status-s';
+          if (s === 'hadir') return 'status-h';
+          if (s === 'izin') return 'status-i';
+          if (s === 'sakit') return 'status-s';
           return 'status-a';
         };
 
         row.innerHTML = `
           <td>${index + 1}</td>
           <td style="font-weight: 600;">${item.nama}</td>
-          <td>${dateStr}</td>
-          <td>${item.kegiatan}</td>
+          <td>${waktuStr}</td>
+          <!-- Kolom Kegiatan Dihapus -->
           <td>
             <img src="${item.foto}" class="photo-thumb" onclick="openModal('${item.foto}')">
           </td>
           <td>
-            <select class="status-select ${getStatusClass(item.status)}" onchange="updateStatus(${item.id}, this.value)">
-              <option value="hadir" ${item.status === 'hadir' ? 'selected' : ''}>Hadir</option>
-              <option value="izin" ${item.status === 'izin' ? 'selected' : ''}>Izin</option>
-              <option value="sakit" ${item.status === 'sakit' ? 'selected' : ''}>Sakit</option>
-              <option value="alpha" ${item.status === 'alpha' ? 'selected' : ''}>Alpha</option>
-            </select>
+            <span class="status-badge ${getStatusClass(item.status)}">${item.status}</span>
           </td>
           <td>${item.keterangan}</td>
         `;
@@ -630,28 +645,14 @@ if ($_SESSION['role'] != 'pengurus') {
       });
     }
 
-    // --- ACTIONS ---
-    function updateStatus(id, newStatus) {
-      const index = absensiData.findIndex(x => x.id === id);
-      if(index !== -1) {
-        absensiData[index].status = newStatus;
-        
-        // Re-render or just update class (Re-rendering is safer here)
-        renderTable(getCurrentFilteredData());
-        showToast(`Status berhasil diperbarui`, 'success');
-      }
-    }
-
     function applyFilter() {
       const dateVal = document.getElementById('filterTanggal').value;
-      const kegVal = document.getElementById('filterKegiatan').value;
-      const statVal = document.getElementById('filterStatus').value;
+      const statVal = document.getElementById('filterStatus').value; // Hanya filter tanggal & status
 
       const filtered = absensiData.filter(item => {
         const matchDate = dateVal ? item.tanggal === dateVal : true;
-        const matchKeg = kegVal ? item.kegiatan === kegVal : true;
         const matchStat = statVal ? item.status === statVal : true;
-        return matchDate && matchKeg && matchStat;
+        return matchDate && matchStat;
       });
 
       renderTable(filtered);
@@ -660,25 +661,20 @@ if ($_SESSION['role'] != 'pengurus') {
 
     function resetFilter() {
       document.getElementById('filterTanggal').value = '';
-      document.getElementById('filterKegiatan').value = '';
       document.getElementById('filterStatus').value = '';
       renderTable(absensiData);
       showToast('Filter direset', 'info');
     }
 
-    // Helper to get current view data (simplification for re-render)
-    function getCurrentFilteredData() {
-      // For simplicity in this demo, return full data. 
-      // In real app, track current filter state.
-      return absensiData; 
-    }
-
-    // --- EXPORT FUNCTIONS ---
+    // Export Functions (Disesuaikan tanpa kegiatan)
     function exportToExcel() {
+      if (absensiData.length === 0) {
+        showToast('Tidak ada data', 'info');
+        return;
+      }
       const ws = XLSX.utils.json_to_sheet(absensiData.map(i => ({
         Nama: i.nama,
-        Tanggal: i.tanggal,
-        Kegiatan: i.kegiatan,
+        Waktu: `${i.tanggal} ${i.jam}`,
         Status: i.status,
         Keterangan: i.keterangan
       })));
@@ -689,21 +685,28 @@ if ($_SESSION['role'] != 'pengurus') {
     }
 
     function exportToPDF() {
-      const { jsPDF } = window.jspdf;
+      if (absensiData.length === 0) {
+        showToast('Tidak ada data', 'info');
+        return;
+      }
+      const {
+        jsPDF
+      } = window.jspdf;
       const doc = new jsPDF();
-      
+
       doc.text("Laporan Absensi PMR", 14, 20);
       doc.autoTable({
-        head: [['Nama', 'Tanggal', 'Kegiatan', 'Status', 'Ket']],
-        body: absensiData.map(i => [i.nama, i.tanggal, i.kegiatan, i.status, i.keterangan]),
+        head: [
+          ['Nama', 'Waktu', 'Status', 'Ket']
+        ], // Header disesuaikan
+        body: absensiData.map(i => [i.nama, `${i.tanggal} ${i.jam}`, i.status, i.keterangan]),
         startY: 30,
       });
-      
+
       doc.save("Laporan_Absensi.pdf");
       showToast('PDF berhasil diunduh', 'success');
     }
 
-    // --- UI HELPERS ---
     window.openModal = (src) => {
       modalImg.src = src;
       modal.style.display = 'flex';
@@ -715,7 +718,6 @@ if ($_SESSION['role'] != 'pengurus') {
       const icon = type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
       toast.innerHTML = `<i class="fas ${icon}"></i> <span>${msg}</span>`;
       toastContainer.appendChild(toast);
-      
       requestAnimationFrame(() => toast.classList.add('show'));
       setTimeout(() => {
         toast.classList.remove('show');
@@ -723,23 +725,25 @@ if ($_SESSION['role'] != 'pengurus') {
       }, 3000);
     }
 
-    // --- SIDEBAR & NAV LOGIC ---
     const menuToggle = document.querySelector('.menu-toggle');
     const sidebar = document.querySelector('.sidebar');
-
     menuToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
-
     document.addEventListener('click', (e) => {
       if (window.innerWidth <= 992) {
-        if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
-          sidebar.classList.remove('active');
-        }
+        if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active');
       }
     });
 
     function goBack() {
       window.history.back();
     }
+
+    function confirmLogout() {
+      if (confirm("Apakah Anda yakin ingin keluar?")) {
+        window.location.href = "../logout.php";
+      }
+    }
   </script>
 </body>
+
 </html>
