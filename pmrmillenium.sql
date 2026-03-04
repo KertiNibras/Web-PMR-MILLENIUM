@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 22, 2026 at 01:59 PM
+-- Generation Time: Mar 04, 2026 at 04:00 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -47,7 +47,15 @@ INSERT INTO `absensi` (`id`, `user_id`, `kegiatan`, `tanggal`, `jam`, `foto`, `s
 (5, 1, 'Absensi Harian', '2026-02-13', '08:18:29', 'absen_1770967109_1.png', 'sakit', 'Demam Wleee', '2026-02-13 07:18:29'),
 (6, 1, 'Absensi Harian', '2026-02-13', '08:18:44', 'absen_1770967124_1.png', 'hadir', 'Hadir Rapatt', '2026-02-13 07:18:44'),
 (7, 3, 'Absensi Harian', '2026-02-13', '08:22:56', 'absen_1770967376_3.png', 'izin', 'Izin Acara Keluarga', '2026-02-13 07:22:56'),
-(16, 3, 'Absensi Harian', '2026-02-22', '12:27:48', 'absen_1771759668_3.png', 'hadir', '', '2026-02-22 11:27:48');
+(16, 3, 'Absensi Harian', '2026-02-22', '12:27:48', 'absen_1771759668_3.png', 'hadir', '', '2026-02-22 11:27:48'),
+(17, 3, 'Absensi Harian', '2026-02-23', '02:35:32', 'absen_1771810532_3.png', 'hadir', 'Hadir coy', '2026-02-23 01:35:32'),
+(18, 3, 'Absensi Harian', '2026-02-23', '02:39:59', 'absen_1771810799_3.png', 'sakit', 'Mouse gw razer nig boss wlee', '2026-02-23 01:39:59'),
+(19, 1, 'Absensi Harian', '2026-02-23', '02:58:33', 'absen_1771811913_1.png', 'izin', 'malas', '2026-02-23 01:58:33'),
+(20, 1, 'Absensi Harian', '2026-02-23', '09:08:07', 'absen_1771812487_1.png', 'hadir', 'hadir waktu', '2026-02-23 02:08:07'),
+(21, 3, 'Absensi Harian', '2026-02-23', '09:16:57', 'absen_1771813017_3.png', 'hadir', '', '2026-02-23 02:16:57'),
+(22, 1, 'Absensi Harian', '2026-02-24', '09:09:49', 'absen_1771898989_1.png', 'hadir', 'hadir coy', '2026-02-24 02:09:49'),
+(23, 1, 'Absensi Harian', '2026-02-24', '17:55:13', 'absen_1771930513_1.png', 'hadir', 'tes absen hadir debug 24 feb', '2026-02-24 10:55:13'),
+(24, 3, 'Absensi Harian', '2026-02-24', '18:39:28', 'absen_1771933168_3.png', 'izin', 'Izin debug 24 feb', '2026-02-24 11:39:28');
 
 -- --------------------------------------------------------
 
@@ -58,7 +66,7 @@ INSERT INTO `absensi` (`id`, `user_id`, `kegiatan`, `tanggal`, `jam`, `foto`, `s
 CREATE TABLE `form_questions` (
   `id` int(11) NOT NULL,
   `question_text` varchar(255) NOT NULL,
-  `question_type` enum('text','textarea','select','radio') DEFAULT 'text',
+  `question_type` enum('text','textarea','select','radio','file') DEFAULT 'text',
   `options` text DEFAULT NULL,
   `is_required` tinyint(1) DEFAULT 1,
   `ordering` int(11) DEFAULT 0,
@@ -70,7 +78,10 @@ CREATE TABLE `form_questions` (
 --
 
 INSERT INTO `form_questions` (`id`, `question_text`, `question_type`, `options`, `is_required`, `ordering`, `created_at`) VALUES
-(1, 'Alasan', 'text', '[]', 1, 1, '2026-02-22 09:13:10');
+(10, 'Nama Lengkap', 'text', '[]', 1, 1, '2026-02-23 13:21:02'),
+(12, 'Kelas & Jurusan', 'select', '[\"XI RPL 1\",\"XI RPL 2\",\"X RPL 1\",\"X RPL 2\"]', 1, 2, '2026-02-23 13:21:48'),
+(13, 'Alasan \"Opsional\"', 'text', '[]', 0, 4, '2026-02-23 14:48:48'),
+(18, 'Prestasi', 'file', '[]', 0, 4, '2026-02-27 03:49:16');
 
 -- --------------------------------------------------------
 
@@ -87,13 +98,6 @@ CREATE TABLE `pendaftaran` (
   `answers` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`answers`)),
   `submission_date` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `pendaftaran`
---
-
-INSERT INTO `pendaftaran` (`id`, `nama_lengkap`, `kelas`, `jurusan`, `no_whatsapp`, `answers`, `submission_date`) VALUES
-(1, 'Jeffrey Epstein', '11', 'RPL', '098676586', '{\"Alasan\":\"ingin....\"}', '2026-02-22 09:14:14');
 
 -- --------------------------------------------------------
 
@@ -128,6 +132,7 @@ CREATE TABLE `users` (
   `username` varchar(30) NOT NULL,
   `nama` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
+  `foto_profil` varchar(255) DEFAULT 'default.jpg',
   `role` enum('anggota','pengurus') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -135,10 +140,10 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `nama`, `password`, `role`) VALUES
-(1, 'anggota', 'Bama Kerti', 'anggota123', 'anggota'),
-(2, 'pengurus', 'Naufal Hanif', 'pengurus123', 'pengurus'),
-(3, 'anggota2', 'Inka Dayungitas', 'anggota1234', 'anggota');
+INSERT INTO `users` (`id`, `username`, `nama`, `password`, `foto_profil`, `role`) VALUES
+(1, '1024012342', 'Bama Kerti', 'anggota123', 'user_1.jpg', 'anggota'),
+(2, 'pengurus', 'Naufal Hanif', 'pengurus123', 'user_2.jpg', 'pengurus'),
+(3, '1024012321', 'Inka Dayungitas', 'anggota1234', 'default.jpg', 'anggota');
 
 --
 -- Indexes for dumped tables
@@ -183,25 +188,25 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `absensi`
 --
 ALTER TABLE `absensi`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT for table `form_questions`
 --
 ALTER TABLE `form_questions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `pendaftaran`
 --
 ALTER TABLE `pendaftaran`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `perpustakaan`
 --
 ALTER TABLE `perpustakaan`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `users`
