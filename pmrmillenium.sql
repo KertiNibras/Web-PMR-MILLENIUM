@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 04, 2026 at 04:00 AM
+-- Generation Time: Mar 04, 2026 at 05:16 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -44,18 +44,7 @@ CREATE TABLE `absensi` (
 --
 
 INSERT INTO `absensi` (`id`, `user_id`, `kegiatan`, `tanggal`, `jam`, `foto`, `status`, `keterangan`, `created_at`) VALUES
-(5, 1, 'Absensi Harian', '2026-02-13', '08:18:29', 'absen_1770967109_1.png', 'sakit', 'Demam Wleee', '2026-02-13 07:18:29'),
-(6, 1, 'Absensi Harian', '2026-02-13', '08:18:44', 'absen_1770967124_1.png', 'hadir', 'Hadir Rapatt', '2026-02-13 07:18:44'),
-(7, 3, 'Absensi Harian', '2026-02-13', '08:22:56', 'absen_1770967376_3.png', 'izin', 'Izin Acara Keluarga', '2026-02-13 07:22:56'),
-(16, 3, 'Absensi Harian', '2026-02-22', '12:27:48', 'absen_1771759668_3.png', 'hadir', '', '2026-02-22 11:27:48'),
-(17, 3, 'Absensi Harian', '2026-02-23', '02:35:32', 'absen_1771810532_3.png', 'hadir', 'Hadir coy', '2026-02-23 01:35:32'),
-(18, 3, 'Absensi Harian', '2026-02-23', '02:39:59', 'absen_1771810799_3.png', 'sakit', 'Mouse gw razer nig boss wlee', '2026-02-23 01:39:59'),
-(19, 1, 'Absensi Harian', '2026-02-23', '02:58:33', 'absen_1771811913_1.png', 'izin', 'malas', '2026-02-23 01:58:33'),
-(20, 1, 'Absensi Harian', '2026-02-23', '09:08:07', 'absen_1771812487_1.png', 'hadir', 'hadir waktu', '2026-02-23 02:08:07'),
-(21, 3, 'Absensi Harian', '2026-02-23', '09:16:57', 'absen_1771813017_3.png', 'hadir', '', '2026-02-23 02:16:57'),
-(22, 1, 'Absensi Harian', '2026-02-24', '09:09:49', 'absen_1771898989_1.png', 'hadir', 'hadir coy', '2026-02-24 02:09:49'),
-(23, 1, 'Absensi Harian', '2026-02-24', '17:55:13', 'absen_1771930513_1.png', 'hadir', 'tes absen hadir debug 24 feb', '2026-02-24 10:55:13'),
-(24, 3, 'Absensi Harian', '2026-02-24', '18:39:28', 'absen_1771933168_3.png', 'izin', 'Izin debug 24 feb', '2026-02-24 11:39:28');
+(26, 1, 'Absensi Harian', '2026-03-04', '11:09:34', 'absen_1_1772597374.jpeg', 'hadir', '-', '2026-03-04 04:09:34');
 
 -- --------------------------------------------------------
 
@@ -98,6 +87,28 @@ CREATE TABLE `pendaftaran` (
   `answers` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`answers`)),
   `submission_date` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pengaturan_absensi`
+--
+
+CREATE TABLE `pengaturan_absensi` (
+  `id` int(11) NOT NULL,
+  `tanggal` date NOT NULL,
+  `waktu_mulai` time NOT NULL,
+  `waktu_selesai` time NOT NULL,
+  `status` tinyint(1) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `pengaturan_absensi`
+--
+
+INSERT INTO `pengaturan_absensi` (`id`, `tanggal`, `waktu_mulai`, `waktu_selesai`, `status`) VALUES
+(1, '2026-03-04', '11:05:00', '11:10:00', 1),
+(2, '2026-03-05', '11:05:00', '11:10:00', 1);
 
 -- --------------------------------------------------------
 
@@ -169,6 +180,12 @@ ALTER TABLE `pendaftaran`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `pengaturan_absensi`
+--
+ALTER TABLE `pengaturan_absensi`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `perpustakaan`
 --
 ALTER TABLE `perpustakaan`
@@ -188,7 +205,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `absensi`
 --
 ALTER TABLE `absensi`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT for table `form_questions`
@@ -201,6 +218,12 @@ ALTER TABLE `form_questions`
 --
 ALTER TABLE `pendaftaran`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+
+--
+-- AUTO_INCREMENT for table `pengaturan_absensi`
+--
+ALTER TABLE `pengaturan_absensi`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `perpustakaan`
