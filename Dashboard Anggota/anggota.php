@@ -1,5 +1,7 @@
 <?php
 session_start();
+include '../koneksi.php'; // Panggil koneksi DB
+
 // 1. Cek apakah user sudah login
 if (!isset($_SESSION['nama'])) {
   echo '<script type="text/javascript">';
@@ -9,41 +11,33 @@ if (!isset($_SESSION['nama'])) {
   exit;
 }
 
-// 2. AMBIL ROLE
-$role = isset($_SESSION['role']) ? $_SESSION['role'] : 'anggota';
-$user_id = isset($_SESSION['id']) ? $_SESSION['id'] : 0; // Asumsi ada ID di session
+// 2. AMBIL ROLE & DATA USER
+ $role = isset($_SESSION['role']) ? $_SESSION['role'] : 'anggota';
+ $user_id = isset($_SESSION['id']) ? $_SESSION['id'] : 0;
+ $nama_user = htmlspecialchars($_SESSION['nama']);
+
+// Logika Penentuan Foto Profil
+ $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
+ $foto_profil = 'https://ui-avatars.com/api/?name='.urlencode($nama_user).'&background=d90429&color=fff'; // Default
+
+// Cek jika ada nama file di DB dan file tersebut benar-benar ada di folder uploads
+if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_session)) {
+    $foto_profil = "../uploads/foto_profil/" . $foto_session;
+}
 
 // ========================================================
-// LOGIKA STATISTIK (Simulasi Data - Ganti dengan Query DB)
+// LOGIKA STATISTIK
 // ========================================================
 
 if ($role == 'pengurus') {
-  // STATISTIK UNTUK PENGURUS (Data Global)
-  // TODO: Ganti dengan Query SQL COUNT
-  // Contoh: SELECT COUNT(*) FROM users WHERE role='anggota'
   $stat_total_anggota = 25;
-
-  // Contoh: SELECT COUNT(*) FROM absensi WHERE MONTH(tanggal) = MONTH(NOW())
   $stat_total_hadir_bulan_ini = 150;
-
-  // Contoh: SELECT COUNT(*) FROM perpustakaan
   $stat_total_buku = 12;
-
-  // Contoh: SELECT COUNT(*) FROM pendaftaran WHERE status='pending'
   $stat_pendaftaran_baru = 3;
 } else {
-  // STATISTIK UNTUK ANGGOTA (Data Pribadi)
-  // TODO: Ganti dengan Query SQL WHERE user_id = $user_id
-
-  // Contoh: SELECT COUNT(*) FROM absensi WHERE user_id = $user_id AND status='Hadir'
   $stat_hadir_saya = 8;
-
-  // Contoh: SELECT COUNT(*) FROM absensi WHERE user_id = $user_id
   $stat_total_pertemuan = 10;
-
   $stat_persentase = ($stat_total_pertemuan > 0) ? round(($stat_hadir_saya / $stat_total_pertemuan) * 100) : 0;
-
-  // Logika sederhana status (bisa disesuaikan)
   $stat_status = ($stat_persentase >= 80) ? 'Baik' : 'Perlu Ditingkatkan';
 }
 ?>
@@ -64,7 +58,6 @@ if ($role == 'pengurus') {
     /* --- CSS VARIABLES --- */
     :root {
       --primary-color: #d90429;
-      /* Merah PMR */
       --primary-hover: #c92a2a;
       --bg-color: #f8f9fa;
       --card-bg: #ffffff;
@@ -75,19 +68,15 @@ if ($role == 'pengurus') {
       --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
       --radius: 12px;
       --header-height: 70px;
+      --sidebar-width: 250px;
 
-      /* Warna Statistik Tambahan */
       --stat-blue: #3b82f6;
       --stat-green: #10b981;
       --stat-orange: #f59e0b;
       --stat-purple: #8b5cf6;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Inter', 'Segoe UI', sans-serif;
@@ -96,16 +85,10 @@ if ($role == 'pengurus') {
       line-height: 1.6;
     }
 
-    a {
-      text-decoration: none;
-      color: inherit;
-    }
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
 
-    ul {
-      list-style: none;
-    }
-
-    /* --- HEADER --- */
+    /* --- HEADER (Layout 3 Kolom) --- */
     header {
       background: #fff;
       box-shadow: var(--shadow-sm);
@@ -117,12 +100,20 @@ if ($role == 'pengurus') {
     }
 
     .navbar {
-      max-width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: center;
       height: 100%;
       padding: 0 20px;
+      max-width: 100%;
+    }
+
+    /* Kolom Kiri: Logo */
+    .nav-left {
+      flex: 1;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
     }
 
     .logo {
@@ -133,11 +124,114 @@ if ($role == 'pengurus') {
       font-size: 18px;
       color: #000;
     }
+    .logo img { height: 40px; }
 
-    .logo img {
-      height: 40px;
+    /* Kolom Tengah */
+    .nav-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
+    /* Kolom Kanan: Profil & Menu */
+    .nav-right {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 15px;
+      position: relative;
+    }
+
+    /* Foto Profil & Dropdown */
+    .profile-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px; /* Jarak antara teks dan foto */
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 50px;
+      transition: background 0.2s;
+    }
+    .profile-btn:hover { background-color: #f1f5f9; }
+
+    /* Teks Sapaan di Header */
+    .profile-greeting {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end; /* Rata kanan */
+      line-height: 1.2;
+    }
+    .profile-greeting small {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+    .profile-greeting span {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-color);
+    }
+
+    .profile-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--primary-color);
+      flex-shrink: 0; /* Agar foto tidak gepeng */
+    }
+
+    /* Dropdown Menu Profil */
+    .profile-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 10px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      width: 220px;
+      z-index: 1001;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.2s ease;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+    .profile-dropdown.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .dropdown-header {
+      padding: 15px;
+      background: #f8f9fa;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .dropdown-header p { font-weight: 600; color: var(--text-color); font-size: 0.9rem; }
+    .dropdown-header small { color: var(--text-muted); font-size: 0.75rem; }
+
+    .profile-dropdown ul li a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 15px;
+      color: var(--text-color);
+      font-size: 0.9rem;
+      transition: 0.2s;
+    }
+    .profile-dropdown ul li a:hover {
+      background-color: #fff1f1;
+      color: var(--primary-color);
+    }
+    .profile-dropdown ul li a i { width: 20px; text-align: center; }
+
+    /* Tombol Hamburger */
     .menu-toggle {
       display: none;
       background: none;
@@ -145,18 +239,10 @@ if ($role == 'pengurus') {
       font-size: 24px;
       cursor: pointer;
       color: var(--primary-color);
+      z-index: 1001;
     }
 
-    .back-btn {
-      display: none;
-      background: none;
-      border: none;
-      font-size: 20px;
-      color: var(--primary-color);
-      cursor: pointer;
-    }
-
-    /* --- LAYOUT --- */
+    /* --- LAYOUT CONTAINER --- */
     .dashboard-container {
       display: flex;
       min-height: 100vh;
@@ -165,7 +251,7 @@ if ($role == 'pengurus') {
 
     /* --- SIDEBAR --- */
     .sidebar {
-      width: 250px;
+      width: var(--sidebar-width);
       background: #fff;
       border-right: 1px solid var(--border-color);
       position: sticky;
@@ -173,6 +259,7 @@ if ($role == 'pengurus') {
       height: calc(100vh - var(--header-height));
       overflow-y: auto;
       z-index: 900;
+      flex-shrink: 0;
     }
 
     .sidebar li {
@@ -186,272 +273,73 @@ if ($role == 'pengurus') {
       border-left: 4px solid transparent;
       transition: all 0.2s;
     }
-
-    .sidebar li:hover,
-    .sidebar li.active {
+    .sidebar li:hover, .sidebar li.active {
       background-color: #fff1f1;
       color: var(--primary-color);
       border-left-color: var(--primary-color);
     }
-
-    .sidebar a {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-    }
+    .sidebar a { display: flex; align-items: center; gap: 10px; width: 100%; }
 
     /* --- MAIN CONTENT --- */
-    .main-content {
-      flex: 1;
-      padding: 30px;
-    }
+    .main-content { flex: 1; padding: 30px; width: 100%; }
 
-    .dashboard-welcome {
-      margin-bottom: 30px;
-    }
+    .dashboard-welcome { margin-bottom: 30px; }
+    .dashboard-welcome h1 { font-size: 1.75rem; color: var(--primary-color); margin-bottom: 5px; }
 
-    .dashboard-welcome h1 {
-      font-size: 1.75rem;
-      color: var(--primary-color);
-      margin-bottom: 5px;
-    }
+    /* --- STATISTIK --- */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 35px; }
+    .stat-card { background: var(--card-bg); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 20px; transition: transform 0.2s; }
+    .stat-card:hover { transform: translateY(-3px); }
+    .stat-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #fff; flex-shrink: 0; }
+    .stat-info h2 { font-size: 1.5rem; margin-bottom: 2px; color: var(--text-color); }
+    .stat-info p { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
 
-    /* --- STATISTIK SECTION (BARU) --- */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
-      margin-bottom: 35px;
-    }
+    .bg-red { background-color: var(--primary-color); }
+    .bg-blue { background-color: var(--stat-blue); }
+    .bg-green { background-color: var(--stat-green); }
+    .bg-orange { background-color: var(--stat-orange); }
+    .bg-purple { background-color: var(--stat-purple); }
 
-    .stat-card {
-      background: var(--card-bg);
-      padding: 20px;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--border-color);
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      transition: transform 0.2s;
-    }
-
-    .stat-card:hover {
-      transform: translateY(-3px);
-    }
-
-    .stat-icon {
-      width: 56px;
-      height: 56px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      color: #fff;
-      flex-shrink: 0;
-    }
-
-    .stat-info h2 {
-      font-size: 1.5rem;
-      margin-bottom: 2px;
-      color: var(--text-color);
-    }
-
-    .stat-info p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    /* Warna Icon Statistik */
-    .bg-red {
-      background-color: var(--primary-color);
-    }
-
-    .bg-blue {
-      background-color: var(--stat-blue);
-    }
-
-    .bg-green {
-      background-color: var(--stat-green);
-    }
-
-    .bg-orange {
-      background-color: var(--stat-orange);
-    }
-
-    .bg-purple {
-      background-color: var(--stat-purple);
-    }
-
-    /* --- CARDS (WARNA MERAH SERAGAM) --- */
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 25px;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding: 25px;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--border-color);
-      transition: all 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      text-align: left;
-    }
-
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: var(--shadow-md);
-      border-color: rgba(217, 4, 41, 0.3);
-    }
-
-    /* Style Icon & Button */
-    .card-icon-wrapper {
-      width: 48px;
-      height: 48px;
-      background-color: #ffebee;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--primary-color);
-      font-size: 1.4rem;
-      margin-bottom: 20px;
-    }
-
-    .card h3 {
-      font-size: 1.15rem;
-      margin-bottom: 8px;
-      color: var(--text-color);
-    }
-
-    .card p {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      margin-bottom: 20px;
-      flex-grow: 1;
-    }
-
-    .card-btn {
-      background-color: var(--primary-color);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      transition: 0.3s;
-      border: none;
-      cursor: pointer;
-      align-self: flex-start;
-    }
-
-    .card-btn:hover {
-      background-color: var(--primary-hover);
-    }
+    /* --- CARDS --- */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
+    .card { background: var(--card-bg); border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); transition: all 0.3s ease; display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
+    .card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); border-color: rgba(217, 4, 41, 0.3); }
+    .card-icon-wrapper { width: 48px; height: 48px; background-color: #ffebee; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary-color); font-size: 1.4rem; margin-bottom: 20px; }
+    .card h3 { font-size: 1.15rem; margin-bottom: 8px; color: var(--text-color); }
+    .card p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; flex-grow: 1; }
+    .card-btn { background-color: var(--primary-color); color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; transition: 0.3s; border: none; cursor: pointer; }
+    .card-btn:hover { background-color: var(--primary-hover); }
 
     /* --- NOTIFICATION --- */
-    .notification {
-      position: fixed;
-      top: 85px;
-      right: 20px;
-      background: white;
-      border-left: 5px solid #10b981;
-      color: #333;
-      padding: 15px 20px;
-      border-radius: 4px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-      z-index: 1100;
-      display: none;
-      align-items: center;
-      gap: 12px;
-      animation: slideIn 0.4s ease forwards;
-      min-width: 280px;
-    }
-
-    .notification i {
-      color: #10b981;
-      font-size: 1.2rem;
-    }
-
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateX(50px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-
-    @keyframes fadeOut {
-      to {
-        opacity: 0;
-        transform: translateX(50px);
-      }
-    }
+    .notification { position: fixed; top: 85px; right: 20px; background: white; border-left: 5px solid #10b981; color: #333; padding: 15px 20px; border-radius: 4px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); z-index: 1100; display: none; align-items: center; gap: 12px; animation: slideIn 0.4s ease forwards; min-width: 280px; }
+    .notification i { color: #10b981; font-size: 1.2rem; }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes fadeOut { to { opacity: 0; transform: translateX(50px); } }
 
     /* --- RESPONSIVE --- */
     @media (max-width: 992px) {
-      .main-content {
-        width: 100%;
-        padding: 20px;
-      }
+      .main-content { width: 100%; padding: 20px; }
 
+      /* Sidebar Muncul dari Kanan */
       .sidebar {
         position: fixed;
         top: var(--header-height);
-        left: -260px;
-        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        left: auto;
+        right: -260px;
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+        border-right: none;
+        border-left: 1px solid var(--border-color);
+        transition: right 0.3s ease;
       }
+      .sidebar.active { right: 0; }
 
-      .sidebar.active {
-        left: 0;
-      }
+      .menu-toggle { display: block; }
 
-      .menu-toggle,
-      .back-btn {
-        display: block;
-      }
-
-      .cards {
-        grid-template-columns: 1fr;
-      }
-
-      .navbar {
-        position: relative;
-      }
-
-      .back-btn {
-        position: absolute;
-        left: 20px;
-        top: 50%;
-        transform: translateY(-50%);
-      }
-
-      .menu-toggle {
-        position: absolute;
-        right: 20px;
-        top: 50%;
-        transform: translateY(-50%);
-      }
-
-      .logo {
-        margin: 0 auto;
-      }
-
-      /* Stat responsive */
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
+      /* Sembunyikan Nama Logo di Mobile */
+      .logo span { display: none; }
+      
+      /* Sembunyikan Teks Sapaan di Mobile */
+      .profile-greeting { display: none; }
     }
   </style>
 </head>
@@ -461,14 +349,54 @@ if ($role == 'pengurus') {
   <!-- HEADER -->
   <header>
     <nav class="navbar">
-      <button class="back-btn" onclick="goBack()" aria-label="Kembali"><i class="fa-solid fa-arrow-left"></i></button>
-
-      <div class="logo">
-        <img src="../Gambar/logpmi.png" alt="Logo PMR">
-        <span>PMR MILLENIUM</span>
+      
+      <!-- KOLOM KIRI: LOGO -->
+      <div class="nav-left">
+        <div class="logo">
+          <img src="../Gambar/logpmi.png" alt="Logo PMR">
+          <span>PMR MILLENIUM</span>
+        </div>
       </div>
 
-      <button class="menu-toggle" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+      <!-- KOLOM TENGAH -->
+      <div class="nav-center"></div>
+
+      <!-- KOLOM KANAN: PROFILE & MENU -->
+      <div class="nav-right">
+        
+        <!-- Foto Profil & Dropdown -->
+        <div class="profile-btn" id="profileBtn">
+          <!-- Tambahkan Teks Sapaan Di Sini -->
+          <div class="profile-greeting">
+            <small><?= ucfirst($role) ?></small>
+            <span>Halo, <?= $nama_user ?></span>
+          </div>
+          <img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img">
+        </div>
+
+                <div class="profile-dropdown" id="profileDropdown">
+          <div class="dropdown-header">
+            <p><?= $nama_user ?></p>
+            <small><?= ucfirst($role) ?></small>
+          </div>
+          <ul>
+            <li>
+              <a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a>
+            </li>
+            <li>
+              <a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a> <!-- UBAH INI -->
+            </li>
+            <li>
+              <a href="ganti_password.php"><i class="fa-solid fa-key"></i> Ganti Password</a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Tombol Hamburger (untuk Mobile) -->
+        <button class="menu-toggle" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+        
+      </div>
+
     </nav>
   </header>
 
@@ -478,7 +406,7 @@ if ($role == 'pengurus') {
       <i class="fas fa-check-circle"></i>
       <div>
         <div style="font-weight: 600;">Login Berhasil</div>
-        <div style="font-size: 0.85rem; color: #666;">Selamat datang, <b><?= htmlspecialchars($_SESSION['nama']); ?></b>!</div>
+        <div style="font-size: 0.85rem; color: #666;">Selamat datang, <b><?= $nama_user ?></b>!</div>
       </div>
     </div>
     <?php unset($_SESSION['login_success']); ?>
@@ -511,90 +439,45 @@ if ($role == 'pengurus') {
     <main class="main-content">
       <div class="dashboard-welcome">
         <h1>Dashboard <?php echo ucfirst($role); ?></h1>
-        <p>Halo, <b><?= htmlspecialchars($_SESSION['nama']); ?></b>! Selamat datang di portal.</p>
+        <p>Halo, <b><?= $nama_user ?></b>! Selamat datang di portal.</p>
       </div>
 
-      <!-- BAGIAN STATISTIK (BARU) -->
+      <!-- STATISTIK -->
       <div class="stats-grid">
         <?php if ($role == 'pengurus'): ?>
-          <!-- Statistik Pengurus -->
           <div class="stat-card">
-            <div class="stat-icon bg-blue">
-              <i class="fa-solid fa-users"></i>
-            </div>
-            <div class="stat-info">
-              <h2><?= $stat_total_anggota ?></h2>
-              <p>Total Anggota</p>
-            </div>
+            <div class="stat-icon bg-blue"><i class="fa-solid fa-users"></i></div>
+            <div class="stat-info"><h2><?= $stat_total_anggota ?></h2><p>Total Anggota</p></div>
           </div>
-
           <div class="stat-card">
-            <div class="stat-icon bg-green">
-              <i class="fa-solid fa-calendar-check"></i>
-            </div>
-            <div class="stat-info">
-              <h2><?= $stat_total_hadir_bulan_ini ?></h2>
-              <p>Kehadiran Bulan Ini</p>
-            </div>
+            <div class="stat-icon bg-green"><i class="fa-solid fa-calendar-check"></i></div>
+            <div class="stat-info"><h2><?= $stat_total_hadir_bulan_ini ?></h2><p>Kehadiran Bulan Ini</p></div>
           </div>
-
           <div class="stat-card">
-            <div class="stat-icon bg-orange">
-              <i class="fa-solid fa-book"></i>
-            </div>
-            <div class="stat-info">
-              <h2><?= $stat_total_buku ?></h2>
-              <p>Total Materi</p>
-            </div>
+            <div class="stat-icon bg-orange"><i class="fa-solid fa-book"></i></div>
+            <div class="stat-info"><h2><?= $stat_total_buku ?></h2><p>Total Materi</p></div>
           </div>
-
           <div class="stat-card">
-            <div class="stat-icon bg-purple">
-              <i class="fa-solid fa-user-plus"></i>
-            </div>
-            <div class="stat-info">
-              <h2><?= $stat_pendaftaran_baru ?></h2>
-              <p>Pendaftaran Baru</p>
-            </div>
+            <div class="stat-icon bg-purple"><i class="fa-solid fa-user-plus"></i></div>
+            <div class="stat-info"><h2><?= $stat_pendaftaran_baru ?></h2><p>Pendaftaran Baru</p></div>
           </div>
-
         <?php else: ?>
-          <!-- Statistik Anggota -->
           <div class="stat-card">
-            <div class="stat-icon bg-green">
-              <i class="fa-solid fa-check-circle"></i>
-            </div>
-            <div class="stat-info">
-              <h2><?= $stat_hadir_saya ?></h2>
-              <p>Total Kehadiran Saya</p>
-            </div>
+            <div class="stat-icon bg-green"><i class="fa-solid fa-check-circle"></i></div>
+            <div class="stat-info"><h2><?= $stat_hadir_saya ?></h2><p>Total Kehadiran Saya</p></div>
           </div>
-
           <div class="stat-card">
-            <div class="stat-icon bg-blue">
-              <i class="fa-solid fa-percent"></i>
-            </div>
-            <div class="stat-info">
-              <h2><?= $stat_persentase ?>%</h2>
-              <p>Persentase Kehadiran</p>
-            </div>
+            <div class="stat-icon bg-blue"><i class="fa-solid fa-percent"></i></div>
+            <div class="stat-info"><h2><?= $stat_persentase ?>%</h2><p>Persentase Kehadiran</p></div>
           </div>
-
           <div class="stat-card">
-            <div class="stat-icon bg-orange">
-              <i class="fa-solid fa-star"></i>
-            </div>
-            <div class="stat-info">
-              <h2><?= $stat_status ?></h2>
-              <p>Status Keaktifan</p>
-            </div>
+            <div class="stat-icon bg-orange"><i class="fa-solid fa-star"></i></div>
+            <div class="stat-info"><h2><?= $stat_status ?></h2><p>Status Keaktifan</p></div>
           </div>
         <?php endif; ?>
       </div>
-      <!-- AKHIR STATISTIK -->
 
       <div class="cards">
-        <!-- CARD MENU TETAP SAMA SEPERTI SEBELUMNYA -->
         <?php if ($role == 'pengurus'): ?>
           <div class="card">
             <div class="card-icon-wrapper"><i class="fa-solid fa-pen-to-square"></i></div>
@@ -638,20 +521,40 @@ if ($role == 'pengurus') {
     document.addEventListener('DOMContentLoaded', () => {
       const menuToggle = document.querySelector('.menu-toggle');
       const sidebar = document.querySelector('.sidebar');
+      const profileBtn = document.getElementById('profileBtn');
+      const profileDropdown = document.getElementById('profileDropdown');
 
-      menuToggle.addEventListener('click', (e) => {
+      // Toggle Sidebar
+      if(menuToggle) {
+          menuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebar.classList.toggle('active');
+            profileDropdown.classList.remove('active');
+          });
+      }
+
+      // Toggle Profile Dropdown
+      profileBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        sidebar.classList.toggle('active');
+        profileDropdown.classList.toggle('active');
+        sidebar.classList.remove('active');
       });
 
+      // Tutup semua jika klik di luar area
       document.addEventListener('click', (e) => {
+        // Tutup Sidebar
         if (window.innerWidth <= 992) {
           if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
             sidebar.classList.remove('active');
           }
         }
+        // Tutup Dropdown
+        if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
+          profileDropdown.classList.remove('active');
+        }
       });
 
+      // Notifikasi Login
       const notification = document.getElementById('loginNotification');
       if (notification) {
         notification.style.display = 'flex';
@@ -663,10 +566,6 @@ if ($role == 'pengurus') {
         }, 4000);
       }
     });
-
-    function goBack() {
-      window.history.back();
-    }
 
     function confirmLogout() {
       if (confirm("Apakah Anda yakin ingin keluar dari akun?")) {

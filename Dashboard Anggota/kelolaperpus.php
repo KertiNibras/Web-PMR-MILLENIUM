@@ -1,5 +1,7 @@
 <?php
 session_start();
+include '../koneksi.php'; // Panggil koneksi DB
+
 // Cek Login
 if (!isset($_SESSION['nama'])) {
   header("Location: ../Login/login.php");
@@ -11,6 +13,15 @@ if ($_SESSION['role'] != 'pengurus') {
   echo '<script>alert("AKSES DITOLAK! Halaman ini khusus Pengurus.");';
   echo 'window.location.href="../Dashboard Anggota/anggota.php";</script>';
   exit;
+}
+
+// Ambil Data User untuk Header
+$nama_user = htmlspecialchars($_SESSION['nama']);
+$role = $_SESSION['role'];
+$foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
+$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
+if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_session)) {
+  $foto_profil = "../uploads/foto_profil/" . $foto_session;
 }
 ?>
 
@@ -24,22 +35,24 @@ if ($_SESSION['role'] != 'pengurus') {
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
   <style>
-    /* --- CSS VARIABLES & RESET --- */
+    /* --- CSS VARIABLES --- */
     :root {
       --primary-color: #d90429;
-      --primary-hover: #ef233c;
-      --secondary-color: #2b2d42;
+      --primary-hover: #c92a2a;
       --bg-color: #f8f9fa;
       --card-bg: #ffffff;
-      --text-color: #333333;
-      --text-muted: #6c757d;
-      --border-color: #e9ecef;
-      --success-color: #27ae60;
-      --warning-color: #f39c12;
-      --danger-color: #e74c3c;
-      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.08);
-      --radius: 10px;
+      --text-color: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --success-color: #10b981;
+      --warning-color: #f59e0b;
+      --danger-color: #ef4444;
+      --info-color: #3b82f6;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
+      --radius: 12px;
+      --header-height: 70px;
+      --sidebar-width: 250px;
     }
 
     * {
@@ -49,95 +62,214 @@ if ($_SESSION['role'] != 'pengurus') {
     }
 
     body {
-      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Inter', 'Segoe UI', sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
       line-height: 1.6;
     }
 
-    /* --- HEADER --- */
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    ul {
+      list-style: none;
+    }
+
+    /* --- HEADER (Layout 3 Kolom) --- */
     header {
       background: #fff;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-sm);
       position: fixed;
       width: 100%;
+      top: 0;
       z-index: 1000;
+      height: var(--header-height);
     }
 
     .navbar {
-      max-width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 15px 20px;
+      height: 100%;
+      padding: 0 20px;
+      max-width: 100%;
+    }
+
+    /* Kiri: Logo */
+    .nav-left {
+      flex: 1;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
     }
 
     .logo {
       display: flex;
       align-items: center;
       gap: 10px;
-      font-weight: bold;
-      color: #000000;
+      font-weight: 700;
       font-size: 18px;
+      color: #000;
     }
 
     .logo img {
       height: 40px;
     }
 
+    /* Tengah */
+    .nav-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Kanan: Profil & Menu */
+    .nav-right {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 15px;
+      position: relative;
+    }
+
+    .profile-btn {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 50px;
+      transition: background 0.2s;
+    }
+
+    .profile-btn:hover {
+      background-color: #f1f5f9;
+    }
+
+    .profile-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--primary-color);
+    }
+
+    /* Dropdown Profil */
+    .profile-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 10px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      width: 220px;
+      z-index: 1001;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.2s ease;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+
+    .profile-dropdown.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .dropdown-header {
+      padding: 15px;
+      background: #f8f9fa;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .dropdown-header p {
+      font-weight: 600;
+      color: var(--text-color);
+      font-size: 0.9rem;
+    }
+
+    .dropdown-header small {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .profile-dropdown ul li a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 15px;
+      color: var(--text-color);
+      font-size: 0.9rem;
+      transition: 0.2s;
+    }
+
+    .profile-dropdown ul li a:hover {
+      background-color: #fff1f1;
+      color: var(--primary-color);
+    }
+
+    .profile-dropdown ul li a i {
+      width: 20px;
+      text-align: center;
+    }
+
+    /* Tombol Hamburger */
     .menu-toggle {
       display: none;
       background: none;
       border: none;
-      font-size: 22px;
+      font-size: 24px;
       cursor: pointer;
       color: var(--primary-color);
+      z-index: 1001;
     }
 
-    /* --- LAYOUT --- */
+    /* --- LAYOUT CONTAINER --- */
     .dashboard-container {
       display: flex;
       min-height: 100vh;
-      padding-top: 70px;
+      padding-top: var(--header-height);
     }
 
+    /* --- SIDEBAR --- */
     .sidebar {
-      width: 250px;
-      background: #ffffff;
+      width: var(--sidebar-width);
+      background: #fff;
       border-right: 1px solid var(--border-color);
-      height: calc(100vh - 70px);
       position: sticky;
-      top: 70px;
+      top: var(--header-height);
+      height: calc(100vh - var(--header-height));
       overflow-y: auto;
-    }
-
-    .sidebar ul {
-      list-style: none;
+      z-index: 900;
+      flex-shrink: 0;
     }
 
     .sidebar li {
       padding: 14px 25px;
       cursor: pointer;
       color: var(--text-color);
+      font-weight: 500;
       display: flex;
       align-items: center;
       gap: 12px;
-      transition: 0.3s;
-      width: 100%;
-      font-weight: 500;
       border-left: 4px solid transparent;
+      transition: all 0.2s;
     }
 
     .sidebar li:hover,
     .sidebar li.active {
-      background-color: #fff0f3;
+      background-color: #fff1f1;
       color: var(--primary-color);
       border-left-color: var(--primary-color);
     }
 
     .sidebar a {
-      text-decoration: none;
-      color: inherit;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -148,69 +280,59 @@ if ($_SESSION['role'] != 'pengurus') {
     .main-content {
       flex: 1;
       padding: 30px;
-      width: calc(100% - 250px);
+      width: 100%;
     }
 
     .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       margin-bottom: 25px;
-      background: white;
-      padding: 20px;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-sm);
     }
 
-    .header-titles h1 {
-      font-size: 1.5rem;
+    .page-header h1 {
+      font-size: 1.75rem;
       color: var(--primary-color);
       margin-bottom: 5px;
     }
 
-    .header-titles p {
+    .page-header p {
       color: var(--text-muted);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
     }
 
     /* --- BUTTONS --- */
     .btn {
       padding: 10px 20px;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       font-size: 0.9rem;
+      color: white;
     }
 
     .btn-primary {
       background-color: var(--primary-color);
-      color: white;
+      box-shadow: 0 4px 6px rgba(217, 4, 41, 0.2);
     }
 
     .btn-primary:hover {
       background-color: var(--primary-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(217, 4, 41, 0.3);
+      transform: translateY(-1px);
     }
 
     .btn-success {
       background-color: var(--success-color);
-      color: white;
     }
 
     .btn-success:hover {
-      background-color: #219653;
-      transform: translateY(-2px);
+      background-color: #0d9668;
     }
 
     .btn-secondary {
-      background-color: #95a5a6;
-      color: white;
+      background-color: var(--text-muted);
     }
 
     /* --- FILTER --- */
@@ -224,11 +346,12 @@ if ($_SESSION['role'] != 'pengurus') {
       gap: 15px;
       flex-wrap: wrap;
       align-items: flex-end;
+      border: 1px solid var(--border-color);
     }
 
     .filter-item {
       flex: 1;
-      min-width: 200px;
+      min-width: 150px;
     }
 
     .filter-item label {
@@ -243,24 +366,21 @@ if ($_SESSION['role'] != 'pengurus') {
       width: 100%;
       padding: 10px 15px;
       border: 1px solid var(--border-color);
-      border-radius: 6px;
+      border-radius: 8px;
       font-size: 0.95rem;
+      outline: none;
       background-color: #fff;
-      transition: border-color 0.3s;
     }
 
     .filter-control:focus {
       border-color: var(--primary-color);
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(217, 4, 41, 0.1);
     }
 
     /* --- GRID & CARD --- */
     .materials-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 25px;
-      margin-bottom: 40px;
     }
 
     .material-card {
@@ -312,7 +432,6 @@ if ($_SESSION['role'] != 'pengurus') {
       letter-spacing: 0.5px;
       color: var(--primary-color);
       margin-bottom: 4px;
-      display: inline-block;
     }
 
     .material-title {
@@ -480,7 +599,7 @@ if ($_SESSION['role'] != 'pengurus') {
       width: 100%;
       padding: 12px;
       border: 1px solid var(--border-color);
-      border-radius: 6px;
+      border-radius: 8px;
       font-size: 1rem;
       font-family: inherit;
     }
@@ -569,10 +688,6 @@ if ($_SESSION['role'] != 'pengurus') {
       border-left-color: var(--danger-color);
     }
 
-    .toast i {
-      font-size: 1.2rem;
-    }
-
     .toast.success i {
       color: var(--success-color);
     }
@@ -588,62 +703,43 @@ if ($_SESSION['role'] != 'pengurus') {
         padding: 20px;
       }
 
+      /* Sidebar Muncul dari Kanan */
       .sidebar {
-        width: 250px;
         position: fixed;
-        top: 70px;
-        left: -250px;
-        height: calc(100vh - 70px);
-        z-index: 999;
-        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        top: var(--header-height);
+        left: auto;
+        right: -260px;
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+        border-right: none;
+        border-left: 1px solid var(--border-color);
+        transition: right 0.3s ease;
       }
 
       .sidebar.active {
-        left: 0;
+        right: 0;
       }
 
       .menu-toggle {
         display: block;
+      }
+
+      .logo span {
+        display: none;
       }
 
       .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
+        text-align: center;
       }
 
-      .btn {
+      .page-header .btn {
         width: 100%;
         justify-content: center;
-      }
-    }
-
-    .back-btn {
-      display: none;
-    }
-
-    @media (max-width: 992px) {
-      .back-btn {
-        display: block;
-        position: absolute;
-        left: 15px;
-        top: 20px;
-        z-index: 1001;
-        background: none;
-        border: none;
-        font-size: 20px;
-        color: var(--primary-color);
-        cursor: pointer;
+        margin-top: 15px;
       }
 
-      .logo {
-        margin: 0 auto;
-      }
-
-      .menu-toggle {
-        position: absolute;
-        right: 15px;
-        top: 18px;
+      .filter-container {
+        flex-direction: column;
+        align-items: stretch;
       }
     }
   </style>
@@ -654,12 +750,43 @@ if ($_SESSION['role'] != 'pengurus') {
   <!-- HEADER -->
   <header>
     <nav class="navbar">
-      <button class="back-btn" onclick="goBack()"><i class="fa-solid fa-arrow-left"></i></button>
-      <div class="logo">
-        <img src="../Gambar/logpmi.png" alt="Logo">
-        <span>PMR MILLENIUM</span>
+      <!-- KOLOM KIRI: LOGO -->
+      <div class="nav-left">
+        <div class="logo">
+          <img src="../Gambar/logpmi.png" alt="Logo PMR">
+          <span>PMR MILLENIUM</span>
+        </div>
       </div>
-      <button class="menu-toggle"><i class="fa-solid fa-bars"></i></button>
+
+      <!-- KOLOM TENGAH -->
+      <div class="nav-center"></div>
+
+      <!-- KOLOM KANAN: PROFILE & MENU -->
+      <div class="nav-right">
+        <div class="profile-btn" id="profileBtn">
+          <img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img">
+        </div>
+
+                <div class="profile-dropdown" id="profileDropdown">
+          <div class="dropdown-header">
+            <p><?= $nama_user ?></p>
+            <small><?= ucfirst($role) ?></small>
+          </div>
+          <ul>
+            <li>
+              <a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a>
+            </li>
+            <li>
+              <a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a> <!-- UBAH INI -->
+            </li>
+            <li>
+              <a href="ganti_password.php"><i class="fa-solid fa-key"></i> Ganti Password</a>
+            </li>
+          </ul>
+        </div>
+
+        <button class="menu-toggle" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+      </div>
     </nav>
   </header>
 
@@ -668,9 +795,9 @@ if ($_SESSION['role'] != 'pengurus') {
     <aside class="sidebar">
       <ul>
         <li><a href="../Dashboard Anggota/anggota.php"><i class="fa-solid fa-house"></i> Dashboard</a></li>
-        <li><a href="../Dashboard Anggota/kelolaabsen.php"><i class="fa-solid fa-calendar-check"></i> Kelola Absensi</a></li>
-        <li class="active"><a href="../Dashboard Anggota/kelolaperpus.php"><i class="fa-solid fa-book"></i> Kelola Perpustakaan Digital</a></li>
-        <li><a href=""><i class="fa-solid fa-users"></i> Kelola Pendaftaran</a></li>
+        <li><a href="kelolaabsen.php"><i class="fa-solid fa-calendar-check"></i> Kelola Absensi</a></li>
+        <li class="active"><a href="kelolaperpus.php"><i class="fa-solid fa-book"></i> Kelola Perpustakaan Digital</a></li>
+        <li><a href="kelola_pendaftaran.php"><i class="fa-solid fa-users"></i> Kelola Pendaftaran</a></li>
         <li style="margin-top: 20px; border-top: 1px solid #eee;">
           <a href="javascript:void(0)" onclick="confirmLogout()">
             <i class="fa-solid fa-right-from-bracket"></i> Log Out
@@ -682,11 +809,9 @@ if ($_SESSION['role'] != 'pengurus') {
     <!-- MAIN CONTENT -->
     <main class="main-content">
       <div class="page-header">
-        <div class="header-titles">
-          <h1>Kelola Materi Perpustakaan Digital</h1>
-          <p>Kelola dokumen PDF, materi pelatihan, dan panduan untuk anggota.</p>
-        </div>
-        <button class="btn btn-primary" id="addMaterialBtn">
+        <h1>Kelola Materi Perpustakaan Digital</h1>
+        <p>Kelola dokumen PDF, materi pelatihan, dan panduan untuk anggota.</p>
+        <button class="btn btn-primary" id="addMaterialBtn" style="margin-top: 15px;">
           <i class="fas fa-plus"></i> Tambah Materi Baru
         </button>
       </div>
@@ -776,23 +901,36 @@ if ($_SESSION['role'] != 'pengurus') {
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
-    /* ================= SIDEBAR ================= */
+    /* ================= LOGIKA DROPDOWN & SIDEBAR ================= */
     const menuToggle = document.querySelector('.menu-toggle');
     const sidebar = document.querySelector('.sidebar');
-    menuToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
-    document.addEventListener('click', (e) => {
-      if (window.innerWidth <= 992 && !sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active');
+    const profileBtn = document.getElementById('profileBtn');
+    const profileDropdown = document.getElementById('profileDropdown');
+
+    menuToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sidebar.classList.toggle('active');
+      profileDropdown.classList.remove('active');
     });
 
-    function goBack() {
-      window.history.back();
-    }
+    profileBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      profileDropdown.classList.toggle('active');
+      sidebar.classList.remove('active');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 992) {
+        if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active');
+      }
+      if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
+    });
 
     function confirmLogout() {
       if (confirm("Yakin keluar?")) window.location.href = "../logout.php";
     }
 
-    /* ================= DATA & DOM ================= */
+    /* ================= DATA & LOGIC ================= */
     let materials = [];
     let currentMaterialId = null;
     let isEditMode = false;
@@ -812,14 +950,12 @@ if ($_SESSION['role'] != 'pengurus') {
       setupEventListeners();
     });
 
-    /* ================= LOAD ================= */
     function loadMaterials() {
       fetch('get_materi.php')
         .then(res => res.json())
         .then(data => {
-          // PENTING: Pastikan mapping data benar
           materials = data.map(m => ({
-            id: m.id, // PASTIKAN INI ADA
+            id: m.id,
             title: m.judul,
             description: m.deskripsi,
             category: m.kategori,
@@ -835,7 +971,6 @@ if ($_SESSION['role'] != 'pengurus') {
         .catch(err => console.error('Gagal load:', err));
     }
 
-    /* ================= RENDER ================= */
     function renderMaterials(list = materials) {
       materialsGrid.innerHTML = '';
       if (list.length === 0) {
@@ -844,9 +979,7 @@ if ($_SESSION['role'] != 'pengurus') {
       }
 
       list.forEach(m => {
-        // Pastikan m.id punya nilai sebelum render
         if (!m.id) return;
-
         materialsGrid.innerHTML += `
           <div class="material-card">
             <div class="card-top">
@@ -862,21 +995,14 @@ if ($_SESSION['role'] != 'pengurus') {
             <div class="card-footer">
               <small class="card-meta"><i class="far fa-clock"></i> ${m.date}</small>
               <div class="card-actions">
-                <!-- Tombol Edit -->
-                <button class="action-btn btn-edit" onclick="openEditModal(${m.id})" title="Edit">
-                    <i class="fas fa-pen"></i>
-                </button>
-                <!-- Tombol Hapus -->
-                <button class="action-btn btn-delete" onclick="deleteMaterial(${m.id})" title="Hapus">
-                    <i class="fas fa-trash"></i>
-                </button>
+                <button class="action-btn btn-edit" onclick="openEditModal(${m.id})" title="Edit"><i class="fas fa-pen"></i></button>
+                <button class="action-btn btn-delete" onclick="deleteMaterial(${m.id})" title="Hapus"><i class="fas fa-trash"></i></button>
               </div>
             </div>
           </div>`;
       });
     }
 
-    /* ================= EVENTS ================= */
     function setupEventListeners() {
       document.getElementById('addMaterialBtn').onclick = openAddModal;
       document.getElementById('closeFormBtn').onclick = closeModal;
@@ -901,7 +1027,6 @@ if ($_SESSION['role'] != 'pengurus') {
       document.getElementById('sortFilter').onchange = filterMaterials;
     }
 
-    /* ================= MODAL LOGIC ================= */
     function openAddModal() {
       isEditMode = false;
       currentMaterialId = null;
@@ -912,26 +1037,21 @@ if ($_SESSION['role'] != 'pengurus') {
       materialFormModal.style.display = 'flex';
     }
 
-    // FUNGSI EDIT YANG DIPERBAIKI
     window.openEditModal = function(id) {
-      // Cari data berdasarkan ID
-      const m = materials.find(x => x.id == id); // Gunakan == agar aman untuk tipe data campuran
+      const m = materials.find(x => x.id == id);
       if (!m) {
         showToast('Data tidak ditemukan', 'error');
         return;
       }
 
       isEditMode = true;
-      currentMaterialId = id; // Simpan ID yang mau diupdate
-
-      // Isi Form
+      currentMaterialId = id;
       formModalTitle.textContent = 'Edit Materi';
       submitBtn.textContent = 'Update';
       document.getElementById('materialTitle').value = m.title;
       document.getElementById('materialDescription').value = m.description;
       document.getElementById('materialCategory').value = m.category;
       fileNameDisplay.textContent = m.fileName || 'File lama (biarkan kosong jika tidak ganti)';
-
       materialFormModal.style.display = 'flex';
     };
 
@@ -939,16 +1059,12 @@ if ($_SESSION['role'] != 'pengurus') {
       materialFormModal.style.display = 'none';
     }
 
-    /* ================= SAVE ================= */
     function saveMaterial() {
       const fd = new FormData();
       fd.append('judul', document.getElementById('materialTitle').value);
       fd.append('deskripsi', document.getElementById('materialDescription').value);
       fd.append('kategori', document.getElementById('materialCategory').value);
-
-      if (materialFile.files[0]) {
-        fd.append('file', materialFile.files[0]);
-      }
+      if (materialFile.files[0]) fd.append('file', materialFile.files[0]);
 
       let url = 'upload_materi.php';
       if (isEditMode) {
@@ -962,7 +1078,7 @@ if ($_SESSION['role'] != 'pengurus') {
         })
         .then(res => res.text())
         .then(res => {
-          if (res.trim() === 'success') { // Tambahkan .trim() untuk menghapus spasi/enter
+          if (res.trim() === 'success') {
             showToast(isEditMode ? 'Materi berhasil diupdate!' : 'Materi berhasil disimpan!');
             closeModal();
             loadMaterials();
@@ -972,7 +1088,6 @@ if ($_SESSION['role'] != 'pengurus') {
         });
     }
 
-    /* ================= DELETE ================= */
     window.deleteMaterial = function(id) {
       if (!confirm('Yakin ingin menghapus materi ini?')) return;
       fetch('delete_materi.php', {
@@ -993,7 +1108,6 @@ if ($_SESSION['role'] != 'pengurus') {
         });
     };
 
-    /* ================= FILTER ================= */
     function filterMaterials() {
       const cat = document.getElementById('categoryFilter').value;
       const q = document.getElementById('searchFilter').value.toLowerCase();

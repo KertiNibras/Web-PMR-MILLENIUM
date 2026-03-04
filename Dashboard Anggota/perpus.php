@@ -1,12 +1,22 @@
 <?php
 session_start();
-// Cek apakah user sudah login
+include '../koneksi.php'; // Panggil koneksi DB
+
+// Cek Login
 if (!isset($_SESSION['nama'])) {
-  echo '<script type="text/javascript">';
-  echo 'alert("Silakan login terlebih dahulu!");';
-  echo 'window.location.href = "../Login/login.php";';
-  echo '</script>';
+  echo '<script>alert("Silakan login terlebih dahulu!"); window.location.href = "../Login/login.php";</script>';
   exit;
+}
+
+// --- LOGIKA AMBIL DATA USER ---
+$role = isset($_SESSION['role']) ? $_SESSION['role'] : 'anggota';
+$nama_user = htmlspecialchars($_SESSION['nama']);
+
+// Logika Foto Profil
+$foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
+$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
+if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_session)) {
+  $foto_profil = "../uploads/foto_profil/" . $foto_session;
 }
 ?>
 
@@ -29,13 +39,11 @@ if (!isset($_SESSION['nama'])) {
       --text-color: #1e293b;
       --text-muted: #64748b;
       --border-color: #e2e8f0;
-      --success-color: #10b981;
-      --warning-color: #f59e0b;
-      --danger-color: #ef4444;
       --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
       --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
       --radius: 12px;
       --header-height: 70px;
+      --sidebar-width: 250px;
     }
 
     * {
@@ -60,7 +68,7 @@ if (!isset($_SESSION['nama'])) {
       list-style: none;
     }
 
-    /* --- HEADER --- */
+    /* --- HEADER (Layout 3 Kolom - Sama dengan anggota.php) --- */
     header {
       background: #fff;
       box-shadow: var(--shadow-sm);
@@ -72,12 +80,20 @@ if (!isset($_SESSION['nama'])) {
     }
 
     .navbar {
-      max-width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: center;
       height: 100%;
       padding: 0 20px;
+      max-width: 100%;
+    }
+
+    /* Kiri: Logo */
+    .nav-left {
+      flex: 1;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
     }
 
     .logo {
@@ -93,6 +109,108 @@ if (!isset($_SESSION['nama'])) {
       height: 40px;
     }
 
+    /* Tengah: Kosong */
+    .nav-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Kanan: Profil & Menu */
+    .nav-right {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 15px;
+      position: relative;
+    }
+
+    .profile-btn {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 50px;
+      transition: background 0.2s;
+    }
+
+    .profile-btn:hover {
+      background-color: #f1f5f9;
+    }
+
+    .profile-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--primary-color);
+    }
+
+    /* Dropdown Profil */
+    .profile-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 10px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      width: 220px;
+      z-index: 1001;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.2s ease;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+
+    .profile-dropdown.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .dropdown-header {
+      padding: 15px;
+      background: #f8f9fa;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .dropdown-header p {
+      font-weight: 600;
+      color: var(--text-color);
+      font-size: 0.9rem;
+    }
+
+    .dropdown-header small {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .profile-dropdown ul li a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 15px;
+      color: var(--text-color);
+      font-size: 0.9rem;
+      transition: 0.2s;
+    }
+
+    .profile-dropdown ul li a:hover {
+      background-color: #fff1f1;
+      color: var(--primary-color);
+    }
+
+    .profile-dropdown ul li a i {
+      width: 20px;
+      text-align: center;
+    }
+
+    /* Tombol Hamburger */
     .menu-toggle {
       display: none;
       background: none;
@@ -100,27 +218,19 @@ if (!isset($_SESSION['nama'])) {
       font-size: 24px;
       cursor: pointer;
       color: var(--primary-color);
+      z-index: 1001;
     }
 
-    .back-btn {
-      display: none;
-      background: none;
-      border: none;
-      font-size: 20px;
-      color: var(--primary-color);
-      cursor: pointer;
-      margin-right: 10px;
-    }
-
-    /* --- LAYOUT --- */
+    /* --- LAYOUT CONTAINER --- */
     .dashboard-container {
       display: flex;
       min-height: 100vh;
       padding-top: var(--header-height);
     }
 
+    /* --- SIDEBAR (Perilaku sama dengan anggota.php) --- */
     .sidebar {
-      width: 250px;
+      width: var(--sidebar-width);
       background: #fff;
       border-right: 1px solid var(--border-color);
       position: sticky;
@@ -128,6 +238,7 @@ if (!isset($_SESSION['nama'])) {
       height: calc(100vh - var(--header-height));
       overflow-y: auto;
       z-index: 900;
+      flex-shrink: 0;
     }
 
     .sidebar li {
@@ -156,14 +267,11 @@ if (!isset($_SESSION['nama'])) {
       width: 100%;
     }
 
+    /* --- MAIN CONTENT --- */
     .main-content {
       flex: 1;
       padding: 30px;
-    }
-
-    /* --- PAGE HEADER --- */
-    .page-header {
-      margin-bottom: 30px;
+      width: 100%;
     }
 
     .page-header h1 {
@@ -175,6 +283,7 @@ if (!isset($_SESSION['nama'])) {
     .page-header p {
       color: var(--text-muted);
       font-size: 0.95rem;
+      margin-bottom: 25px;
     }
 
     /* --- FILTER --- */
@@ -185,7 +294,7 @@ if (!isset($_SESSION['nama'])) {
       box-shadow: var(--shadow-sm);
       margin-bottom: 30px;
       display: flex;
-      gap: 20px;
+      gap: 15px;
       flex-wrap: wrap;
       align-items: flex-end;
       border: 1px solid var(--border-color);
@@ -193,7 +302,7 @@ if (!isset($_SESSION['nama'])) {
 
     .filter-item {
       flex: 1;
-      min-width: 200px;
+      min-width: 150px;
     }
 
     .filter-item label {
@@ -202,7 +311,6 @@ if (!isset($_SESSION['nama'])) {
       font-size: 0.8rem;
       font-weight: 600;
       color: var(--text-muted);
-      margin-left: 4px;
     }
 
     .filter-control {
@@ -213,21 +321,17 @@ if (!isset($_SESSION['nama'])) {
       font-size: 0.95rem;
       outline: none;
       background-color: #fff;
-      transition: border-color 0.3s;
     }
 
     .filter-control:focus {
-      outline: none;
       border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px rgba(217, 4, 41, 0.1);
     }
 
-    /* --- GRID & CARD (DESAIN DISAMAKAN) --- */
+    /* --- GRID & CARD --- */
     .materials-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 25px;
-      margin-bottom: 40px;
     }
 
     .material-card {
@@ -247,7 +351,6 @@ if (!isset($_SESSION['nama'])) {
       border-color: rgba(217, 4, 41, 0.3);
     }
 
-    /* Card Top */
     .card-top {
       padding: 20px;
       display: flex;
@@ -296,7 +399,6 @@ if (!isset($_SESSION['nama'])) {
       overflow: hidden;
     }
 
-    /* Card Body */
     .card-body {
       padding: 0 20px 20px 20px;
       flex-grow: 1;
@@ -313,7 +415,6 @@ if (!isset($_SESSION['nama'])) {
       overflow: hidden;
     }
 
-    /* Card Footer (TAMBAH TANGGAL) */
     .card-footer {
       padding: 15px 20px;
       border-top: 1px solid var(--border-color);
@@ -336,7 +437,6 @@ if (!isset($_SESSION['nama'])) {
       color: white;
       padding: 8px 16px;
       border-radius: 8px;
-      text-decoration: none;
       font-size: 0.85rem;
       font-weight: 600;
       display: inline-flex;
@@ -347,7 +447,7 @@ if (!isset($_SESSION['nama'])) {
 
     .btn-download:hover {
       background-color: var(--primary-hover);
-      transform: translateY(-2px);
+      transform: translateY(-1px);
     }
 
     /* --- RESPONSIVE --- */
@@ -357,20 +457,28 @@ if (!isset($_SESSION['nama'])) {
         padding: 20px;
       }
 
+      /* Sidebar Muncul dari Kanan */
       .sidebar {
         position: fixed;
         top: var(--header-height);
-        left: -260px;
-        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        left: auto;
+        right: -260px;
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+        border-right: none;
+        border-left: 1px solid var(--border-color);
+        transition: right 0.3s ease;
       }
 
       .sidebar.active {
-        left: 0;
+        right: 0;
       }
 
-      .menu-toggle,
-      .back-btn {
+      .menu-toggle {
         display: block;
+      }
+
+      .logo span {
+        display: none;
       }
 
       .filter-container {
@@ -390,12 +498,43 @@ if (!isset($_SESSION['nama'])) {
   <!-- HEADER -->
   <header>
     <nav class="navbar">
-      <button class="back-btn" onclick="goBack()"><i class="fa-solid fa-arrow-left"></i></button>
-      <div class="logo">
-        <img src="../Gambar/logpmi.png" alt="Logo">
-        <span>PMR MILLENIUM</span>
+      <!-- KOLOM KIRI: LOGO -->
+      <div class="nav-left">
+        <div class="logo">
+          <img src="../Gambar/logpmi.png" alt="Logo PMR">
+          <span>PMR MILLENIUM</span>
+        </div>
       </div>
-      <button class="menu-toggle"><i class="fa-solid fa-bars"></i></button>
+
+      <!-- KOLOM TENGAH -->
+      <div class="nav-center"></div>
+
+      <!-- KOLOM KANAN: PROFILE & MENU -->
+      <div class="nav-right">
+        <div class="profile-btn" id="profileBtn">
+          <img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img">
+        </div>
+
+                <div class="profile-dropdown" id="profileDropdown">
+          <div class="dropdown-header">
+            <p><?= $nama_user ?></p>
+            <small><?= ucfirst($role) ?></small>
+          </div>
+          <ul>
+            <li>
+              <a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a>
+            </li>
+            <li>
+              <a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a> <!-- UBAH INI -->
+            </li>
+            <li>
+              <a href="ganti_password.php"><i class="fa-solid fa-key"></i> Ganti Password</a>
+            </li>
+          </ul>
+        </div>
+
+        <button class="menu-toggle" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+      </div>
     </nav>
   </header>
 
@@ -456,27 +595,36 @@ if (!isset($_SESSION['nama'])) {
   </div>
 
   <script>
-    // --- Sidebar Logic ---
+    // --- LOGIKA DROPDOWN PROFIL & SIDEBAR ---
     const menuToggle = document.querySelector('.menu-toggle');
     const sidebar = document.querySelector('.sidebar');
+    const profileBtn = document.getElementById('profileBtn');
+    const profileDropdown = document.getElementById('profileDropdown');
 
     menuToggle.addEventListener('click', (e) => {
       e.stopPropagation();
       sidebar.classList.toggle('active');
-    });
-    document.addEventListener('click', (e) => {
-      if (window.innerWidth <= 992 && !sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active');
+      profileDropdown.classList.remove('active');
     });
 
-    function goBack() {
-      window.history.back();
-    }
+    profileBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      profileDropdown.classList.toggle('active');
+      sidebar.classList.remove('active');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 992) {
+        if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active');
+      }
+      if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
+    });
 
     function confirmLogout() {
       if (confirm("Yakin keluar?")) window.location.href = "../logout.php";
     }
 
-    // --- DATA & LOGIC ---
+    // --- LOGIKA DATA MATERI ---
     let materials = [];
     const materialsGrid = document.getElementById('materialsGrid');
 
@@ -494,7 +642,6 @@ if (!isset($_SESSION['nama'])) {
             title: m.judul,
             description: m.deskripsi,
             category: m.kategori,
-            // Format tanggal: "25 Okt 2023"
             date: new Date(m.created_at).toLocaleDateString('id-ID', {
               day: 'numeric',
               month: 'short',

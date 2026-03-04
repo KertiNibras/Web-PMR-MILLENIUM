@@ -4,7 +4,6 @@ include '../koneksi.php';
 // Ambil pertanyaan dinamis dari database
 $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY ordering ASC");
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 
@@ -13,13 +12,11 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pendaftaran Anggota | PMR Millenium</title>
 
-    <!-- Google Fonts Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* --- CSS VARIABLES --- */
         :root {
             --primary-color: #d90429;
             --primary-hover: #c92a2a;
@@ -51,7 +48,6 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
             padding: 20px;
         }
 
-        /* --- CONTAINER UTAMA --- */
         .reg-card {
             background-color: var(--card-bg);
             width: 100%;
@@ -77,7 +73,6 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
             }
         }
 
-        /* --- LOGO --- */
         .logo {
             margin-bottom: 20px;
             display: flex;
@@ -89,7 +84,6 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
             height: 70px;
         }
 
-        /* --- TYPOGRAPHY --- */
         h2 {
             font-size: 1.5rem;
             margin-bottom: 8px;
@@ -103,7 +97,6 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
             margin-bottom: 30px;
         }
 
-        /* --- FORM ELEMENTS --- */
         .form-group {
             margin-bottom: 20px;
             text-align: left;
@@ -122,7 +115,7 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
             color: var(--primary-color);
         }
 
-        /* Input Grid Layout */
+        /* Input Grid Layout (Dibiarkan untuk layout umum) */
         .row-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -162,60 +155,7 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
             min-height: 100px;
         }
 
-        /* --- DYNAMIC ACHIEVEMENT (Style disimpan jaga2 tapi logic diubah) --- */
-        .achievement-wrapper {
-            margin-bottom: 15px;
-        }
-
-        .achievement-item {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-            align-items: center;
-        }
-
-        .btn-remove {
-            background-color: #fee2e2;
-            color: #dc2626;
-            border: none;
-            width: 42px;
-            height: 42px;
-            border-radius: var(--input-radius);
-            cursor: pointer;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.2s;
-            flex-shrink: 0;
-        }
-
-        .btn-remove:hover {
-            background-color: #fecaca;
-        }
-
-        .btn-add {
-            background-color: transparent;
-            color: var(--primary-color);
-            border: 1px dashed var(--primary-color);
-            padding: 8px 12px;
-            border-radius: var(--input-radius);
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            width: 100%;
-            justify-content: center;
-        }
-
-        .btn-add:hover {
-            background-color: #fff1f1;
-        }
-
-        /* --- BUTTONS --- */
+        /* Buttons */
         .btn-submit {
             display: block;
             width: 100%;
@@ -239,7 +179,6 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
             box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
         }
 
-        /* Tombol Kembali */
         .btn-back {
             display: inline-flex;
             align-items: center;
@@ -262,7 +201,7 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
             background-color: #f1f5f9;
         }
 
-        /* --- VALIDATION & MODAL --- */
+        /* Validation */
         .input-error {
             border-color: #dc2626 !important;
             background-color: #fef2f2 !important;
@@ -339,13 +278,79 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
             font-weight: 600;
             margin-top: 15px;
         }
+
+        /* Styling Custom File Upload */
+        .custom-file-upload {
+            position: relative;
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        /* Sembunyikan input asli */
+        .custom-file-upload input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Tampilan area upload palsu (Dummy) */
+        .file-upload-dummy {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--input-radius);
+            padding: 20px;
+            text-align: center;
+            background-color: #f8fafc;
+            transition: all 0.3s ease;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .custom-file-upload input[type="file"]:hover+.file-upload-dummy {
+            border-color: var(--primary-color);
+            background-color: #fff;
+        }
+
+        .file-upload-dummy i {
+            font-size: 24px;
+            margin-bottom: 8px;
+            display: block;
+            color: var(--primary-color);
+        }
+
+        .file-upload-dummy p {
+            font-size: 0.85rem;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .file-name {
+            display: block;
+            margin-top: 8px;
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+
+        /* Warna hijau saat file sudah dipilih */
+        .file-selected .file-upload-dummy {
+            border-color: #16a34a;
+            background-color: #f0fdf4;
+        }
+
+        .file-selected .file-upload-dummy i {
+            color: #16a34a;
+        }
     </style>
 </head>
 
 <body>
 
     <div class="reg-card">
-        <!-- LOGO -->
         <div class="logo">
             <img src="../Gambar/logpmi.png" alt="Logo PMR" onerror="this.style.display='none'">
         </div>
@@ -353,40 +358,9 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
         <h2>Pendaftaran Anggota</h2>
         <p class="subtitle">SMKN 1 CIBINONG - PMR MILLENIUM</p>
 
-        <form id="pmrForm" novalidate>
-            <!-- Fixed Fields: Identitas Dasar -->
-            <div class="form-group">
-                <label for="nama">Nama Lengkap <span class="required">*</span></label>
-                <input type="text" id="nama" name="nama" placeholder="Masukkan nama lengkap" required>
-                <div class="error-msg">Nama lengkap wajib diisi.</div>
-            </div>
+        <form id="pmrForm" method="POST" enctype="multipart/form-data" novalidate>
+            <!-- Field statis sudah dihapus. Semua field diambil dari database. -->
 
-            <div class="row-2">
-                <div class="form-group">
-                    <label for="kelas">Kelas <span class="required">*</span></label>
-                    <select id="kelas" name="kelas" required>
-                        <option value="" disabled selected>Pilih Kelas</option>
-                        <option value="10">Kelas 10</option>
-                        <option value="11">Kelas 11</option>
-                        <option value="12">Kelas 12</option>
-                    </select>
-                    <div class="error-msg">Silakan pilih kelas.</div>
-                </div>
-
-                <div class="form-group">
-                    <label for="jurusan">Jurusan <span class="required">*</span></label>
-                    <input type="text" id="jurusan" name="jurusan" placeholder="Contoh: TKJ / RPL" required>
-                    <div class="error-msg">Jurusan wajib diisi.</div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="nohp">Nomor WhatsApp <span class="required">*</span></label>
-                <input type="tel" id="nohp" name="nohp" placeholder="08xxxxxxxxxx" required>
-                <div class="error-msg">Nomor HP wajib diisi.</div>
-            </div>
-
-            <!-- Dynamic Fields: Question from DB -->
             <div id="dynamic-questions">
                 <?php
                 if (mysqli_num_rows($questions) > 0) {
@@ -397,23 +371,38 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
                         echo "<div class='form-group'>";
                         echo "<label>{$q['question_text']} {$req_mark}</label>";
 
-                        // Handle Input Types
                         if ($q['question_type'] == 'text') {
+
                             echo "<input type='text' name='dyn_{$q['id']}' placeholder='Jawaban Anda' {$req}>";
                         } elseif ($q['question_type'] == 'textarea') {
+
                             echo "<textarea name='dyn_{$q['id']}' placeholder='Jawaban Anda' {$req}></textarea>";
+                        } elseif ($q['question_type'] == 'file') {
+                            // ID unik untuk JavaScript
+                            $fileId = "file_" . $q['id'];
+
+                            echo "<div class='custom-file-upload'>";
+                            // Input asli tersembunyi
+                            echo "<input type='file' name='dyn_{$q['id']}' id='{$fileId}' {$req} onchange='showFileName(this)'>";
+
+                            // Tampilan visual custom
+                            echo "<div class='file-upload-dummy'>";
+                            echo "<i class='fa-solid fa-cloud-arrow-up'></i>"; // Ikon
+                            echo "<p>Klik atau seret file ke sini<br><small style='color:#94a3b8'>Maks 2MB (JPG/PDF)</small></p>";
+                            echo "<span class='file-name' id='label_{$q['id']}'>Belum ada file dipilih</span>";
+                            echo "</div>";
+                            echo "</div>";
                         } elseif ($q['question_type'] == 'select' || $q['question_type'] == 'radio') {
                             $opts = json_decode($q['options'], true);
 
                             if ($q['question_type'] == 'select') {
                                 echo "<select name='dyn_{$q['id']}' {$req}>";
-                                if ($req) echo "<option value='' disabled selected>Pilih</option>"; // Placeholder option
+                                if ($req) echo "<option value='' disabled selected>Pilih</option>";
                                 foreach ($opts as $o) {
                                     echo "<option value='$o'>$o</option>";
                                 }
                                 echo "</select>";
                             } else {
-                                // Radio buttons
                                 echo "<div style='display:flex; flex-direction:column; gap:8px; margin-top:5px;'>";
                                 foreach ($opts as $o) {
                                     echo "<label style='display:flex; align-items:center; gap:8px; font-weight:400; cursor:pointer;'>";
@@ -425,14 +414,18 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
                         }
                         echo "</div>";
                     }
+                } else {
+                    echo "<p style='color:var(--text-muted); text-align:center; padding: 20px 0;'>Formulir pendaftaran belum tersedia. Silakan hubungi pengurus.</p>";
                 }
                 ?>
             </div>
 
-            <button type="submit" class="btn-submit">Kirim Pendaftaran</button>
+            <?php if (mysqli_num_rows($questions) > 0): ?>
+                <button type="submit" class="btn-submit">Kirim Pendaftaran</button>
+            <?php endif; ?>
         </form>
 
-        <a href="../Halaman Utama/index.html" class="btn-back">
+        <a href="../Halaman Utama/index.php" class="btn-back">
             <i class="fa-solid fa-arrow-left"></i> Kembali ke Beranda
         </a>
     </div>
@@ -449,7 +442,6 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
         </div>
     </div>
 
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
     <script>
@@ -457,30 +449,25 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
             const form = document.getElementById('pmrForm');
             const modal = document.getElementById('successModal');
 
+            // Jika tidak ada pertanyaan, hentikan proses form
+            if (!form) return;
+
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 let isValid = true;
-
-                // 1. Validasi Biasa
                 const requiredInputs = form.querySelectorAll('[required]');
 
                 requiredInputs.forEach(input => {
-                    // Khusus Radio button butuh validasi beda
                     if (input.type === 'radio') {
-                        // Biarkan logic validasi radio di bawah atau pakai logic standar
-                        // Standar check: jika satu group radio tidak ada yang checked
                         const name = input.name;
                         const checked = form.querySelector(`input[name="${name}"]:checked`);
                         if (!checked) {
                             isValid = false;
-                            // Kasih efek error di parent atau pesan
-                            // Sederhananya kita alert saja atau highlight
-                            input.parentElement.style.color = 'red'; // highlight text
+                            input.parentElement.style.color = 'red';
                         } else {
                             input.parentElement.style.color = 'inherit';
                         }
                     } else {
-                        // Text, Select, Textarea
                         const errorMsg = input.nextElementSibling;
                         input.classList.remove('input-error');
                         if (errorMsg && errorMsg.classList.contains('error-msg')) errorMsg.style.display = 'none';
@@ -493,16 +480,22 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
                     }
                 });
 
-                // 2. Jika Valid, Kirim Data
                 if (isValid) {
                     const formData = new FormData(form);
 
-                    // Kirim ke proses_register.php
                     fetch('proses_register.php', {
                             method: 'POST',
                             body: formData
                         })
-                        .then(response => response.json())
+                        .then(response => {
+                            // Cek jika response tidak ok (misal 404 atau 500)
+                            if (!response.ok) {
+                                return response.text().then(text => {
+                                    throw new Error(text)
+                                });
+                            }
+                            return response.json();
+                        })
                         .then(data => {
                             if (data.status === 'success') {
                                 modal.classList.add('active');
@@ -512,8 +505,8 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
                             }
                         })
                         .catch(error => {
-                            console.error('Error:', error);
-                            alert('Tidak dapat terhubung ke server.');
+                            console.error('Detail Error:', error.message);
+                            alert('Error Detail: ' + error.message); // Ini akan menampilkan error PHP asli
                         });
                 } else {
                     const firstError = document.querySelector('.input-error');
@@ -527,6 +520,20 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
 
         function closeModal() {
             document.getElementById('successModal').classList.remove('active');
+        }
+        // Fungsi untuk menampilkan nama file yang dipilih
+        function showFileName(input) {
+            const container = input.closest('.custom-file-upload');
+            const label = container.querySelector('.file-name');
+
+            if (input.files && input.files.length > 0) {
+                const fileName = input.files[0].name;
+                label.innerText = fileName;
+                container.classList.add('file-selected'); // Tambah class untuk warna hijau
+            } else {
+                label.innerText = 'Belum ada file dipilih';
+                container.classList.remove('file-selected');
+            }
         }
     </script>
 </body>

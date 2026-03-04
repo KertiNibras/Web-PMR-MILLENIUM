@@ -1,3 +1,22 @@
+<?php
+session_start();
+include '../koneksi.php'; // Pastikan path ke koneksi benar. Jika file ini ada di folder 'Halaman Utama', maka pathnya '../koneksi.php'
+
+// Cek status login
+ $is_logged_in = isset($_SESSION['nama']);
+ $role = isset($_SESSION['role']) ? $_SESSION['role'] : '';
+ $nama_user = $is_logged_in ? htmlspecialchars($_SESSION['nama']) : 'Guest';
+
+// Tentukan link dashboard berdasarkan role
+ $dashboard_link = '../Login/login.php'; // Default jika belum login
+if ($is_logged_in) {
+    if ($role == 'pengurus') {
+        $dashboard_link = '../Dashboard Anggota/anggota.php'; // Atau halaman utama pengurus
+    } else {
+        $dashboard_link = '../Dashboard Anggota/anggota.php';
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="id">
 
@@ -48,7 +67,7 @@
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
       position: fixed;
       width: 100%;
-      z-index: 1000; /* Base z-index */
+      z-index: 1000;
       top: 0;
     }
 
@@ -349,7 +368,6 @@
       display: flex;
       gap: 20px;
       transition: transform 0.5s ease-in-out;
-      /* Default for desktop */
     }
 
     .card-carousel {
@@ -467,20 +485,20 @@
     .footer .social-icons img { width: 24px; height: 24px; filter: brightness(0) invert(1); opacity: 0.7; transition: 0.3s; }
     .footer .social-icons a:hover img { opacity: 1; transform: scale(1.1); }
 
-    /* --- MOBILE MENU (Z-INDEX FIX) --- */
+    /* --- MOBILE MENU --- */
     .hamburger { display: none; font-size: 24px; background: none; border: none; cursor: pointer; }
     
     .menu-overlay { 
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
       background: rgba(0,0,0,0.5); 
-      z-index: 1001; /* Di atas header */
+      z-index: 1001;
       opacity: 0; visibility: hidden; transition: 0.3s; 
     }
     .menu-overlay.active { opacity: 1; visibility: visible; }
     
     .mobile-menu {
       position: fixed; top: 0; right: -100%; width: 280px; height: 100%; background: white;
-      z-index: 1002; /* Paling Atas */
+      z-index: 1002;
       padding: 60px 20px; transition: right 0.4s; display: flex; flex-direction: column; gap: 20px;
     }
     .mobile-menu.active { right: 0; }
@@ -488,7 +506,7 @@
     .mobile-menu a:hover { color: var(--primary); }
     .mobile-close { position: absolute; top: 15px; right: 15px; font-size: 24px; background: none; border: none; cursor: pointer; }
 
-    /* --- RESPONSIVE MOBILE (FIX CAROUSEL) --- */
+    /* --- RESPONSIVE --- */
     @media (max-width: 768px) {
       .hamburger { display: block; }
       .nav-links { display: none; }
@@ -502,29 +520,22 @@
         padding: 0 10px;
       }
 
-      /* Perbaikan Carousel Mobile: Pakai Scroll Snap, Bukan JS Transform */
-      .carousel-wrapper {
-        padding: 0; /* Hilangkan padding untuk full width */
-      }
-      
+      .carousel-wrapper { padding: 0; }
       .carousel-container {
-        overflow-x: auto; /* Bisa di-scroll horizontal */
-        scroll-snap-type: x mandatory; /* Snap ke gambar */
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
         scroll-behavior: smooth;
-        -webkit-overflow-scrolling: touch; /* Smooth di iPhone */
-        padding: 0 20px; /* Jarak tepat */
-        
-        /* Override JS Transform */
+        -webkit-overflow-scrolling: touch;
+        padding: 0 20px;
         transform: none !important; 
       }
 
       .card-carousel {
-        min-width: 85%; /* Lebar 85% layar, sisanya kelihatan sedikit */
-        scroll-snap-align: center; /* Snap ke tengah */
+        min-width: 85%;
+        scroll-snap-align: center;
         flex-shrink: 0;
       }
 
-      /* Sembunyikan tombol panah di mobile */
       .carousel-btn { display: none; }
     }
   </style>
@@ -545,7 +556,14 @@
         <li><a href="#pengurus"><i class="fas fa-users"></i> Pengurus</a></li>
         <li><a href="#kegiatan"><i class="fas fa-images"></i> Kegiatan</a></li>
         <li><a href="https://uks-smartcare.smkn1cibinong.sch.id/" target="_blank"><i class="fas fa-heartbeat"></i> UKS</a></li>
-        <li><a href="../Login/login.php" class="btn-header"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+        
+        <!-- LOGIKA TOMBOL LOGIN/DASHBOARD -->
+        <?php if ($is_logged_in): ?>
+          <li><a href="<?= $dashboard_link ?>" class="btn-header"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+        <?php else: ?>
+          <li><a href="../Login/login.php" class="btn-header"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+        <?php endif; ?>
+
       </ul>
       <button class="hamburger" id="hamburger-btn"><i class="fas fa-bars"></i></button>
     </nav>
@@ -559,7 +577,14 @@
     <a href="#pengurus"><i class="fas fa-users"></i> Pengurus</a>
     <a href="#kegiatan"><i class="fas fa-images"></i> Kegiatan</a>
     <a href="https://uks-smartcare.smkn1cibinong.sch.id/" target="_blank"><i class="fas fa-heartbeat"></i> UKS</a>
-    <a href="../Login/login.php" class="btn-header" style="justify-content: center; margin-top: 20px; color: white !important;"><i class="fas fa-sign-in-alt"></i> Login</a>
+    
+    <!-- LOGIKA TOMBOL LOGIN/DASHBOARD DI MOBILE MENU -->
+    <?php if ($is_logged_in): ?>
+      <a href="<?= $dashboard_link ?>" class="btn-header" style="justify-content: center; margin-top: 20px; color: white !important;"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <?php else: ?>
+      <a href="../Login/login.php" class="btn-header" style="justify-content: center; margin-top: 20px; color: white !important;"><i class="fas fa-sign-in-alt"></i> Login</a>
+    <?php endif; ?>
+    
   </div>
 
   <!-- HERO -->
@@ -621,7 +646,7 @@
   <!-- PENGURUS -->
   <section class="section pengurus-section" id="pengurus">
     <h2 class="section-title" data-aos="fade-down">Struktur Organisasi</h2>
-    <p class="section-subtitle" data-aos="fade-up">Kepengurusan PMR Millenium Tahun 2025</p>
+    <p class="section-subtitle" data-aos="fade-up">Kepengurusan PMR Millenium Tahun 2026</p>
 
     <div class="leader-grid">
       <div class="card-pengurus" data-aos="zoom-in">
@@ -755,7 +780,7 @@
       <a href="#"><img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/youtube.svg" alt="YT"></a>
       <a href="#"><img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/facebook.svg" alt="FB"></a>
     </div>
-    <p>© 2025 PMR Millenium SMKN 1 Cibinong. All Rights Reserved.</p>
+    <p>© 2026 PMR Millenium SMKN 1 Cibinong. All Rights Reserved.</p>
   </footer>
 
   <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
@@ -773,7 +798,6 @@
       overlay.classList.add('active');
     });
 
-    // Function to close menu (called by overlay, close btn, and links)
     function closeMenu() {
       mobileMenu.classList.remove('active');
       overlay.classList.remove('active');
@@ -782,7 +806,6 @@
     overlay.addEventListener('click', closeMenu);
     closeBtn.addEventListener('click', closeMenu);
 
-    // Close menu when clicking links inside mobile menu
     document.querySelectorAll('.mobile-menu a').forEach(link => {
       link.addEventListener('click', closeMenu);
     });
@@ -801,25 +824,23 @@
       if (e.target.tagName !== 'IMG') closeFull();
     });
 
-    // Carousel Logic (Only active on Desktop > 768px)
-    // On mobile, we use CSS Scroll Snap, so JS is skipped there
+    // Carousel Logic
     const carousels = document.querySelectorAll('.carousel-container');
     const counters = [0, 0]; 
 
     function getItemsPerView() {
-      if (window.innerWidth <= 768) return 1; // Snap handles mobile
+      if (window.innerWidth <= 768) return 1;
       if (window.innerWidth <= 1024) return 2;
       return 3;
     }
 
     function updateCarousel(index) {
-      // Only run transform logic if screen is wider than mobile
       if (window.innerWidth > 768) {
         const container = carousels[index];
         const items = container.children;
         if (items.length === 0) return;
         
-        const itemWidth = items[0].offsetWidth + 20; // width + gap
+        const itemWidth = items[0].offsetWidth + 20;
         const maxTranslate = (items.length - getItemsPerView()) * itemWidth;
         
         let translateX = counters[index] * itemWidth;
@@ -830,7 +851,7 @@
     }
 
     function nextSlide(index) {
-      if (window.innerWidth <= 768) return; // Let CSS handle it
+      if (window.innerWidth <= 768) return;
         
       const container = carousels[index];
       const totalItems = container.children.length;
@@ -861,17 +882,14 @@
       }
     }
 
-    // Auto-slide (Desktop only)
     setInterval(() => { if(window.innerWidth > 768) nextSlide(0); }, 5000);
     setInterval(() => { if(window.innerWidth > 768) nextSlide(1); }, 6000);
 
-    // Reset transform if resizing from mobile to desktop
     window.addEventListener('resize', () => {
       if (window.innerWidth > 768) {
          updateCarousel(0);
          updateCarousel(1);
       } else {
-         // Reset transform for mobile so CSS scroll works
          carousels[0].style.transform = 'none';
          carousels[1].style.transform = 'none';
          counters[0] = 0;
@@ -880,4 +898,5 @@
     });
   </script>
 </body>
+
 </html>

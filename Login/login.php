@@ -7,45 +7,51 @@ include '../koneksi.php';
 $status = null;
 $displayUsername = "";
 $redirectLink = "";
+$foto_profil = ""; // Inisialisasi variabel foto
 
 // --- LOGIKA LOGIN ---
 if (isset($_POST['login'])) {
-
     $username = mysqli_real_escape_string($koneksi, $_POST['username']);
     $password = $_POST['password'];
 
-    // Cari akun berdasarkan username
     $sql    = "SELECT * FROM users WHERE username = '$username'";
     $result = mysqli_query($koneksi, $sql);
 
     if (mysqli_num_rows($result) > 0) {
         $data = mysqli_fetch_assoc($result);
 
-        // Cek password
+        // Verifikasi Password (Sebaiknya gunakan password_verify jika password di-hash)
         if ($password == $data['password']) {
-
-            // Simpan data ke session
+            // Simpan data penting ke Session
+            $_SESSION['id'] = $data['id'];
             $_SESSION['nama'] = $data['nama'];
-            $_SESSION['role'] = $data['role']; // PENTING: Simpan Role
+            $_SESSION['role'] = $data['role'];
             $_SESSION['username'] = $data['username'];
+            $_SESSION['foto'] = $data['foto_profil'];
 
-            // Tentukan Status Sukses
+            // Set variabel untuk tampilan berhasil
             $status = 'success';
             $displayUsername = $data['nama'];
-
-            // --- PERUBAHAN DISINI ---
-            // Arahkan SEMUA user (Anggota & Pengurus) ke file Dashboard yang sama
             $redirectLink = '../Dashboard Anggota/anggota.php';
 
-            // Jika kamu ingin langsung set notifikasi login success di dashboard
-            $_SESSION['login_success'] = true;
+            // --- LOGIKA FOTO PROFIL (Diperbaiki) ---
+            $foto_db = $data['foto_profil'];
+            // Cek jika ada nama file di DB dan file tersebut benar-benar ada di folder uploads
+            if (!empty($foto_db) && file_exists("../uploads/foto_profil/" . $foto_db)) {
+                $foto_profil = "../uploads/foto_profil/" . $foto_db;
+            } else {
+                // Jika tidak ada foto, gunakan avatar default dari ui-avatars
+                // Menggunakan $data['nama'] bukan $nama_user
+                $foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($data['nama']) . '&background=d90429&color=fff';
+            }
         } else {
-            $status = 'error'; // Password salah
+            $status = 'error';
         }
     } else {
-        $status = 'error'; // Username tidak ditemukan
+        $status = 'error';
     }
 }
+// Hapus blok logika foto lama yang ada di sini sebelumnya
 ?>
 
 <!DOCTYPE html>
@@ -104,7 +110,6 @@ if (isset($_POST['login'])) {
             border: 1px solid var(--border-color);
             text-align: center;
             animation: fadeIn 0.6s ease-out;
-            position: relative;
         }
 
         @keyframes fadeIn {
@@ -255,8 +260,28 @@ if (isset($_POST['login'])) {
             font-weight: 600;
         }
 
+        /* Alert Styles */
         .alert-content {
             margin: 20px 0;
+        }
+
+        /* Styling untuk Foto Profil di Alert Sukses */
+        .profile-photo-wrapper {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            overflow: hidden;
+            border: 4px solid var(--success-bg);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            background-color: #eee;
+            /* Placeholder bg */
+        }
+
+        .profile-photo-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .icon-wrapper-alert {
@@ -290,6 +315,8 @@ if (isset($_POST['login'])) {
             background-color: var(--primary-color);
         }
 
+        /* Tombol tetap merah */
+
         .error .icon-wrapper-alert {
             background-color: var(--error-bg);
         }
@@ -317,11 +344,11 @@ if (isset($_POST['login'])) {
 
         <?php if ($status === 'success'): ?>
             <div class="alert-content success">
-                <div class="icon-wrapper-alert">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                    </svg>
+                <!-- FOTO PROFIL DITAMBAHKAN DI SINI -->
+                <div class="profile-photo-wrapper">
+                    <img src="<?= $foto_profil ?>" alt="Foto Profil">
                 </div>
+
                 <h2>Login Berhasil!</h2>
                 <p class="subtitle">Selamat datang, <strong><?= htmlspecialchars($displayUsername) ?></strong>.<br>Mengalihkan...</p>
                 <a href="<?= $redirectLink ?>" class="btn btn-primary">Masuk Dashboard &rarr;</a>
@@ -368,11 +395,10 @@ if (isset($_POST['login'])) {
             </form>
 
             <a href="../Daftar/register.php" class="link-register">Belum punya akun? <span>Daftar Sekarang</span></a>
-            <a href="../Halaman Utama/index.html" class="btn-back">Kembali ke Beranda</a>
+            <a href="../Halaman Utama/index.php" class="btn-back">Kembali ke Beranda</a>
         <?php endif; ?>
 
     </div>
-
 </body>
 
 </html>

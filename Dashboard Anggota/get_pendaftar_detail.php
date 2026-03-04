@@ -11,24 +11,36 @@ if(!$d) { echo "Data tidak ditemukan"; exit; }
 
  $answers = json_decode($d['answers'], true);
 
- $html = "
-    <table style='width:100%; border-collapse:collapse;'>
-        <tr><td style='padding:8px; border-bottom:1px solid #eee; font-weight:bold'>Nama</td><td style='padding:8px; border-bottom:1px solid #eee'>{$d['nama_lengkap']}</td></tr>
-        <tr><td style='padding:8px; border-bottom:1px solid #eee; font-weight:bold'>Kelas</td><td style='padding:8px; border-bottom:1px solid #eee'>{$d['kelas']}</td></tr>
-        <tr><td style='padding:8px; border-bottom:1px solid #eee; font-weight:bold'>Jurusan</td><td style='padding:8px; border-bottom:1px solid #eee'>{$d['jurusan']}</td></tr>
-        <tr><td style='padding:8px; border-bottom:1px solid #eee; font-weight:bold'>No. WA</td><td style='padding:8px; border-bottom:1px solid #eee'>{$d['no_whatsapp']}</td></tr>
-    </table>
-    <h4 style='margin-top:20px; margin-bottom:10px; color:#333;'>Jawaban Tambahan</h4>
-";
+$html = "<table style='width:100%; border-collapse:collapse;'>";
 
-if($answers) {
-    $html .= "<table style='width:100%; border-collapse:collapse;'>";
-    foreach($answers as $question => $answer) {
-        $html .= "<tr><td style='padding:8px; border-bottom:1px solid #eee; font-weight:bold; width:40%'>$question</td><td style='padding:8px; border-bottom:1px solid #eee'>$answer</td></tr>";
+if($answers && is_array($answers)) foreach($answers as $question => $answer) {
+
+    $displayAnswer = htmlspecialchars($answer);
+
+    // Jika jawaban adalah file dari question_file
+    if (strpos($answer, 'question_file/') !== false) {
+
+        $filePath = "../uploads/" . $answer;
+
+        if (file_exists($filePath)) {
+            $displayAnswer = "<a href='$filePath' target='_blank' 
+                                style='color:#007bff; font-weight:bold;'>
+                                Lihat File
+                              </a>";
+        } else {
+            $displayAnswer = "<span style='color:red;'>File tidak ditemukan</span>";
+        }
     }
-    $html .= "</table>";
-} else {
-    $html .= "<p style='color:#999'>Tidak ada jawaban tambahan.</p>";
+
+    $html .= "
+    <tr>
+        <td style='padding:8px; border-bottom:1px solid #eee; font-weight:bold; width:40%'>
+            ".htmlspecialchars($question)."
+        </td>
+        <td style='padding:8px; border-bottom:1px solid #eee'>
+            ".$displayAnswer."
+        </td>
+    </tr>";
 }
 
 echo $html;
