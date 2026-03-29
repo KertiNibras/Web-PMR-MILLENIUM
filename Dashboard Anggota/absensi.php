@@ -2,253 +2,478 @@
 session_start();
 include '../koneksi.php';
 
+// Cek Login
 if (!isset($_SESSION['nama'])) {
-  echo '<script>alert("Silakan login!"); window.location = "../Login/login.php";</script>';
+  echo '<script>alert("Silakan login terlebih dahulu!"); window.location.href = "../Login/login.php";</script>';
   exit;
 }
 
-// Ambil ID User
+// --- LOGIKA AMBIL ID USER & ROLE ---
 if (!isset($_SESSION['id'])) {
-  $stmt = mysqli_prepare($koneksi, "SELECT id FROM users WHERE nama = ?");
-  mysqli_stmt_bind_param($stmt, "s", $_SESSION['nama']);
+  $nama_session = $_SESSION['nama'];
+  $stmt = mysqli_prepare($koneksi, "SELECT id, role FROM users WHERE nama = ?");
+  mysqli_stmt_bind_param($stmt, "s", $nama_session);
   mysqli_stmt_execute($stmt);
-  $res = mysqli_stmt_get_result($stmt);
-  if($row = mysqli_fetch_assoc($res)) $_SESSION['id'] = $row['id'];
+  $result_id = mysqli_stmt_get_result($stmt);
+
+  if (mysqli_num_rows($result_id) > 0) {
+    $data_user = mysqli_fetch_assoc($result_id);
+    $_SESSION['id'] = $data_user['id'];
+    $_SESSION['role'] = $data_user['role'];
+  } else {
+    echo '<script>alert("Data user tidak ditemukan!"); window.location.href = "../logout.php";</script>';
+    exit;
+  }
 }
 
  $id_user = $_SESSION['id'];
+ $role = isset($_SESSION['role']) ? $_SESSION['role'] : 'anggota';
  $nama_user = htmlspecialchars($_SESSION['nama']);
+
+// Logika Foto Profil
+ $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
  $foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
-// (Logika foto profil sama seperti sebelumnya)
+if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_session)) {
+  $foto_profil = "../uploads/foto_profil/" . $foto_session;
+}
 
-// Cek Status Absensi Sekarang
- $now_time = date('H:i:s');
- $now_date = date('Y-m-d');
- $q_cek = mysqli_query($koneksi, "SELECT * FROM pengaturan_absensi WHERE tanggal='$now_date' AND status=1 AND waktu_mulai <= '$now_time' AND waktu_selesai >= '$now_time'");
- $is_open = mysqli_num_rows($q_cek) > 0;
- $setting = mysqli_fetch_assoc($q_cek);
+// LOGIC: Kalender
+ $month = isset($_GET['m']) ? intval($_GET['m']) : date('m');
+ $year = isset($_GET['y']) ? intval($_GET['y']) : date('Y');
 
-// Ambil data absensi user untuk kalender
- $q_riwayat = mysqli_query($koneksi, "SELECT tanggal FROM absensi WHERE user_id='$id_user'");
- $riwayat_tanggal = [];
-while($r = mysqli_fetch_assoc($q_riwayat)){
-    $riwayat_tanggal[] = $r['tanggal'];
+// Ambil riwayat absensi user di bulan/tahun tersebut
+ $query_absen = mysqli_query($koneksi, "SELECT tanggal, status FROM absensi WHERE user_id = '$id_user' AND MONTH(tanggal) = '$month' AND YEAR(tanggal) = '$year'");
+ $riwayat_absen = [];
+while ($row = mysqli_fetch_assoc($query_absen)) {
+  $riwayat_absen[$row['tanggal']] = $row['status'];
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Absensi | PMR Millenium</title>
+  <title>Rekap Absensi | PMR Millenium</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-  <!-- CSS sama seperti halaman pengurus, tapi dengan sedikit penyesuaian warna status -->
+  <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
+
   <style>
-    /* Copy CSS dari halaman pengurus untuk konsistensi, atau gunakan CSS Anda sebelumnya */
-    :root { --primary-color: #d90429; --success-color: #10b981; --border-color: #e2e8f0; --bg-color: #f8f9fa; }
-    body { font-family: 'Inter', sans-serif; background: var(--bg-color); margin: 0; }
-    /* Header CSS (Sama) */
-    header { background: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
-    .logo { display: flex; align-items: center; gap: 10px; font-weight: bold; color: #000; }
-    
-    /* Container */
-    .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
-    
+    :root {
+      --primary-color: #d90429;
+      --primary-hover: #c92a2a;
+      --bg-color: #f8f9fa;
+      --text-color: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --success-color: #10b981;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+      --radius: 12px;
+      --header-height: 70px;
+      --sidebar-width: 250px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; }
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+
+    /* HEADER & SIDEBAR */
+    header { background: #fff; box-shadow: var(--shadow-sm); position: fixed; width: 100%; top: 0; z-index: 1000; height: var(--header-height); }
+    .navbar { display: flex; justify-content: space-between; align-items: center; height: 100%; padding: 0 20px; max-width: 100%; }
+    .nav-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #000; }
+    .logo img { height: 40px; }
+    .nav-center { flex: 1; display: flex; justify-content: center; align-items: center; }
+    .nav-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 15px; position: relative; }
+    .profile-btn { display: flex; align-items: center; cursor: pointer; padding: 5px; border-radius: 50px; transition: background 0.2s; }
+    .profile-btn:hover { background-color: #f1f5f9; }
+    .profile-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); }
+    .profile-dropdown { position: absolute; top: 100%; right: 0; margin-top: 10px; background: #fff; border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); width: 220px; z-index: 1001; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.2s ease; border: 1px solid var(--border-color); overflow: hidden; }
+    .profile-dropdown.active { opacity: 1; visibility: visible; transform: translateY(0); }
+    .dropdown-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid var(--border-color); }
+    .dropdown-header p { font-weight: 600; color: var(--text-color); font-size: 0.9rem; }
+    .dropdown-header small { color: var(--text-muted); font-size: 0.75rem; }
+    .profile-dropdown ul li a { display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: var(--text-color); font-size: 0.9rem; transition: 0.2s; }
+    .profile-dropdown ul li a:hover { background-color: #fff1f1; color: var(--primary-color); }
+    .profile-dropdown ul li a i { width: 20px; text-align: center; }
+    .menu-toggle { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--primary-color); z-index: 1001; }
+    .dashboard-container { display: flex; min-height: 100vh; padding-top: var(--header-height); }
+    .sidebar { width: var(--sidebar-width); background: #fff; border-right: 1px solid var(--border-color); position: sticky; top: var(--header-height); height: calc(100vh - var(--header-height)); overflow-y: auto; z-index: 900; flex-shrink: 0; }
+    .sidebar li { padding: 14px 25px; cursor: pointer; color: var(--text-color); font-weight: 500; display: flex; align-items: center; gap: 12px; border-left: 4px solid transparent; transition: all 0.2s; }
+    .sidebar li:hover, .sidebar li.active { background-color: #fff1f1; color: var(--primary-color); border-left-color: var(--primary-color); }
+    .sidebar a { display: flex; align-items: center; gap: 10px; width: 100%; }
+
+    /* Main Content */
+    .main-content { flex: 1; padding: 30px; width: 100%; }
+    .page-title h1 { font-size: 1.75rem; color: var(--primary-color); margin-bottom: 5px; }
+    .page-title p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px; }
+
     /* Status Box */
-    .status-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; margin-bottom: 20px; border: 1px solid var(--border-color); }
-    .status-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 10px; }
-    .status-time { color: #666; margin-bottom: 15px; }
-    
-    /* Tombol Absen */
-    .btn-absen { width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; color: white; background: var(--primary-color); cursor: pointer; transition: 0.3s; }
-    .btn-absen:disabled { background: #ccc; cursor: not-allowed; }
-    .btn-absen.active { background: var(--success-color); animation: pulse 2s infinite; }
-    
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+    .status-box { background: white; padding: 25px; border-radius: var(--radius); box-shadow: var(--shadow-sm); margin-bottom: 25px; text-align: center; border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; gap: 15px; }
+    .status-box.inactive { background: #fee2e2; border-color: #fecaca; }
+    .status-box.active { background: #dcfce7; border-color: #bbf7d0; }
+    .status-icon { font-size: 3rem; margin-bottom: 10px; }
+    .status-box.inactive .status-icon { color: var(--primary-color); }
+    .status-box.active .status-icon { color: var(--success-color); }
+    .status-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 5px; }
+    .status-time { font-size: 0.9rem; color: var(--text-muted); }
 
-    /* Kalender */
-    .calendar-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; background: white; padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); }
-    .day-name { text-align: center; font-size: 0.8rem; color: #999; font-weight: 600; }
-    .day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 0.9rem; position: relative; cursor: default; color: #444; }
-    .day.today { border: 2px solid var(--primary-color); color: var(--primary-color); font-weight: bold; }
-    .day.hadir { background: #dcfce7; color: var(--success-color); font-weight: bold; }
-    .day.hadir::after { content: '✓'; position: absolute; bottom: 2px; font-size: 0.6rem; }
-    .day.other { color: #ddd; }
+    /* Buttons */
+    .btn { padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease; font-size: 0.95rem; color: white; }
+    .btn-primary { background-color: var(--primary-color); box-shadow: 0 4px 6px rgba(217, 4, 41, 0.2); }
+    .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+    
+    /* PERBAIKAN: Definisi tombol success agar berwarna hijau */
+    .btn-success { background-color: var(--success-color); box-shadow: 0 4px 6px rgba(16, 184, 129, 0.2); }
+    .btn-success:hover { background-color: #059669; transform: translateY(-1px); }
 
-    /* Modal Camera (Sederhana) */
-    .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999; justify-content:center; align-items:center; }
-    .modal-content { background: white; width: 90%; max-width: 500px; padding: 20px; border-radius: 15px; text-align: center; }
-    video, #canvas { width: 100%; border-radius: 10px; background: #000; }
+    .btn:disabled { background-color: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Calendar Styles */
+    .calendar-container { background: white; border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 20px; border: 1px solid var(--border-color); }
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
+    .calendar-header h2 { font-size: 1.2rem; color: var(--text-color); }
+    .calendar-nav { display: flex; gap: 10px; }
+    .calendar-nav a { padding: 8px 15px; background: var(--bg-color); border-radius: 6px; color: var(--text-color); font-weight: 600; transition: 0.2s; }
+    .calendar-nav a:hover { background: var(--primary-color); color: white; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .calendar-day-name { text-align: center; font-weight: 600; color: var(--text-muted); font-size: 0.85rem; padding: 10px; }
+    .calendar-day { border: 1px solid var(--border-color); border-radius: 8px; min-height: 80px; padding: 8px; position: relative; background: #fff; transition: 0.2s; }
+    .calendar-day:hover { background: #f8fafc; }
+    .calendar-day.empty { background: #f8f9fa; border-color: transparent; }
+    .calendar-day.today { border-color: var(--primary-color); border-width: 2px; }
+    .day-number { font-weight: 600; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px; }
+    .calendar-day.today .day-number { color: var(--primary-color); }
+    .attendance-mark { display: flex; align-items: center; justify-content: center; height: calc(100% - 25px); color: var(--success-color); font-size: 2rem; }
+    .attendance-mark i { background: #dcfce7; padding: 10px; border-radius: 50%; }
+
+    /* Modal & Camera */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+    .modal-content { background: white; border-radius: var(--radius); max-width: 500px; width: 100%; overflow: hidden; display: flex; flex-direction: column; position: relative; animation: fadeIn 0.3s ease; }
+    .modal-header { padding: 15px 20px; background: var(--primary-color); color: white; display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h3 { font-size: 1.1rem; }
+    .close-modal { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; line-height: 1; }
+    .modal-body { padding: 20px; overflow-y: auto; }
+    .camera-wrapper { width: 100%; background: #1e293b; border-radius: 8px; overflow: hidden; margin: 15px 0; position: relative; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; }
+    #video, #capturedImage { width: 100%; height: 100%; object-fit: cover; }
+    #video { transform: scaleX(-1); }
+    #capturedImage { display: none; }
+    .switch-cam-btn { position: absolute; top: 15px; right: 15px; background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.7); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; z-index: 10; }
+    .toast { position: fixed; top: 90px; right: 20px; background: white; color: var(--text-color); padding: 15px 20px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15); display: flex; align-items: center; gap: 12px; min-width: 280px; z-index: 9999; transform: translateX(120%); transition: transform 0.3s ease-out; border-left: 5px solid var(--primary-color); }
+    .toast.show { transform: translateX(0); }
+    .toast.success { border-left-color: var(--success-color); }
+    .toast.success i { color: var(--success-color); }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    @media (max-width: 992px) {
+      .main-content { width: 100%; padding: 20px; }
+      .sidebar { position: fixed; top: var(--header-height); left: auto; right: -260px; box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1); border-right: none; border-left: 1px solid var(--border-color); transition: right 0.3s ease; z-index: 999; }
+      .sidebar.active { right: 0; }
+      .menu-toggle { display: block; }
+      .logo span { display: none; }
+    }
   </style>
 </head>
+
 <body>
 
-<header>
-  <div class="logo"><img src="../Gambar/logpmi.png" width="35"> PMR MILLENIUM</div>
-  <div style="display:flex; align-items:center; gap:10px;">
-    <span><?= $nama_user ?></span>
-    <img src="<?= $foto_profil ?>" width="35" style="border-radius:50%;">
-  </div>
-</header>
+  <!-- HEADER -->
+  <header>
+    <nav class="navbar">
+      <div class="nav-left">
+        <div class="logo">
+          <img src="../Gambar/logpmi.png" alt="Logo PMR">
+          <span>PMR MILLENIUM</span>
+        </div>
+      </div>
+      <div class="nav-center"></div>
+      <div class="nav-right">
+        <div class="profile-btn" id="profileBtn">
+          <img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img">
+        </div>
+        <div class="profile-dropdown" id="profileDropdown">
+          <div class="dropdown-header">
+            <p><?= $nama_user ?></p>
+            <small><?= ucfirst($role) ?></small>
+          </div>
+          <ul>
+            <li><a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a></li>
+            <li><a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a></li>
+            <li><a href="ganti_password.php"><i class="fa-solid fa-key"></i> Ganti Password</a></li>
+          </ul>
+        </div>
+        <button class="menu-toggle" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+      </div>
+    </nav>
+  </header>
 
-<div class="container">
-  
-  <!-- Box Status & Tombol -->
-  <div class="status-box">
-    <div class="status-title" id="statusTitle">Status Absensi</div>
-    <div class="status-time" id="statusTime">
-        <?= $is_open ? "Dibuka sampai pukul ".date('H:i', strtotime($setting['waktu_selesai'])) : "Absensi Belum Dibuka / Ditutup" ?>
+  <div class="dashboard-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <ul>
+        <li><a href="anggota.php"><i class="fa-solid fa-house"></i> Dashboard</a></li>
+        <li class="active"><a href="absensi.php"><i class="fa-solid fa-calendar-check"></i> Rekap Absensi</a></li>
+        <li><a href="perpus.php"><i class="fa-solid fa-book"></i> Perpustakaan Digital</a></li>
+        <li style="margin-top: 20px; border-top: 1px solid #eee;">
+          <a href="javascript:void(0)" onclick="confirmLogout()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
+        </li>
+      </ul>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <div class="page-title">
+        <h1>Absensi & Kehadiran</h1>
+        <p>Lakukan absensi harianmu dan pantau riwayat kehadiran.</p>
+      </div>
+
+      <!-- Status Box -->
+      <section class="status-box" id="attendanceStatus">
+        <div class="status-icon"><i class="fas fa-spinner fa-spin"></i></div>
+        <div class="status-title">Memeriksa status absensi...</div>
+      </section>
+
+      <!-- Kalender Rekap -->
+      <section class="calendar-container">
+        <div class="calendar-header">
+          <h2><?= date('F Y', strtotime("$year-$month-01")) ?></h2>
+          <div class="calendar-nav">
+            <?php
+            $prev_month = $month - 1; $prev_year = $year;
+            if ($prev_month == 0) { $prev_month = 12; $prev_year--; }
+            $next_month = $month + 1; $next_year = $year;
+            if ($next_month == 13) { $next_month = 1; $next_year++; }
+            ?>
+            <a href="?m=<?= $prev_month ?>&y=<?= $prev_year ?>"><i class="fas fa-chevron-left"></i></a>
+            <a href="?m=<?= date('m') ?>&y=<?= date('Y') ?>">Hari Ini</a>
+            <a href="?m=<?= $next_month ?>&y=<?= $next_year ?>"><i class="fas fa-chevron-right"></i></a>
+          </div>
+        </div>
+
+        <div class="calendar-grid">
+          <div class="calendar-day-name">Min</div><div class="calendar-day-name">Sen</div><div class="calendar-day-name">Sel</div><div class="calendar-day-name">Rab</div><div class="calendar-day-name">Kam</div><div class="calendar-day-name">Jum</div><div class="calendar-day-name">Sab</div>
+
+          <?php
+          $first_day = date('w', strtotime("$year-$month-01"));
+          $days_in_month = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+          $today = date('Y-m-d');
+
+          for ($i = 0; $i < $first_day; $i++) { echo "<div class='calendar-day empty'></div>"; }
+
+          for ($day = 1; $day <= $days_in_month; $day++) {
+            $date_val = "$year-$month-" . str_pad($day, 2, '0', STR_PAD_LEFT);
+            $is_today = ($date_val == $today) ? 'today' : '';
+            echo "<div class='calendar-day $is_today'>";
+            echo "<div class='day-number'>$day</div>";
+            if (isset($riwayat_absen[$date_val])) {
+              echo "<div class='attendance-mark' title='Hadir'><i class='fas fa-check-circle'></i></div>";
+            }
+            echo "</div>";
+          }
+          ?>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL CAMERA -->
+  <div class="modal" id="cameraModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Ambil Foto Absensi</h3>
+        <button class="close-modal" id="btnCloseModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="camera-wrapper">
+          <button class="switch-cam-btn" id="btnSwitchCamera" title="Ganti Kamera"><i class="fa-solid fa-camera-rotate"></i></button>
+          <video id="video" autoplay playsinline></video>
+          <canvas id="canvas" style="display:none;"></canvas>
+          <img id="capturedImage" alt="Capture">
+        </div>
+
+        <div id="cameraControls" style="margin-top: 15px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+          <button class="btn btn-primary" id="btnCapture"><i class="fa-solid fa-camera"></i> Ambil Foto</button>
+          <!-- Tombol ini sekarang punya class btn-success yang CSS-nya sudah didefinisikan -->
+          <button class="btn btn-success" id="btnSubmit" style="display:none; width: 100%;"><i class="fa-solid fa-paper-plane"></i> Kirim Absensi</button>
+        </div>
+
+        <div id="successMessage" style="display:none; text-align:center;">
+          <div style="color: var(--success-color); font-size: 3rem; margin: 20px 0;"><i class="fa-solid fa-check-circle"></i></div>
+          <h4>Absensi Berhasil!</h4>
+          <button class="btn btn-primary" style="margin-top: 15px;" onclick="location.reload()">Selesai</button>
+        </div>
+      </div>
     </div>
-    
-    <button class="btn-absen <?= $is_open ? 'active' : '' ?>" id="btnAbsen" <?= !$is_open ? 'disabled' : '' ?>>
-      <i class="fa-solid fa-camera"></i> Absen Sekarang
-    </button>
   </div>
 
-  <!-- Kalender Riwayat -->
-  <h3 style="margin-bottom: 15px; color: #444;">Riwayat Kehadiranmu</h3>
-  <div class="calendar-nav">
-    <button id="prev" style="border:none; background:none; cursor:pointer;"><i class="fa-solid fa-arrow-left"></i></button>
-    <span id="monthLabel">November 2023</span>
-    <button id="next" style="border:none; background:none; cursor:pointer;"><i class="fa-solid fa-arrow-right"></i></button>
-  </div>
-  <div class="calendar-grid" id="calGrid"></div>
+  <div id="toastContainer"></div>
 
-</div>
+  <script>
+    // --- LOGIC DROPDOWN & SIDEBAR ---
+    const menuToggle = document.querySelector('.menu-toggle');
+    const sidebar = document.querySelector('.sidebar');
+    const profileBtn = document.getElementById('profileBtn');
+    const profileDropdown = document.getElementById('profileDropdown');
 
-<!-- Modal Kamera -->
-<div class="modal" id="camModal">
-  <div class="modal-content">
-    <h3 style="margin-bottom:15px;">Ambil Foto Selfie</h3>
-    <video id="video" autoplay playsinline></video>
-    <canvas id="canvas" style="display:none;"></canvas>
-    <img id="photoPreview" style="display:none; width:100%; border-radius:10px;">
-    
-    <div style="margin-top:15px; display:flex; gap:10px; justify-content:center;">
-        <button class="btn-absen" id="captureBtn" style="width:auto; padding:10px 20px;"><i class="fa fa-camera"></i> Ambil</button>
-        <button class="btn-absen active" id="submitBtn" style="display:none; width:auto; padding:10px 20px;">Kirim Absensi</button>
-        <button onclick="stopCam()" style="border:none; background:#eee; padding:10px 20px; border-radius:8px;">Batal</button>
-    </div>
-  </div>
-</div>
+    menuToggle.addEventListener('click', (e) => { e.stopPropagation(); sidebar.classList.toggle('active'); profileDropdown.classList.remove('active'); });
+    profileBtn.addEventListener('click', (e) => { e.stopPropagation(); profileDropdown.classList.toggle('active'); sidebar.classList.remove('active'); });
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 992) { if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active'); }
+      if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
+    });
 
-<script>
-const hadirDates = <?= json_encode($riwayat_tanggal) ?>;
-let currentMonth = new Date().getMonth();
-let currentYear = new Date().getFullYear();
-const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    function confirmLogout() { if (confirm('Yakin keluar?')) window.location.href = '../logout.php'; }
 
-function renderCal() {
-    const grid = document.getElementById('calGrid');
-    const label = document.getElementById('monthLabel');
-    label.textContent = monthNames[currentMonth] + " " + currentYear;
-    grid.innerHTML = '';
+    // --- REALTIME STATUS CHECK ---
+    const statusBox = document.getElementById('attendanceStatus');
 
-    // Header
-    ['Min','Sen','Sel','Rab','Kam','Jum','Sab'].forEach(d => grid.innerHTML += `<div class="day-name">${d}</div>`);
-
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-    const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
-    const today = new Date().toISOString().split('T')[0];
-
-    // Empty cells
-    for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="day other"></div>`;
-
-    // Days
-    for(let d=1; d<=daysInMonth; d++) {
-        let dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        let classes = "day";
-        if(dateStr === today) classes += " today";
-        if(hadirDates.includes(dateStr)) classes += " hadir";
-        
-        grid.innerHTML += `<div class="${classes}">${d}</div>`;
+    async function checkAttendanceStatus() {
+      try {
+        const res = await fetch('get_status_absen.php'); // Path benar
+        const data = await res.json();
+        renderStatus(data);
+      } catch (error) {
+        statusBox.innerHTML = `
+                <div class="status-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="status-title">Gagal memuat status</div>
+                <div class="status-time">Cek file get_status_absen.php</div>
+            `;
+        statusBox.className = 'status-box inactive';
+      }
     }
-}
-document.getElementById('prev').onclick = () => { currentMonth--; if(currentMonth<0){currentMonth=11; currentYear--;} renderCal(); };
-document.getElementById('next').onclick = () => { currentMonth++; if(currentMonth>11){currentMonth=0; currentYear++;} renderCal(); };
-renderCal();
 
-// Realtime Check Status (Polling setiap 5 detik)
-setInterval(() => {
-    fetch('check_status_absen.php').then(r => r.json()).then(res => {
-        const btn = document.getElementById('btnAbsen');
-        const title = document.getElementById('statusTitle');
-        const time = document.getElementById('statusTime');
-        
-        if(res.status === 'buka'){
-            btn.disabled = false;
-            btn.classList.add('active');
-            title.textContent = "Absensi Dibuka!";
-            time.textContent = "Sisa waktu sampai pukul " + res.selesai;
-        } else {
-            btn.disabled = true;
-            btn.classList.remove('active');
-            title.textContent = "Absensi Ditutup";
-            time.textContent = "Absensi belum tersedia untuk saat ini.";
-        }
-    });
-}, 5000);
+    function renderStatus(data) {
+      if (data.is_open) {
+        statusBox.className = 'status-box active';
+        statusBox.innerHTML = `
+                <div class="status-icon"><i class="fas fa-door-open"></i></div>
+                <div class="status-title">Absensi Dibuka</div>
+                <div class="status-time">Waktu: ${data.jam_mulai} - ${data.jam_selesai} WIB</div>
+                <button class="btn btn-primary" id="btnOpenCamera"><i class="fa-solid fa-camera"></i> Absensi Sekarang</button>
+            `;
+        document.getElementById('btnOpenCamera').onclick = () => {
+          document.getElementById('cameraModal').style.display = 'flex';
+          resetModal();
+          startCamera(useFrontCamera ? 'user' : 'environment');
+        };
+      } else {
+        statusBox.className = 'status-box inactive';
+        let message = data.message || "Absensi Belum Dibuka";
+        let info = "Silakan tunggu pengurus membuka absensi.";
+        if (data.message) info = "";
+        statusBox.innerHTML = `
+                <div class="status-icon"><i class="fas fa-door-closed"></i></div>
+                <div class="status-title">${message}</div>
+                <div class="status-time">${info}</div>
+            `;
+      }
+    }
 
-// Camera Logic
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const modal = document.getElementById('camModal');
-let stream = null;
+    checkAttendanceStatus();
+    setInterval(checkAttendanceStatus, 5000);
 
-document.getElementById('btnAbsen').onclick = async function() {
-    modal.style.display = 'flex';
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-    video.srcObject = stream;
-    video.style.display = 'block';
-    document.getElementById('photoPreview').style.display = 'none';
-    document.getElementById('captureBtn').style.display = 'inline-block';
-    document.getElementById('submitBtn').style.display = 'none';
-};
+    // --- LOGIKA KAMERA ---
+    let currentImageData = null;
+    let stream = null;
+    let useFrontCamera = true;
 
-window.stopCam = () => { if(stream) stream.getTracks().forEach(t => t.stop()); modal.style.display = 'none'; };
+    const modal = document.getElementById('cameraModal');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const capturedImage = document.getElementById('capturedImage');
+    const btnCapture = document.getElementById('btnCapture');
+    const btnSwitch = document.getElementById('btnSwitchCamera');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const toastContainer = document.getElementById('toastContainer');
 
-document.getElementById('captureBtn').onclick = () => {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
-    
-    // Mirror effect jika perlu
-    // ...
-    
-    let dataUrl = canvas.toDataURL('image/jpeg');
-    document.getElementById('photoPreview').src = dataUrl;
-    document.getElementById('photoPreview').style.display = 'block';
-    video.style.display = 'none';
-    
-    document.getElementById('captureBtn').style.display = 'none';
-    document.getElementById('submitBtn').style.display = 'inline-block';
-    stopCam(); // Stop camera stream, tapi modal tetap terbuka
-    modal.style.display = 'flex'; // Pastikan modal tetap ada
-};
+    async function startCamera(facingMode) {
+      try {
+        if (stream) stream.getTracks().forEach(track => track.stop());
+        const constraints = { video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } } };
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+        video.style.display = 'block';
+        capturedImage.style.display = 'none';
+        btnSwitch.style.display = 'flex';
+        btnCapture.style.display = 'inline-flex';
+        btnSubmit.style.display = 'none';
+        video.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+      } catch (err) {
+        alert("Tidak dapat mengakses kamera.");
+        console.error(err);
+      }
+    }
 
-document.getElementById('submitBtn').onclick = function() {
-    this.innerHTML = "Mengirim...";
-    this.disabled = true;
-    
-    let photoData = document.getElementById('photoPreview').src;
-    
-    fetch('proses_absensi.php', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ foto: photoData })
-    }).then(r => r.json()).then(res => {
-        if(res.success){
-            alert("Absensi Berhasil!");
-            location.reload();
-        } else {
-            alert(res.message || "Gagal");
-            this.innerHTML = "Kirim Absensi";
-            this.disabled = false;
-        }
-    });
-};
+    document.getElementById('btnCloseModal').onclick = () => { modal.style.display = 'none'; stopCamera(); };
+    window.onclick = (e) => { if (e.target == modal) { modal.style.display = 'none'; stopCamera(); } };
 
-</script>
+    function stopCamera() { if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; } }
+
+    btnSwitch.onclick = async () => { useFrontCamera = !useFrontCamera; await startCamera(useFrontCamera ? 'user' : 'environment'); };
+
+    btnCapture.onclick = () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      let ctx = canvas.getContext('2d');
+      if (useFrontCamera) { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      if (useFrontCamera) ctx.setTransform(1, 0, 0, 1, 0, 0);
+      currentImageData = canvas.toDataURL('image/png');
+      capturedImage.src = currentImageData;
+      video.style.display = 'none';
+      capturedImage.style.display = 'block';
+      stopCamera();
+      btnSwitch.style.display = 'none';
+      showSubmitButton();
+    };
+
+    function showSubmitButton() { btnCapture.style.display = 'none'; btnSubmit.style.display = 'inline-flex'; }
+
+    btnSubmit.onclick = () => {
+      if (!currentImageData) { alert("Ambil foto dulu!"); return; }
+
+      btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
+      btnSubmit.disabled = true;
+
+      // Data yang dikirim disesuaikan dengan proses_absensi.php baru
+      fetch('proses_absensi.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            foto: currentImageData
+            // Status dan keterangan tidak perlu dikirim, akan otomatis 'hadir' di backend
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'success') {
+            document.getElementById('cameraControls').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'block';
+          } else {
+            alert('Error: ' + data.message);
+            btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Absensi';
+            btnSubmit.disabled = false;
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Gagal mengirim data. Cek console untuk detail.');
+          btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Absensi';
+          btnSubmit.disabled = false;
+        });
+    };
+
+    function resetModal() {
+      video.style.display = 'block'; capturedImage.style.display = 'none';
+      document.getElementById('cameraControls').style.display = 'flex';
+      document.getElementById('successMessage').style.display = 'none';
+      btnCapture.style.display = 'inline-flex'; btnSubmit.style.display = 'none';
+      btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Absensi';
+      btnSubmit.disabled = false; currentImageData = null;
+    }
+  </script>
 </body>
 </html>

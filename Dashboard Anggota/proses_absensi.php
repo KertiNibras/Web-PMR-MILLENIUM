@@ -2,114 +2,75 @@
 session_start();
 include '../koneksi.php';
 
-// ==========================================
-// 1. VALIDASI SESI
-// ==========================================
+// Matikan error display untuk menjaga JSON tetap bersih
+error_reporting(0);
+ini_set('display_errors', 0);
+
+header('Content-Type: application/json');
+
+// Cek login
 if (!isset($_SESSION['id'])) {
-    echo json_encode(['status' => 'error', 'message' => 'Sesi tidak valid, silakan login ulang.']);
+    echo json_encode(['status' => 'error', 'message' => 'Sesi tidak valid. Silakan login ulang.']);
     exit;
 }
 
-// ==========================================
-// 2. VALIDASI WAKTU ABSENSI (REALTIME)
-// ==========================================
-// Cek apakah pengurus membuka absensi saat ini
- $now_time = date('H:i:s');
- $now_date = date('Y-m-d');
+ $id_user = $_SESSION['id'];
 
-// Query cek ke tabel pengaturan_absensi
- $cek_jadwal = mysqli_query($koneksi, "SELECT id FROM pengaturan_absensi 
-                                      WHERE tanggal = '$now_date' 
-                                      AND status = 1 
-                                      AND waktu_mulai <= '$now_time' 
-                                      AND waktu_selesai >= '$now_time'");
+// Ambil data JSON dari body request
+ $json = file_get_contents('php://input');
+ $data = json_decode($json, true);
 
-if (mysqli_num_rows($cek_jadwal) == 0) {
-    echo json_encode(['status' => 'error', 'message' => 'Absensi saat ini ditutup atau belum dibuka.']);
+// Validasi data foto
+if (!isset($data['foto']) || empty($data['foto'])) {
+    echo json_encode(['status' => 'error', 'message' => 'Foto tidak ditemukan.']);
     exit;
 }
 
-// ==========================================
-// 3. VALIDASI DUPLIKAT ABSENSI HARI INI
-// ==========================================
- $user_id = $_SESSION['id'];
- $cek_absen = mysqli_query($koneksi, "SELECT id FROM absensi WHERE user_id = '$user_id' AND tanggal = '$now_date'");
-if (mysqli_num_rows($cek_absen) > 0) {
-    echo json_encode(['status' => 'error', 'message' => 'Anda sudah melakukan absensi hari ini.']);
-    exit;
+ $foto_base64 = $data['foto'];
+ $keterangan = isset($data['keterangan']) ? $data['keterangan'] : '-';
+
+// Proses simpan gambar
+ $folder = "../uploads/absensi/";
+if (!is_dir($folder)) {
+    mkdir($folder, 0777, true);
 }
 
-// ==========================================
-// 4. AMBIL & PROSES DATA INPUT
-// ==========================================
- $input = json_decode(file_get_contents('php://input'), true);
- $photoData = $input['foto'] ?? '';
+// Nama file unik
+ $nama_file = "absen_" . $id_user . "_" . time() . ".png";
 
-// Validasi Foto
-if (empty($photoData)) {
-    echo json_encode(['status' => 'error', 'message' => 'Foto wajib diambil.']);
+// Pisahkan header base64
+ $image_parts = explode(";base64,", $foto_base64);
+if (count($image_parts) < 2) {
+    echo json_encode(['status' => 'error', 'message' => 'Format gambar tidak valid.']);
     exit;
 }
+ $image_base64 = base64_decode($image_parts[1]);
+ $file_path = $folder . $nama_file;
 
-// Proses Simpan Gambar
- $fileName = '';
- $image_parts = explode(";base64,", $photoData);
+// Simpan file
+if (file_put_contents($file_path, $image_base64)) {
+    // Simpan ke database
+    $tanggal = date('Y-m-d');
+    $jam = date('H:i:s');
+    $status = 'hadir'; // Otomatis hadir karena sudah foto
 
-if (count($image_parts) == 2) {
-    $image_type_aux = explode("image/", $image_parts[0]);
-    $image_type = $image_type_aux[1]; // png, jpeg, dll
-    $image_base64 = base64_decode($image_parts[1]);
-
-    $allowed_types = ['png', 'jpeg', 'jpg', 'webp'];
-    if (!in_array($image_type, $allowed_types)) {
-        echo json_encode(['status' => 'error', 'message' => 'Format gambar tidak didukung.']);
+    // Cek apakah sudah absen hari ini
+    $cek = mysqli_query($koneksi, "SELECT id FROM absensi WHERE user_id='$id_user' AND tanggal='$tanggal'");
+    if (mysqli_num_rows($cek) > 0) {
+        echo json_encode(['status' => 'error', 'message' => 'Anda sudah melakukan absensi hari ini.']);
         exit;
     }
 
-    // Nama file unik: absen_iduser_timestamp.ext
-    $fileName = 'absen_' . $user_id . '_' . time() . '.' . $image_type;
+    $query = "INSERT INTO absensi (user_id, tanggal, jam, foto, status, keterangan) VALUES (?, ?, ?, ?, ?, ?)";
+    $stmt = mysqli_prepare($koneksi, $query);
+    mysqli_stmt_bind_param($stmt, "isssss", $id_user, $tanggal, $jam, $nama_file, $status, $keterangan);
     
-    // Pastikan folder uploads/absensi ada
-    if (!is_dir('../uploads/absensi')) {
-        mkdir('../uploads/absensi', 0777, true);
+    if (mysqli_stmt_execute($stmt)) {
+        echo json_encode(['status' => 'success', 'message' => 'Absensi berhasil dicatat.']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Gagal menyimpan ke database.']);
     }
-
-    $filePath = '../uploads/absensi/' . $fileName;
-    file_put_contents($filePath, $image_base64);
 } else {
-    echo json_encode(['status' => 'error', 'message' => 'Data gambar tidak valid.']);
-    exit;
-}
-
-// ==========================================
-// 5. SIMPAN KE DATABASE
-// ==========================================
-// Data otomatis sesuai permintaan:
-// - Status: 'hadir' (otomatis)
-// - Keterangan: '-' (kosong/default)
-// - Kegiatan: Dihapus atau diisi default 'Absensi Harian'
-
- $status_default = 'hadir';
- $keterangan_default = '-'; // Atau bisa dikosongkan ''
- $kegiatan_default = 'Absensi Harian'; // Default jika kolom di DB masih ada
-
-// Gunakan mysqli_real_escape_string untuk keamanan
- $safe_user_id = mysqli_real_escape_string($koneksi, $user_id);
- $safe_tanggal = mysqli_real_escape_string($koneksi, $now_date);
- $safe_jam = mysqli_real_escape_string($koneksi, $now_time);
- $safe_fileName = mysqli_real_escape_string($koneksi, $fileName);
- $safe_status = mysqli_real_escape_string($koneksi, $status_default);
- $safe_keterangan = mysqli_real_escape_string($koneksi, $keterangan_default);
- $safe_kegiatan = mysqli_real_escape_string($koneksi, $kegiatan_default);
-
-// Query Insert (Sesuaikan kolom 'kegiatan' jika masih ada di tabel DB)
- $query = "INSERT INTO absensi (user_id, tanggal, jam, foto, status, keterangan, kegiatan) 
-          VALUES ('$safe_user_id', '$safe_tanggal', '$safe_jam', '$safe_fileName', '$safe_status', '$safe_keterangan', '$safe_kegiatan')";
-
-if (mysqli_query($koneksi, $query)) {
-    echo json_encode(['status' => 'success', 'message' => 'Absensi berhasil dicatat!']);
-} else {
-    // Log error jika perlu
-    echo json_encode(['status' => 'error', 'message' => 'Terjadi kesalahan sistem.']);
+    echo json_encode(['status' => 'error', 'message' => 'Gagal menyimpan gambar ke server.']);
 }
 ?>
