@@ -4,10 +4,10 @@ session_start();
 include '../koneksi.php';
 
 // --- VARIABEL STATUS & PESAN ---
-$status = null;
-$displayUsername = "";
-$redirectLink = "";
-$foto_profil = ""; // Inisialisasi variabel foto
+ $status = null;
+ $displayUsername = "";
+ $redirectLink = "";
+ $foto_profil = ""; 
 
 // --- LOGIKA LOGIN ---
 if (isset($_POST['login'])) {
@@ -20,7 +20,11 @@ if (isset($_POST['login'])) {
     if (mysqli_num_rows($result) > 0) {
         $data = mysqli_fetch_assoc($result);
 
-        // Verifikasi Password (Sebaiknya gunakan password_verify jika password di-hash)
+        // --- CARA AMAN VERIFIKASI PASSWORD ---
+        // Jika password di database sudah di-hash menggunakan password_hash(), gunakan baris ini:
+        // if (password_verify($password, $data['password'])) { ... }
+        
+        // Jika password masih plain text (sesuai kode Anda saat ini):
         if ($password == $data['password']) {
             // Simpan data penting ke Session
             $_SESSION['id'] = $data['id'];
@@ -34,24 +38,28 @@ if (isset($_POST['login'])) {
             $displayUsername = $data['nama'];
             $redirectLink = '../Dashboard Anggota/anggota.php';
 
-            // --- LOGIKA FOTO PROFIL (Diperbaiki) ---
+            // --- LOGIKA FOTO PROFIL (ROBUST) ---
             $foto_db = $data['foto_profil'];
-            // Cek jika ada nama file di DB dan file tersebut benar-benar ada di folder uploads
-            if (!empty($foto_db) && file_exists("../uploads/foto_profil/" . $foto_db)) {
-                $foto_profil = "../uploads/foto_profil/" . $foto_db;
+            
+            // Tentukan path dasar (absolute path lebih aman)
+            $baseDir = realpath(__DIR__ . '/../'); // Menuju folder root project
+            $filePath = $baseDir . '/uploads/foto_profil/' . $foto_db;
+
+            // Cek jika ada nama file di DB dan file tersebut benar-benar ada
+            if (!empty($foto_db) && file_exists($filePath)) {
+                // Path untuk tampilan di browser (relative ke root web)
+                $foto_profil = "../uploads/foto_profil/" . htmlspecialchars($foto_db);
             } else {
-                // Jika tidak ada foto, gunakan avatar default dari ui-avatars
-                // Menggunakan $data['nama'] bukan $nama_user
+                // Avatar Default via UI Avatars
                 $foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($data['nama']) . '&background=d90429&color=fff';
             }
         } else {
-            $status = 'error';
+            $status = 'error'; // Password salah
         }
     } else {
-        $status = 'error';
+        $status = 'error'; // Username tidak ditemukan
     }
 }
-// Hapus blok logika foto lama yang ada di sini sebelumnya
 ?>
 
 <!DOCTYPE html>
@@ -66,17 +74,17 @@ if (isset($_POST['login'])) {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* --- VARIABLES --- */
+        /* --- CSS VARIABLES (Modern & Clean) --- */
         :root {
             --primary-color: #d90429;
-            --primary-hover: #c92a2a;
-            --bg-color: #f8fafc;
+            --primary-hover: #b80d24;
+            --bg-color: #f1f5f9;
             --card-bg: #ffffff;
             --text-main: #1e293b;
             --text-muted: #64748b;
             --border-color: #e2e8f0;
             --radius: 16px;
-            --shadow: 0 10px 25px rgba(226, 56, 56, 0.1);
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
             --success-bg: #dcfce7;
             --success-icon: #16a34a;
             --error-bg: #fee2e2;
@@ -98,6 +106,8 @@ if (isset($_POST['login'])) {
             align-items: center;
             padding: 20px;
             color: var(--text-main);
+            /* Gradient background halus */
+            background-image: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
         }
 
         .login-card {
@@ -110,18 +120,24 @@ if (isset($_POST['login'])) {
             border: 1px solid var(--border-color);
             text-align: center;
             animation: fadeIn 0.6s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Decorative top bar */
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--primary-color);
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .logo {
@@ -158,7 +174,7 @@ if (isset($_POST['login'])) {
         label {
             display: block;
             font-size: 0.85rem;
-            font-weight: 500;
+            font-weight: 600;
             color: var(--text-main);
             margin-bottom: 8px;
             margin-left: 2px;
@@ -182,29 +198,30 @@ if (isset($_POST['login'])) {
 
         input {
             width: 100%;
-            padding: 12px 14px 12px 44px;
+            padding: 14px 14px 14px 44px;
             border: 1px solid var(--border-color);
             border-radius: 10px;
             font-size: 0.95rem;
             color: var(--text-main);
             transition: all 0.3s ease;
-            background-color: #fff;
+            background-color: #f8fafc;
         }
-
+        
         input:focus {
             border-color: var(--primary-color);
             outline: none;
-            box-shadow: 0 0 0 3px rgba(226, 56, 56, 0.1);
+            box-shadow: 0 0 0 3px rgba(217, 4, 41, 0.1);
+            background-color: #fff;
         }
 
-        input:focus+.input-icon {
+        input:focus + .input-icon {
             fill: var(--primary-color);
         }
 
         .btn {
             display: block;
             width: 100%;
-            padding: 13px;
+            padding: 14px;
             border-radius: 10px;
             font-weight: 600;
             font-size: 1rem;
@@ -212,7 +229,7 @@ if (isset($_POST['login'])) {
             border: none;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
             color: #fff;
         }
 
@@ -223,6 +240,11 @@ if (isset($_POST['login'])) {
         .btn-primary:hover {
             background-color: var(--primary-hover);
             transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(217, 4, 41, 0.25);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
         }
 
         .btn-back {
@@ -240,32 +262,20 @@ if (isset($_POST['login'])) {
             border-radius: 10px;
             transition: all 0.2s;
             background-color: transparent;
+            border: 1px solid transparent;
         }
 
         .btn-back:hover {
             color: var(--primary-color);
             background-color: #fff1f1;
+            border-color: #fecaca;
         }
 
-        .link-register {
-            display: block;
-            margin-top: 15px;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            text-decoration: none;
-        }
-
-        .link-register span {
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-
-        /* Alert Styles */
+        /* --- ALERT STYLES --- */
         .alert-content {
-            margin: 20px 0;
+            animation: fadeIn 0.6s ease-out;
         }
 
-        /* Styling untuk Foto Profil di Alert Sukses */
         .profile-photo-wrapper {
             width: 100px;
             height: 100px;
@@ -275,7 +285,6 @@ if (isset($_POST['login'])) {
             border: 4px solid var(--success-bg);
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             background-color: #eee;
-            /* Placeholder bg */
         }
 
         .profile-photo-wrapper img {
@@ -310,12 +319,10 @@ if (isset($_POST['login'])) {
         .success h2 {
             color: var(--success-icon);
         }
-
-        .success .btn {
-            background-color: var(--primary-color);
+        
+        .success .subtitle strong {
+            color: var(--primary-color);
         }
-
-        /* Tombol tetap merah */
 
         .error .icon-wrapper-alert {
             background-color: var(--error-bg);
@@ -328,9 +335,21 @@ if (isset($_POST['login'])) {
         .error h2 {
             color: var(--error-icon);
         }
-
-        .error .btn {
-            background-color: var(--error-icon);
+        
+        /* Loading Spinner untuk redirect */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -339,20 +358,31 @@ if (isset($_POST['login'])) {
 
     <div class="login-card">
         <div class="logo">
+            <!-- Pastikan path gambar benar -->
             <img src="../Gambar/logpmi.png" alt="Logo PMR">
         </div>
 
         <?php if ($status === 'success'): ?>
             <div class="alert-content success">
-                <!-- FOTO PROFIL DITAMBAHKAN DI SINI -->
                 <div class="profile-photo-wrapper">
                     <img src="<?= $foto_profil ?>" alt="Foto Profil">
                 </div>
 
                 <h2>Login Berhasil!</h2>
-                <p class="subtitle">Selamat datang, <strong><?= htmlspecialchars($displayUsername) ?></strong>.<br>Mengalihkan...</p>
-                <a href="<?= $redirectLink ?>" class="btn btn-primary">Masuk Dashboard &rarr;</a>
+                <p class="subtitle">Selamat datang, <strong><?= htmlspecialchars($displayUsername) ?></strong>.<br>Anda akan dialihkan secara otomatis...</p>
+                
+                <a href="<?= $redirectLink ?>" class="btn btn-primary" id="btn-dashboard">
+                    Masuk Dashboard &rarr;
+                </a>
             </div>
+            
+            <!-- Auto Redirect Script -->
+            <script>
+                // Redirect setelah 2 detik
+                setTimeout(function() {
+                    window.location.href = "<?= $redirectLink ?>";
+                }, 2000);
+            </script>
 
         <?php elseif ($status === 'error'): ?>
             <div class="alert-content error">
@@ -362,13 +392,13 @@ if (isset($_POST['login'])) {
                     </svg>
                 </div>
                 <h2>Login Gagal</h2>
-                <p class="subtitle">Username atau password salah.</p>
+                <p class="subtitle">Username atau password yang Anda masukkan salah.</p>
                 <a href="login.php" class="btn">Coba Lagi</a>
             </div>
 
         <?php else: ?>
             <h2>Login PMR</h2>
-            <p class="subtitle">Silakan masuk untuk mengakses akun Anda.</p>
+            <p class="subtitle">Silakan masuk untuk mengakses panel anggota.</p>
 
             <form action="" method="POST">
                 <div class="field">
@@ -391,14 +421,12 @@ if (isset($_POST['login'])) {
                     </div>
                 </div>
 
-                <button type="submit" name="login" class="btn btn-primary">Login Sekarang</button>
+                <button type="submit" name="login" class="btn btn-primary">Login</button>
             </form>
 
-            <a href="../Daftar/register.php" class="link-register">Belum punya akun? <span>Daftar Sekarang</span></a>
             <a href="../Halaman Utama/index.php" class="btn-back">Kembali ke Beranda</a>
         <?php endif; ?>
 
     </div>
 </body>
-
 </html>

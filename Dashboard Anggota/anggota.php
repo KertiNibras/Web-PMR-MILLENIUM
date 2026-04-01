@@ -5,7 +5,6 @@ include '../koneksi.php'; // Panggil koneksi DB
 // 1. Cek apakah user sudah login
 if (!isset($_SESSION['nama'])) {
   echo '<script type="text/javascript">';
-  echo 'alert("Silakan login terlebih dahulu!");';
   echo 'window.location.href = "../Login/login.php";';
   echo '</script>';
   exit;
@@ -20,7 +19,6 @@ if (!isset($_SESSION['nama'])) {
  $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
  $foto_profil = 'https://ui-avatars.com/api/?name='.urlencode($nama_user).'&background=d90429&color=fff'; // Default
 
-// Cek jika ada nama file di DB dan file tersebut benar-benar ada di folder uploads
 if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_session)) {
     $foto_profil = "../uploads/foto_profil/" . $foto_session;
 }
@@ -66,6 +64,7 @@ if ($role == 'pengurus') {
       --border-color: #e2e8f0;
       --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
       --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
       --radius: 12px;
       --header-height: 70px;
       --sidebar-width: 250px;
@@ -88,7 +87,7 @@ if ($role == 'pengurus') {
     a { text-decoration: none; color: inherit; }
     ul { list-style: none; }
 
-    /* --- HEADER (Layout 3 Kolom) --- */
+    /* --- HEADER --- */
     header {
       background: #fff;
       box-shadow: var(--shadow-sm);
@@ -108,176 +107,56 @@ if ($role == 'pengurus') {
       max-width: 100%;
     }
 
-    /* Kolom Kiri: Logo */
-    .nav-left {
-      flex: 1;
-      display: flex;
-      justify-content: flex-start;
-      align-items: center;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 18px;
-      color: #000;
-    }
+    .nav-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #000; }
     .logo img { height: 40px; }
 
-    /* Kolom Tengah */
-    .nav-center {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+    .nav-center { flex: 1; display: flex; justify-content: center; align-items: center; }
 
-    /* Kolom Kanan: Profil & Menu */
-    .nav-right {
-      flex: 1;
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 15px;
-      position: relative;
-    }
+    .nav-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 15px; position: relative; }
 
-    /* Foto Profil & Dropdown */
-    .profile-btn {
-      display: flex;
-      align-items: center;
-      gap: 10px; /* Jarak antara teks dan foto */
-      cursor: pointer;
-      padding: 5px 10px;
-      border-radius: 50px;
-      transition: background 0.2s;
-    }
+    .profile-btn { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 10px; border-radius: 50px; transition: background 0.2s; }
     .profile-btn:hover { background-color: #f1f5f9; }
 
-    /* Teks Sapaan di Header */
-    .profile-greeting {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end; /* Rata kanan */
-      line-height: 1.2;
-    }
-    .profile-greeting small {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      font-weight: 500;
-      text-transform: capitalize;
-    }
-    .profile-greeting span {
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: var(--text-color);
-    }
+    .profile-greeting { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+    .profile-greeting small { color: var(--text-muted); font-size: 0.75rem; font-weight: 500; text-transform: capitalize; }
+    .profile-greeting span { font-weight: 600; font-size: 0.9rem; color: var(--text-color); }
 
-    .profile-img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid var(--primary-color);
-      flex-shrink: 0; /* Agar foto tidak gepeng */
-    }
+    .profile-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); flex-shrink: 0; }
 
-    /* Dropdown Menu Profil */
     .profile-dropdown {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      margin-top: 10px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-      width: 220px;
-      z-index: 1001;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(-10px);
-      transition: all 0.2s ease;
-      border: 1px solid var(--border-color);
-      overflow: hidden;
+      position: absolute; top: 100%; right: 0; margin-top: 10px; background: #fff;
+      border-radius: 8px; box-shadow: var(--shadow-lg); width: 220px; z-index: 1001;
+      opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.2s ease;
+      border: 1px solid var(--border-color); overflow: hidden;
     }
-    .profile-dropdown.active {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
+    .profile-dropdown.active { opacity: 1; visibility: visible; transform: translateY(0); }
 
-    .dropdown-header {
-      padding: 15px;
-      background: #f8f9fa;
-      border-bottom: 1px solid var(--border-color);
-    }
+    .dropdown-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid var(--border-color); }
     .dropdown-header p { font-weight: 600; color: var(--text-color); font-size: 0.9rem; }
     .dropdown-header small { color: var(--text-muted); font-size: 0.75rem; }
 
-    .profile-dropdown ul li a {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 15px;
-      color: var(--text-color);
-      font-size: 0.9rem;
-      transition: 0.2s;
-    }
-    .profile-dropdown ul li a:hover {
-      background-color: #fff1f1;
-      color: var(--primary-color);
-    }
+    .profile-dropdown ul li a { display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: var(--text-color); font-size: 0.9rem; transition: 0.2s; }
+    .profile-dropdown ul li a:hover { background-color: #fff1f1; color: var(--primary-color); }
     .profile-dropdown ul li a i { width: 20px; text-align: center; }
 
-    /* Tombol Hamburger */
-    .menu-toggle {
-      display: none;
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: var(--primary-color);
-      z-index: 1001;
-    }
+    .menu-toggle { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--primary-color); z-index: 1001; }
 
     /* --- LAYOUT CONTAINER --- */
-    .dashboard-container {
-      display: flex;
-      min-height: 100vh;
-      padding-top: var(--header-height);
-    }
+    .dashboard-container { display: flex; min-height: 100vh; padding-top: var(--header-height); }
 
     /* --- SIDEBAR --- */
     .sidebar {
-      width: var(--sidebar-width);
-      background: #fff;
-      border-right: 1px solid var(--border-color);
-      position: sticky;
-      top: var(--header-height);
-      height: calc(100vh - var(--header-height));
-      overflow-y: auto;
-      z-index: 900;
-      flex-shrink: 0;
+      width: var(--sidebar-width); background: #fff; border-right: 1px solid var(--border-color);
+      position: sticky; top: var(--header-height); height: calc(100vh - var(--header-height));
+      overflow-y: auto; z-index: 900; flex-shrink: 0;
     }
 
     .sidebar li {
-      padding: 14px 25px;
-      cursor: pointer;
-      color: var(--text-color);
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      border-left: 4px solid transparent;
-      transition: all 0.2s;
+      padding: 14px 25px; cursor: pointer; color: var(--text-color); font-weight: 500;
+      display: flex; align-items: center; gap: 12px; border-left: 4px solid transparent; transition: all 0.2s;
     }
-    .sidebar li:hover, .sidebar li.active {
-      background-color: #fff1f1;
-      color: var(--primary-color);
-      border-left-color: var(--primary-color);
-    }
+    .sidebar li:hover, .sidebar li.active { background-color: #fff1f1; color: var(--primary-color); border-left-color: var(--primary-color); }
     .sidebar a { display: flex; align-items: center; gap: 10px; width: 100%; }
 
     /* --- MAIN CONTENT --- */
@@ -310,35 +189,136 @@ if ($role == 'pengurus') {
     .card-btn { background-color: var(--primary-color); color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; transition: 0.3s; border: none; cursor: pointer; }
     .card-btn:hover { background-color: var(--primary-hover); }
 
-    /* --- NOTIFICATION --- */
-    .notification { position: fixed; top: 85px; right: 20px; background: white; border-left: 5px solid #10b981; color: #333; padding: 15px 20px; border-radius: 4px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); z-index: 1100; display: none; align-items: center; gap: 12px; animation: slideIn 0.4s ease forwards; min-width: 280px; }
+    /* --- NOTIFICATION LOGIN --- */
+    .notification {
+      position: fixed; top: 85px; right: 20px; background: white; border-left: 5px solid #10b981;
+      color: #333; padding: 15px 20px; border-radius: 4px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      z-index: 1100; display: none; align-items: center; gap: 12px; animation: slideIn 0.4s ease forwards;
+      min-width: 280px;
+    }
     .notification i { color: #10b981; font-size: 1.2rem; }
     @keyframes slideIn { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
     @keyframes fadeOut { to { opacity: 0; transform: translateX(50px); } }
 
+    /* --- STYLE MODAL LOGOUT (DIUBAH MIRIP LOGIN) --- */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(3px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-box {
+      background: #fff;
+      padding: 40px 30px;
+      border-radius: var(--radius); /* Pakai radius yang sama dengan card login */
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      border: 1px solid var(--border-color);
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.active .modal-box {
+      transform: scale(1);
+    }
+
+    .modal-icon {
+      width: 80px;
+      height: 80px;
+      background: #fee2e2; /* Warna background soft red */
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      color: var(--primary-color);
+      font-size: 2rem;
+    }
+
+    .modal-box h3 {
+      margin-bottom: 10px;
+      font-size: 1.5rem;
+      color: var(--text-color);
+      font-weight: 700;
+    }
+
+    .modal-box p {
+      color: var(--text-muted);
+      margin-bottom: 30px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-direction: column; /* Default column untuk mobile feel, bisa diubah row jika lebar */
+    }
+    
+    @media (min-width: 400px) {
+        .modal-actions { flex-direction: row; }
+    }
+
+    .btn-modal {
+      padding: 13px;
+      border-radius: 10px; /* Sama seperti button login */
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      font-size: 1rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Tombol Batal -> Mirip tombol secondary/back */
+    .btn-cancel {
+      background-color: #f1f5f9;
+      color: var(--text-muted);
+    }
+    .btn-cancel:hover {
+      background-color: #e2e8f0;
+      color: var(--text-color);
+    }
+
+    /* Tombol Logout -> Mirip tombol Login (Merah) */
+    .btn-logout {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    .btn-logout:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+
     /* --- RESPONSIVE --- */
     @media (max-width: 992px) {
       .main-content { width: 100%; padding: 20px; }
-
-      /* Sidebar Muncul dari Kanan */
       .sidebar {
-        position: fixed;
-        top: var(--header-height);
-        left: auto;
-        right: -260px;
-        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-        border-right: none;
-        border-left: 1px solid var(--border-color);
-        transition: right 0.3s ease;
+        position: fixed; top: var(--header-height); left: auto; right: -260px;
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1); border-right: none;
+        border-left: 1px solid var(--border-color); transition: right 0.3s ease;
       }
       .sidebar.active { right: 0; }
-
       .menu-toggle { display: block; }
-
-      /* Sembunyikan Nama Logo di Mobile */
       .logo span { display: none; }
-      
-      /* Sembunyikan Teks Sapaan di Mobile */
       .profile-greeting { display: none; }
     }
   </style>
@@ -349,8 +329,6 @@ if ($role == 'pengurus') {
   <!-- HEADER -->
   <header>
     <nav class="navbar">
-      
-      <!-- KOLOM KIRI: LOGO -->
       <div class="nav-left">
         <div class="logo">
           <img src="../Gambar/logpmi.png" alt="Logo PMR">
@@ -358,15 +336,10 @@ if ($role == 'pengurus') {
         </div>
       </div>
 
-      <!-- KOLOM TENGAH -->
       <div class="nav-center"></div>
 
-      <!-- KOLOM KANAN: PROFILE & MENU -->
       <div class="nav-right">
-        
-        <!-- Foto Profil & Dropdown -->
         <div class="profile-btn" id="profileBtn">
-          <!-- Tambahkan Teks Sapaan Di Sini -->
           <div class="profile-greeting">
             <small><?= ucfirst($role) ?></small>
             <span>Halo, <?= $nama_user ?></span>
@@ -374,33 +347,24 @@ if ($role == 'pengurus') {
           <img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img">
         </div>
 
-                <div class="profile-dropdown" id="profileDropdown">
+        <div class="profile-dropdown" id="profileDropdown">
           <div class="dropdown-header">
             <p><?= $nama_user ?></p>
             <small><?= ucfirst($role) ?></small>
           </div>
           <ul>
-            <li>
-              <a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a>
-            </li>
-            <li>
-              <a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a> <!-- UBAH INI -->
-            </li>
-            <li>
-              <a href="ganti_password.php"><i class="fa-solid fa-key"></i> Ganti Password</a>
-            </li>
+            <li><a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a></li>
+            <li><a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a></li>
+            <li><a href="ganti_password.php"><i class="fa-solid fa-key"></i> Ganti Password</a></li>
           </ul>
         </div>
 
-        <!-- Tombol Hamburger (untuk Mobile) -->
         <button class="menu-toggle" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
-        
       </div>
-
     </nav>
   </header>
 
-  <!-- NOTIFIKASI -->
+  <!-- NOTIFIKASI LOGIN -->
   <?php if (isset($_SESSION['login_success'])): ?>
     <div id="loginNotification" class="notification">
       <i class="fas fa-check-circle"></i>
@@ -411,6 +375,21 @@ if ($role == 'pengurus') {
     </div>
     <?php unset($_SESSION['login_success']); ?>
   <?php endif; ?>
+
+  <!-- MODAL LOGOUT (STYLE BARU) -->
+  <div class="modal-overlay" id="logoutModal">
+    <div class="modal-box">
+      <div class="modal-icon">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </div>
+      <h3>Konfirmasi Keluar</h3>
+      <p>Apakah Anda yakin ingin keluar dari akun?</p>
+      <div class="modal-actions">
+        <button class="btn-modal btn-cancel" onclick="closeLogoutModal()">Batal</button>
+        <button class="btn-modal btn-logout" onclick="proceedLogout()">Ya, Keluar</button>
+      </div>
+    </div>
+  </div>
 
   <div class="dashboard-container">
     <!-- SIDEBAR -->
@@ -428,7 +407,7 @@ if ($role == 'pengurus') {
         <?php endif; ?>
 
         <li style="margin-top: 20px; border-top: 1px solid #eee;">
-          <a href="javascript:void(0)" onclick="confirmLogout()">
+          <a href="javascript:void(0)" onclick="openLogoutModal()">
             <i class="fa-solid fa-right-from-bracket"></i> Log Out
           </a>
         </li>
@@ -542,13 +521,11 @@ if ($role == 'pengurus') {
 
       // Tutup semua jika klik di luar area
       document.addEventListener('click', (e) => {
-        // Tutup Sidebar
         if (window.innerWidth <= 992) {
           if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
             sidebar.classList.remove('active');
           }
         }
-        // Tutup Dropdown
         if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
           profileDropdown.classList.remove('active');
         }
@@ -567,12 +544,27 @@ if ($role == 'pengurus') {
       }
     });
 
-    function confirmLogout() {
-      if (confirm("Apakah Anda yakin ingin keluar dari akun?")) {
-        window.location.href = "../logout.php";
-      }
+    // --- FUNGSI MODAL LOGOUT ---
+    function openLogoutModal() {
+      const modal = document.getElementById('logoutModal');
+      modal.classList.add('active');
     }
+
+    function closeLogoutModal() {
+      const modal = document.getElementById('logoutModal');
+      modal.classList.remove('active');
+    }
+
+    function proceedLogout() {
+      window.location.href = "../logout.php";
+    }
+    
+    // Tutup modal jika klik overlay
+    document.getElementById('logoutModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeLogoutModal();
+        }
+    });
   </script>
 </body>
-
 </html>

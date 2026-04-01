@@ -338,6 +338,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       padding-top: var(--header-height);
     }
 
+.btn-modal {
+      padding: 13px;
+      border-radius: 10px; /* Sama seperti button login */
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      font-size: 1rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Tombol Batal -> Mirip tombol secondary/back */
+    .btn-cancel {
+      background-color: #f1f5f9;
+      color: var(--text-muted);
+    }
+    .btn-cancel:hover {
+      background-color: #e2e8f0;
+      color: var(--text-color);
+    }
+
+    /* Tombol Logout -> Mirip tombol Login (Merah) */
+    .btn-logout {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    .btn-logout:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+
     /* --- SIDEBAR --- */
     .sidebar {
       width: var(--sidebar-width);
@@ -701,6 +732,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       </div>
     </nav>
   </header>
+
+<!-- MODAL LOGOUT (STYLE BARU) -->
+  <div class="modal-overlay" id="logoutModal">
+    <div class="modal-box">
+      <div class="modal-icon">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </div>
+      <h3>Konfirmasi Keluar</h3>
+      <p>Apakah Anda yakin ingin keluar dari akun?</p>
+      <div class="modal-actions">
+        <button class="btn-modal btn-cancel" onclick="closeLogoutModal()">Batal</button>
+        <button class="btn-modal btn-logout" onclick="proceedLogout()">Ya, Keluar</button>
+      </div>
+    </div>
+  </div>
 
   <div class="dashboard-container">
     <!-- SIDEBAR -->
@@ -1084,6 +1130,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             alert('Terjadi kesalahan sistem.');
         });
     }
+
+    // --- FUNGSI MODAL LOGOUT ---
+    function openLogoutModal() {
+      const modal = document.getElementById('logoutModal');
+      modal.classList.add('active');
+    }
+
+    function closeLogoutModal() {
+      const modal = document.getElementById('logoutModal');
+      modal.classList.remove('active');
+    }
+
+    function proceedLogout() {
+      window.location.href = "../logout.php";
+    }
+    
+    // Tutup modal jika klik overlay
+    document.getElementById('logoutModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeLogoutModal();
+        }
+    });
   </script>
 </body>
 

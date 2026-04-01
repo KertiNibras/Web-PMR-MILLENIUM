@@ -650,8 +650,8 @@ if ($is_logged_in) {
 
     <div class="leader-grid">
       <div class="card-pengurus" data-aos="zoom-in">
-        <img src="../Gambar/hanip.jpg" alt="Ketua PMR" onclick="openFull(this)">
-        <h3>Mochammad Naufal Hanif</h3>
+        <img src="../Gambar/kemala.jpeg" alt="Ketua PMR" onclick="openFull(this)">
+        <h3>Kemala Putri Oktaviani</h3>
         <span class="jabatan">Ketua PMR</span>
         <div class="kelas">
           <span>XI RPL 1</span>
@@ -659,12 +659,12 @@ if ($is_logged_in) {
         </div>
       </div>
       <div class="card-pengurus" data-aos="zoom-in" data-aos-delay="100">
-        <img src="../Gambar/zaki.jpg" alt="Wakil Ketua" onclick="openFull(this)">
-        <h3>Muhammad Zaky Arrasyid</h3>
+        <img src="../Gambar/alif.jpg" alt="Wakil Ketua" onclick="openFull(this)">
+        <h3>Muhammad Alif Alghifari</h3>
         <span class="jabatan">Wakil Ketua</span>
         <div class="kelas">
-          <span>XI DKV 4</span>
-          <img src="../Gambar/dkv.png" alt="DKV">
+          <span>X RPL 1</span>
+          <img src="../Gambar/rpl.png" alt="RPL">
         </div>
       </div>
     </div>
@@ -672,28 +672,28 @@ if ($is_logged_in) {
     <div class="container">
       <div class="staff-grid">
         <div class="card-pengurus" data-aos="fade-up">
-          <img src="../Gambar/bintangemon.jpg" alt="Sekretaris 1" onclick="openFull(this)">
-          <h3>Bintang Athallah Sopyan</h3>
+          <img src="../Gambar/hanip.jpg" alt="Sekretaris 1" onclick="openFull(this)">
+          <h3>Mochammad Naufal Hanif</h3>
           <span class="jabatan">Sekretaris 1</span>
-          <div class="kelas">XI TFLM 2 <img src="../Gambar/tflm.png" alt="Logo"></div>
+          <div class="kelas">XI RPL 1 <img src="../Gambar/rpl.png" alt="Logo"></div>
         </div>
         <div class="card-pengurus" data-aos="fade-up" data-aos-delay="100">
-          <img src="../Gambar/repan.jpg" alt="Sekretaris 2" onclick="openFull(this)">
-          <h3>Revan Oknanda</h3>
+          <img src="../Gambar/aurelia.jpg" alt="Sekretaris 2" onclick="openFull(this)">
+          <h3>Aurelia Zahra</h3>
           <span class="jabatan">Sekretaris 2</span>
-          <div class="kelas">XI TKR 3 <img src="../Gambar/tkr.png" alt="Logo"></div>
+          <div class="kelas">X DKV 3 <img src="../Gambar/dkv.png" alt="Logo"></div>
         </div>
         <div class="card-pengurus" data-aos="fade-up" data-aos-delay="200">
-          <img src="../Gambar/kemala.jpg" alt="Bendahara 1" onclick="openFull(this)">
-          <h3>Kemala Putri Oktaviani</h3>
+          <img src="../Gambar/sharhana.jpg" alt="Bendahara 1" onclick="openFull(this)">
+          <h3>Sharhana Hajarani</h3>
           <span class="jabatan">Bendahara 1</span>
-          <div class="kelas">XI TKJ 1 <img src="../Gambar/tkj.png" alt="Logo"></div>
+          <div class="kelas">XI DPIB 1 <img src="../Gambar/dpib.png" alt="Logo"></div>
         </div>
         <div class="card-pengurus" data-aos="fade-up" data-aos-delay="300">
-          <img src="../Gambar/rafa.jpg" alt="Bendahara 2" onclick="openFull(this)">
-          <h3>Rafa Zulfahmi</h3>
+          <img src="../Gambar/anindia.jpg" alt="Bendahara 2" onclick="openFull(this)">
+          <h3>Anindia Rahma Alliya</h3>
           <span class="jabatan">Bendahara 2</span>
-          <div class="kelas">XI TKP 1 <img src="../Gambar/tkp.jpg" alt="Logo"></div>
+          <div class="kelas">X RPL 1 <img src="../Gambar/rpl.png" alt="Logo"></div>
         </div>
       </div>
     </div>
