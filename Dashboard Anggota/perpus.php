@@ -9,12 +9,12 @@ if (!isset($_SESSION['nama'])) {
 }
 
 // --- LOGIKA AMBIL DATA USER ---
-$role = isset($_SESSION['role']) ? $_SESSION['role'] : 'anggota';
-$nama_user = htmlspecialchars($_SESSION['nama']);
+ $role = isset($_SESSION['role']) ? $_SESSION['role'] : 'anggota';
+ $nama_user = htmlspecialchars($_SESSION['nama']);
 
 // Logika Foto Profil
-$foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
-$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
+ $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
+ $foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
 if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_session)) {
   $foto_profil = "../uploads/foto_profil/" . $foto_session;
 }
@@ -68,7 +68,7 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
       list-style: none;
     }
 
-    /* --- HEADER (Layout 3 Kolom - Sama dengan anggota.php) --- */
+    /* --- HEADER --- */
     header {
       background: #fff;
       box-shadow: var(--shadow-sm);
@@ -88,7 +88,6 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
       max-width: 100%;
     }
 
-    /* Kiri: Logo */
     .nav-left {
       flex: 1;
       display: flex;
@@ -109,7 +108,6 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
       height: 40px;
     }
 
-    /* Tengah: Kosong */
     .nav-center {
       flex: 1;
       display: flex;
@@ -117,7 +115,6 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
       align-items: center;
     }
 
-    /* Kanan: Profil & Menu */
     .nav-right {
       flex: 1;
       display: flex;
@@ -210,7 +207,6 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
       text-align: center;
     }
 
-    /* Tombol Hamburger */
     .menu-toggle {
       display: none;
       background: none;
@@ -228,7 +224,7 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
       padding-top: var(--header-height);
     }
 
-    /* --- SIDEBAR (Perilaku sama dengan anggota.php) --- */
+    /* --- SIDEBAR --- */
     .sidebar {
       width: var(--sidebar-width);
       background: #fff;
@@ -450,9 +446,10 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
       transform: translateY(-1px);
     }
 
+    /* --- STYLE MODAL LOGOUT --- */
     .btn-modal {
       padding: 13px;
-      border-radius: 10px; /* Sama seperti button login */
+      border-radius: 10px;
       font-weight: 600;
       cursor: pointer;
       border: none;
@@ -461,7 +458,6 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
-    /* Tombol Batal -> Mirip tombol secondary/back */
     .btn-cancel {
       background-color: #f1f5f9;
       color: var(--text-muted);
@@ -471,7 +467,6 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
       color: var(--text-color);
     }
 
-    /* Tombol Logout -> Mirip tombol Login (Merah) */
     .btn-logout {
       background-color: var(--primary-color);
       color: white;
@@ -480,6 +475,30 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
       background-color: var(--primary-hover);
       transform: translateY(-2px);
     }
+
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
+      display: flex; justify-content: center; align-items: center; z-index: 9999;
+      opacity: 0; visibility: hidden; transition: all 0.3s ease;
+    }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+    
+    .modal-box {
+      background: white; padding: 30px; border-radius: 16px; text-align: center;
+      width: 90%; max-width: 400px; transform: scale(0.9); transition: transform 0.3s ease;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .modal-overlay.active .modal-box { transform: scale(1); }
+
+    .modal-icon {
+      width: 70px; height: 70px; background: #fee2e2; color: var(--primary-color);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px; font-size: 2rem;
+    }
+    .modal-box h3 { margin-bottom: 10px; color: var(--text-color); }
+    .modal-box p { color: var(--text-muted); margin-bottom: 25px; font-size: 0.95rem; }
+    .modal-actions { display: flex; gap: 15px; justify-content: center; }
 
     /* --- RESPONSIVE --- */
     @media (max-width: 992px) {
@@ -546,7 +565,7 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
           <img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img">
         </div>
 
-                <div class="profile-dropdown" id="profileDropdown">
+        <div class="profile-dropdown" id="profileDropdown">
           <div class="dropdown-header">
             <p><?= $nama_user ?></p>
             <small><?= ucfirst($role) ?></small>
@@ -556,7 +575,7 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
               <a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a>
             </li>
             <li>
-              <a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a> <!-- UBAH INI -->
+              <a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a>
             </li>
             <li>
               <a href="ganti_password.php"><i class="fa-solid fa-key"></i> Ganti Password</a>
@@ -569,7 +588,7 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
     </nav>
   </header>
 
-<!-- MODAL LOGOUT (STYLE BARU) -->
+  <!-- MODAL LOGOUT -->
   <div class="modal-overlay" id="logoutModal">
     <div class="modal-box">
       <div class="modal-icon">
@@ -592,7 +611,8 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
         <li><a href="absensi.php"><i class="fa-solid fa-calendar-check"></i> Rekap Absensi</a></li>
         <li class="active"><a href="perpus.php"><i class="fa-solid fa-book"></i> Perpustakaan Digital</a></li>
         <li style="margin-top: 20px; border-top: 1px solid #eee;">
-          <a href="javascript:void(0)" onclick="confirmLogout()">
+          <!-- UBAH: onclick memanggil modal baru -->
+          <a href="javascript:void(0)" onclick="openLogoutModal()">
             <i class="fa-solid fa-right-from-bracket"></i> Log Out
           </a>
         </li>
@@ -665,10 +685,6 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
       }
       if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
     });
-
-    function confirmLogout() {
-      if (confirm("Yakin keluar?")) window.location.href = "../logout.php";
-    }
 
     // --- LOGIKA DATA MATERI ---
     let materials = [];

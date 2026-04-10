@@ -338,32 +338,108 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       padding-top: var(--header-height);
     }
 
-.btn-modal {
-      padding: 13px;
-      border-radius: 10px; /* Sama seperti button login */
+    /* ======================================== */
+    /* CSS TAMBAHAN UNTUK MODAL LOGOUT (FIXED) */
+    /* ======================================== */
+    
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-box {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.active .modal-box {
+      transform: scale(1);
+    }
+
+    .modal-icon {
+      width: 60px;
+      height: 60px;
+      background: #fee2e2;
+      color: var(--primary-color);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 24px;
+    }
+
+    .modal-box h3 {
+      margin-bottom: 10px;
+      font-size: 1.25rem;
+      color: var(--text-color);
+    }
+
+    .modal-box p {
+      color: var(--text-muted);
+      margin-bottom: 25px;
+      font-size: 0.95rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    /* Style untuk tombol modal */
+    .btn-modal {
+      padding: 12px 20px;
+      border-radius: 10px;
       font-weight: 600;
       cursor: pointer;
       border: none;
       transition: all 0.2s ease;
-      font-size: 1rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      font-size: 0.95rem;
+      flex: 1;
     }
 
-    /* Tombol Batal -> Mirip tombol secondary/back */
+    /* Tombol Batal */
     .btn-cancel {
       background-color: #f1f5f9;
       color: var(--text-muted);
     }
+
     .btn-cancel:hover {
       background-color: #e2e8f0;
       color: var(--text-color);
     }
 
-    /* Tombol Logout -> Mirip tombol Login (Merah) */
+    /* Tombol Logout (Merah) */
     .btn-logout {
       background-color: var(--primary-color);
       color: white;
     }
+
     .btn-logout:hover {
       background-color: var(--primary-hover);
       transform: translateY(-2px);
@@ -594,7 +670,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       font-size: 0.8rem;
     }
 
-    /* Modal */
+    /* Modal Form Biasa */
     .modal {
       display: none;
       position: fixed;
@@ -720,7 +796,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
               <a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a>
             </li>
             <li>
-              <a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a> <!-- UBAH INI -->
+              <a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a>
             </li>
             <li>
               <a href="ganti_password.php"><i class="fa-solid fa-key"></i> Ganti Password</a>
@@ -733,7 +809,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     </nav>
   </header>
 
-<!-- MODAL LOGOUT (STYLE BARU) -->
+<!-- MODAL LOGOUT (HTML sudah benar) -->
   <div class="modal-overlay" id="logoutModal">
     <div class="modal-box">
       <div class="modal-icon">
@@ -757,6 +833,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         <li><a href="kelolaperpus.php"><i class="fa-solid fa-book"></i> Kelola Perpustakaan Digital</a></li>
         <li class="active"><a href="kelola_pendaftaran.php"><i class="fa-solid fa-users"></i> Kelola Pendaftaran</a></li>
         <li style="margin-top: 20px; border-top: 1px solid #eee;">
+          <!-- Diubah memanggil fungsi custom -->
           <a href="javascript:void(0)" onclick="confirmLogout()">
             <i class="fa-solid fa-right-from-bracket"></i> Log Out
           </a>
@@ -935,9 +1012,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
     });
 
+    // --- FUNGSI LOGOUT (FIXED) ---
     function confirmLogout() {
-      if (confirm("Yakin keluar?")) window.location.href = "../logout.php";
+      openLogoutModal();
     }
+
+    function openLogoutModal() {
+      const modal = document.getElementById('logoutModal');
+      modal.classList.add('active');
+    }
+
+    function closeLogoutModal() {
+      const modal = document.getElementById('logoutModal');
+      modal.classList.remove('active');
+    }
+
+    function proceedLogout() {
+      window.location.href = "../logout.php";
+    }
+
+    // Tutup modal jika klik overlay
+    document.getElementById('logoutModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeLogoutModal();
+      }
+    });
 
     // ============================
     // 1. TAB HANDLING
@@ -1105,7 +1204,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
           content.innerHTML = html;
         });
     }
-        function deletePendaftar(id) {
+    
+    function deletePendaftar(id) {
       if (!confirm('Yakin ingin menghapus data pendaftar ini?')) return;
 
       const data = new FormData();
@@ -1130,28 +1230,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             alert('Terjadi kesalahan sistem.');
         });
     }
-
-    // --- FUNGSI MODAL LOGOUT ---
-    function openLogoutModal() {
-      const modal = document.getElementById('logoutModal');
-      modal.classList.add('active');
-    }
-
-    function closeLogoutModal() {
-      const modal = document.getElementById('logoutModal');
-      modal.classList.remove('active');
-    }
-
-    function proceedLogout() {
-      window.location.href = "../logout.php";
-    }
-    
-    // Tutup modal jika klik overlay
-    document.getElementById('logoutModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeLogoutModal();
-        }
-    });
   </script>
 </body>
 
