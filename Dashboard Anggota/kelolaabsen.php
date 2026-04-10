@@ -23,16 +23,16 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
 // --- LOGIC HANDLE SETTINGS (POST) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_absensi'])) {
   $tanggal = $_POST['tanggal'];
-  $jam_mulai = $_POST['jam_mulai'];
-  $jam_selesai = $_POST['jam_selesai'];
+  $waktu_mulai = $_POST['waktu_mulai'];
+  $waktu_selesai = $_POST['waktu_selesai'];
   $status = isset($_POST['status_aktif']) ? 'aktif' : 'tidak';
 
   $cek = mysqli_query($koneksi, "SELECT id FROM pengaturan_absensi LIMIT 1");
   if (mysqli_num_rows($cek) > 0) {
     $row = mysqli_fetch_assoc($cek);
-    mysqli_query($koneksi, "UPDATE pengaturan_absensi SET tanggal='$tanggal', jam_mulai='$jam_mulai', jam_selesai='$jam_selesai', status='$status' WHERE id=" . $row['id']);
+    mysqli_query($koneksi, "UPDATE pengaturan_absensi SET tanggal='$tanggal', waktu_mulai='$waktu_mulai', waktu_selesai='$waktu_selesai', status='$status' WHERE id=" . $row['id']);
   } else {
-    mysqli_query($koneksi, "INSERT INTO pengaturan_absensi (tanggal, jam_mulai, jam_selesai, status) VALUES ('$tanggal', '$jam_mulai', '$jam_selesai', '$status')");
+    mysqli_query($koneksi, "INSERT INTO pengaturan_absensi (tanggal, waktu_mulai, waktu_selesai, status) VALUES ('$tanggal', '$waktu_mulai', '$waktu_selesai', '$status')");
   }
   echo "<script>alert('Pengaturan absensi berhasil diperbarui!'); window.location.href='kelolaabsen.php';</script>";
 }
@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_absensi'])) {
  $set_query = mysqli_query($koneksi, "SELECT * FROM pengaturan_absensi LIMIT 1");
  $settings = mysqli_fetch_assoc($set_query);
 if (!$settings) {
-  $settings = ['tanggal' => date('Y-m-d'), 'jam_mulai' => '07:00', 'jam_selesai' => '09:00', 'status' => 'tidak'];
+  $settings = ['tanggal' => date('Y-m-d'), 'waktu_mulai' => '07:00', 'waktu_selesai' => '09:00', 'status' => 'tidak'];
 }
 
 // Ambil data kalender
@@ -56,10 +56,8 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
   $rekap_harian[$r['tanggal']] = $r['total'];
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -67,113 +65,53 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
   <style>
-    :root {
-      --primary-color: #d90429;
-      --primary-hover: #c92a2a;
-      --bg-color: #f8f9fa;
-      --text-color: #1e293b;
-      --text-muted: #64748b;
-      --border-color: #e2e8f0;
-      --success-color: #10b981;
-      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-      --radius: 12px;
-      --header-height: 70px;
-      --sidebar-width: 250px;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; }
-    a { text-decoration: none; color: inherit; }
-    ul { list-style: none; }
-
+    /* CSS Tetap Sama */
+    :root { --primary-color: #d90429; --primary-hover: #c92a2a; --bg-color: #f8f9fa; --text-color: #1e293b; --text-muted: #64748b; --border-color: #e2e8f0; --success-color: #10b981; --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05); --radius: 12px; --header-height: 70px; --sidebar-width: 250px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; } body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; }
+    a { text-decoration: none; color: inherit; } ul { list-style: none; }
     header { background: #fff; box-shadow: var(--shadow-sm); position: fixed; width: 100%; top: 0; z-index: 1000; height: var(--header-height); }
     .navbar { display: flex; justify-content: space-between; align-items: center; height: 100%; padding: 0 20px; max-width: 100%; }
-    .nav-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; }
-    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #000; }
-    .logo img { height: 40px; }
+    .nav-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; } .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #000; } .logo img { height: 40px; }
     .nav-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 15px; position: relative; }
-    .profile-btn { display: flex; align-items: center; cursor: pointer; padding: 5px; border-radius: 50px; transition: background 0.2s; }
-    .profile-btn:hover { background-color: #f1f5f9; }
-    .profile-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); }
-    
-    .profile-dropdown {
-      position: absolute; top: 100%; right: 0; margin-top: 10px; background: #fff; border-radius: 8px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); width: 220px; z-index: 1001; opacity: 0; visibility: hidden;
-      transform: translateY(-10px); transition: all 0.2s ease; border: 1px solid var(--border-color); overflow: hidden;
-    }
+    .profile-btn { display: flex; align-items: center; cursor: pointer; padding: 5px; border-radius: 50px; } .profile-btn:hover { background-color: #f1f5f9; } .profile-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); }
+    .profile-dropdown { position: absolute; top: 100%; right: 0; margin-top: 10px; background: #fff; border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); width: 220px; z-index: 1001; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.2s ease; border: 1px solid var(--border-color); overflow: hidden; }
     .profile-dropdown.active { opacity: 1; visibility: visible; transform: translateY(0); }
-    .dropdown-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid var(--border-color); }
-    .dropdown-header p { font-weight: 600; font-size: 0.9rem; }
-    .dropdown-header small { color: var(--text-muted); font-size: 0.75rem; }
-    .profile-dropdown ul li a { display: flex; align-items: center; gap: 10px; padding: 12px 15px; font-size: 0.9rem; transition: 0.2s; }
-    .profile-dropdown ul li a:hover { background-color: #fff1f1; color: var(--primary-color); }
-
+    .dropdown-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid var(--border-color); } .dropdown-header p { font-weight: 600; font-size: 0.9rem; } .dropdown-header small { color: var(--text-muted); font-size: 0.75rem; }
+    .profile-dropdown ul li a { display: flex; align-items: center; gap: 10px; padding: 12px 15px; font-size: 0.9rem; transition: 0.2s; } .profile-dropdown ul li a:hover { background-color: #fff1f1; color: var(--primary-color); }
     .menu-toggle { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--primary-color); z-index: 1001; }
     .dashboard-container { display: flex; min-height: 100vh; padding-top: var(--header-height); }
-    
-    .sidebar {
-      width: var(--sidebar-width); background: #fff; border-right: 1px solid var(--border-color);
-      position: sticky; top: var(--header-height); height: calc(100vh - var(--header-height));
-      overflow-y: auto; z-index: 900; flex-shrink: 0;
-    }
+    .sidebar { width: var(--sidebar-width); background: #fff; border-right: 1px solid var(--border-color); position: sticky; top: var(--header-height); height: calc(100vh - var(--header-height)); overflow-y: auto; z-index: 900; flex-shrink: 0; }
     .sidebar li { padding: 14px 25px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 12px; border-left: 4px solid transparent; transition: all 0.2s; }
-    .sidebar li:hover, .sidebar li.active { background-color: #fff1f1; color: var(--primary-color); border-left-color: var(--primary-color); }
-    .sidebar a { display: flex; align-items: center; gap: 10px; width: 100%; }
-
+    .sidebar li:hover, .sidebar li.active { background-color: #fff1f1; color: var(--primary-color); border-left-color: var(--primary-color); } .sidebar a { display: flex; align-items: center; gap: 10px; width: 100%; }
     .main-content { flex: 1; padding: 30px; width: 100%; }
-    .page-title h1 { font-size: 1.75rem; color: var(--primary-color); margin-bottom: 5px; }
-    .page-title p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px; }
-
+    .page-title h1 { font-size: 1.75rem; color: var(--primary-color); margin-bottom: 5px; } .page-title p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px; }
     .control-box { background: white; padding: 25px; border-radius: var(--radius); box-shadow: var(--shadow-sm); margin-bottom: 25px; border: 1px solid var(--border-color); }
     .control-box h3 { margin-bottom: 20px; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
     .control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; align-items: end; }
-    .form-group { display: flex; flex-direction: column; gap: 8px; }
-    .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
-    .form-control { width: 100%; padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; }
-    .form-control:focus { border-color: var(--primary-color); outline: none; }
-    
+    .form-group { display: flex; flex-direction: column; gap: 8px; } .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+    .form-control { width: 100%; padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; } .form-control:focus { border-color: var(--primary-color); outline: none; }
     .toggle-switch { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
-    .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 26px; }
-    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-    input:checked+.slider { background-color: var(--success-color); }
-    input:checked+.slider:before { transform: translateX(22px); }
-
+    .switch { position: relative; display: inline-block; width: 50px; height: 26px; } .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 26px; } .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked+.slider { background-color: var(--success-color); } input:checked+.slider:before { transform: translateX(22px); }
     .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease; font-size: 0.9rem; color: white; }
-    .btn-primary { background-color: var(--primary-color); }
-    .btn-primary:hover { background-color: var(--primary-hover); }
-    .btn-success { background-color: var(--success-color); }
-    .btn-danger { background-color: #ef4444; }
-
+    .btn-primary { background-color: var(--primary-color); } .btn-primary:hover { background-color: var(--primary-hover); }
+    .btn-success { background-color: var(--success-color); } .btn-danger { background-color: #ef4444; }
     .calendar-container { background: white; border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 20px; border: 1px solid var(--border-color); }
-    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
-    .calendar-header h2 { font-size: 1.2rem; }
-    .calendar-nav { display: flex; gap: 10px; }
-    .calendar-nav a { padding: 8px 15px; background: var(--bg-color); border-radius: 6px; font-weight: 600; transition: 0.2s; }
-    .calendar-nav a:hover { background: var(--primary-color); color: white; }
-
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); } .calendar-header h2 { font-size: 1.2rem; }
+    .calendar-nav { display: flex; gap: 10px; } .calendar-nav a { padding: 8px 15px; background: var(--bg-color); border-radius: 6px; font-weight: 600; }
     .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
     .calendar-day-name { text-align: center; font-weight: 600; color: var(--text-muted); font-size: 0.85rem; padding: 10px; }
     .calendar-day { border: 1px solid var(--border-color); border-radius: 8px; min-height: 80px; padding: 8px; position: relative; background: #fff; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; }
     .calendar-day:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
     .calendar-day.empty { background: #f8f9fa; border-color: transparent; cursor: default; }
     .calendar-day.today { border-color: var(--primary-color); border-width: 2px; }
-    .day-number { font-weight: 600; color: var(--text-muted); font-size: 0.9rem; margin-bottom: auto; }
-    .calendar-day.today .day-number { color: var(--primary-color); }
-
-    /* WARNA KALENDER */
-    .bg-hadir { background-color: #dcfce7 !important; border-color: #16a34a !important; }
-    .bg-hadir .day-number { color: #166534; }
-    .bg-tidak-hadir { background-color: #fee2e2 !important; border-color: #dc2626 !important; }
-    .bg-tidak-hadir .day-number { color: #991b1b; }
+    .day-number { font-weight: 600; color: var(--text-muted); font-size: 0.9rem; margin-bottom: auto; } .calendar-day.today .day-number { color: var(--primary-color); }
+    .bg-hadir { background-color: #dcfce7 !important; border-color: #16a34a !important; } .bg-hadir .day-number { color: #166534; }
     .attendance-count { font-size: 0.8rem; background: rgba(0, 0, 0, 0.05); color: #166534; padding: 4px 8px; border-radius: 4px; margin-top: 5px; text-align: center; font-weight: 600; }
-
-    /* MODAL & TABLE */
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
     .modal-content { background: white; border-radius: var(--radius); max-width: 900px; width: 100%; overflow: hidden; animation: fadeIn 0.3s ease; display: flex; flex-direction: column; max-height: 90vh; }
     .modal-header { padding: 15px 20px; background: var(--primary-color); color: white; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-    .modal-header h3 { font-size: 1.1rem; }
     .close-modal { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
     .modal-body { padding: 20px; overflow-y: auto; }
     .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -182,53 +120,31 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
     .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: #dcfce7; color: #166534; text-transform: capitalize; }
     .photo-thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #eee; transition: transform 0.2s; }
     .photo-thumb:hover { transform: scale(1.1); border-color: var(--primary-color); }
-
     .modal-img-content { background: transparent; max-width: 90vw; max-height: 90vh; display: flex; align-items: center; justify-content: center; position: relative; }
     .modal-img-content img { max-width: 100%; max-height: 85vh; border-radius: 8px; box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); }
     .close-img-modal { position: absolute; top: -10px; right: -10px; background: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); z-index: 10; }
-
-    /* MODAL LOGOUT */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9999; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: all 0.3s ease; }
     .modal-overlay.active { opacity: 1; visibility: visible; }
     .modal-box { background: white; padding: 30px; border-radius: 16px; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transform: scale(0.9); transition: transform 0.3s ease; }
     .modal-overlay.active .modal-box { transform: scale(1); }
     .modal-icon { width: 60px; height: 60px; background: #fee2e2; color: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px; }
-    .modal-box h3 { margin-bottom: 10px; font-size: 1.25rem; color: var(--text-color); }
-    .modal-box p { color: var(--text-muted); margin-bottom: 25px; font-size: 0.95rem; }
+    .modal-box h3 { margin-bottom: 10px; font-size: 1.25rem; color: var(--text-color); } .modal-box p { color: var(--text-muted); margin-bottom: 25px; font-size: 0.95rem; }
     .modal-actions { display: flex; gap: 10px; justify-content: center; }
     .btn-modal { padding: 12px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s ease; font-size: 0.95rem; flex: 1; }
-    .btn-cancel { background-color: #f1f5f9; color: var(--text-muted); }
-    .btn-cancel:hover { background-color: #e2e8f0; color: var(--text-color); }
-    .btn-logout { background-color: var(--primary-color); color: white; }
-    .btn-logout:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
-
+    .btn-cancel { background-color: #f1f5f9; color: var(--text-muted); } .btn-logout { background-color: var(--primary-color); color: white; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    @media (max-width: 992px) {
-      .sidebar { position: fixed; top: var(--header-height); left: auto; right: -260px; transition: right 0.3s ease; z-index: 999; }
-      .sidebar.active { right: 0; }
-      .menu-toggle { display: block; }
-      .logo span { display: none; }
-      .control-grid { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 992px) { .sidebar { position: fixed; top: var(--header-height); left: auto; right: -260px; transition: right 0.3s ease; z-index: 999; } .sidebar.active { right: 0; } .menu-toggle { display: block; } .logo span { display: none; } .control-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
-
 <body>
   <header>
     <nav class="navbar">
-      <div class="nav-left">
-        <div class="logo"><img src="../Gambar/logpmi.png" alt="Logo PMR"><span>PMR MILLENIUM</span></div>
-      </div>
+      <div class="nav-left"><div class="logo"><img src="../Gambar/logpmi.png" alt="Logo PMR"><span>PMR MILLENIUM</span></div></div>
       <div class="nav-center"></div>
       <div class="nav-right">
-        <div class="profile-btn" id="profileBtn">
-          <img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img">
-        </div>
+        <div class="profile-btn" id="profileBtn"><img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img"></div>
         <div class="profile-dropdown" id="profileDropdown">
-          <div class="dropdown-header">
-            <p><?= $nama_user ?></p><small><?= ucfirst($role) ?></small>
-          </div>
+          <div class="dropdown-header"><p><?= $nama_user ?></p><small><?= ucfirst($role) ?></small></div>
           <ul>
             <li><a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a></li>
             <li><a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a></li>
@@ -259,9 +175,7 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
         <li class="active"><a href="kelolaabsen.php"><i class="fa-solid fa-calendar-check"></i> Kelola Absensi</a></li>
         <li><a href="kelolaperpus.php"><i class="fa-solid fa-book"></i> Kelola Perpustakaan Digital</a></li>
         <li><a href="kelola_pendaftaran.php"><i class="fa-solid fa-users"></i> Kelola Pendaftaran</a></li>
-        <li style="margin-top: 20px; border-top: 1px solid #eee;">
-          <a href="javascript:void(0)" onclick="confirmLogout()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
-        </li>
+        <li style="margin-top: 20px; border-top: 1px solid #eee;"><a href="javascript:void(0)" onclick="confirmLogout()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
       </ul>
     </aside>
 
@@ -275,18 +189,9 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
         <h3><i class="fas fa-cog"></i> Pengaturan Absensi</h3>
         <form method="POST" action="">
           <div class="control-grid">
-            <div class="form-group">
-              <label>Tanggal Absensi</label>
-              <input type="date" name="tanggal" class="form-control" value="<?= $settings['tanggal'] ?>" required>
-            </div>
-            <div class="form-group">
-              <label>Jam Mulai</label>
-              <input type="time" name="jam_mulai" class="form-control" value="<?= $settings['jam_mulai'] ?>" required>
-            </div>
-            <div class="form-group">
-              <label>Jam Selesai</label>
-              <input type="time" name="jam_selesai" class="form-control" value="<?= $settings['jam_selesai'] ?>" required>
-            </div>
+            <div class="form-group"><label>Tanggal Absensi</label><input type="date" name="tanggal" class="form-control" value="<?= $settings['tanggal'] ?>" required></div>
+            <div class="form-group"><label>Jam Mulai</label><input type="time" name="waktu_mulai" class="form-control" value="<?= $settings['waktu_mulai'] ?>" required></div>
+            <div class="form-group"><label>Jam Selesai</label><input type="time" name="waktu_selesai" class="form-control" value="<?= $settings['waktu_selesai'] ?>" required></div>
             <div class="form-group">
               <label>Status</label>
               <div class="toggle-switch">
@@ -294,14 +199,10 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
                   <input type="checkbox" name="status_aktif" <?= $settings['status'] == 'aktif' ? 'checked' : '' ?>>
                   <span class="slider"></span>
                 </label>
-                <span id="statusLabel" style="font-weight: 600; color: <?= $settings['status'] == 'aktif' ? 'var(--success-color)' : 'var(--text-muted)' ?>">
-                  <?= $settings['status'] == 'aktif' ? 'DIBUKA' : 'DITUTUP' ?>
-                </span>
+                <span id="statusLabel" style="font-weight: 600; color: <?= $settings['status'] == 'aktif' ? 'var(--success-color)' : 'var(--text-muted)' ?>"><?= $settings['status'] == 'aktif' ? 'DIBUKA' : 'DITUTUP' ?></span>
               </div>
             </div>
-            <div class="form-group" style="align-self: end;">
-              <button type="submit" name="update_absensi" class="btn btn-primary" style="width: 100%;"><i class="fas fa-save"></i> Simpan</button>
-            </div>
+            <div class="form-group" style="align-self: end;"><button type="submit" name="update_absensi" class="btn btn-primary" style="width: 100%;"><i class="fas fa-save"></i> Simpan</button></div>
           </div>
         </form>
       </section>
@@ -309,14 +210,8 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       <section class="control-box" style="border-left: 4px solid var(--primary-color);">
         <h3><i class="fas fa-file-export"></i> Export Rekap Data</h3>
         <div class="control-grid">
-          <div class="form-group">
-            <label>Dari Tanggal</label>
-            <input type="date" id="exportStart" class="form-control" value="<?= date('Y-m-01') ?>">
-          </div>
-          <div class="form-group">
-            <label>Sampai Tanggal</label>
-            <input type="date" id="exportEnd" class="form-control" value="<?= date('Y-m-d') ?>">
-          </div>
+          <div class="form-group"><label>Dari Tanggal</label><input type="date" id="exportStart" class="form-control" value="<?= date('Y-m-01') ?>"></div>
+          <div class="form-group"><label>Sampai Tanggal</label><input type="date" id="exportEnd" class="form-control" value="<?= date('Y-m-d') ?>"></div>
           <div class="form-group" style="align-self: end;">
             <div style="display: flex; gap: 10px;">
               <button onclick="exportRange('excel')" class="btn btn-success"><i class="fas fa-file-excel"></i> Excel</button>
@@ -331,10 +226,8 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
           <h2><?= date('F Y', strtotime("$year-$month-01")) ?></h2>
           <div class="calendar-nav">
             <?php
-            $prev_month = $month - 1; $prev_year = $year;
-            if ($prev_month == 0) { $prev_month = 12; $prev_year--; }
-            $next_month = $month + 1; $next_year = $year;
-            if ($next_month == 13) { $next_month = 1; $next_year++; }
+            $prev_month = $month - 1; $prev_year = $year; if ($prev_month == 0) { $prev_month = 12; $prev_year--; }
+            $next_month = $month + 1; $next_year = $year; if ($next_month == 13) { $next_month = 1; $next_year++; }
             ?>
             <a href="?m=<?= $prev_month ?>&y=<?= $prev_year ?>"><i class="fas fa-chevron-left"></i></a>
             <a href="?m=<?= date('m') ?>&y=<?= date('Y') ?>">Hari Ini</a>
@@ -343,47 +236,36 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
         </div>
 
         <div class="calendar-grid">
-          <div class="calendar-day-name">Min</div>
-          <div class="calendar-day-name">Sen</div>
-          <div class="calendar-day-name">Sel</div>
-          <div class="calendar-day-name">Rab</div>
-          <div class="calendar-day-name">Kam</div>
-          <div class="calendar-day-name">Jum</div>
-          <div class="calendar-day-name">Sab</div>
+          <div class="calendar-day-name">Min</div><div class="calendar-day-name">Sen</div><div class="calendar-day-name">Sel</div><div class="calendar-day-name">Rab</div><div class="calendar-day-name">Kam</div><div class="calendar-day-name">Jum</div><div class="calendar-day-name">Sab</div>
 
           <?php
           $first_day = date('w', strtotime("$year-$month-01"));
           $days_in_month = cal_days_in_month(CAL_GREGORIAN, $month, $year);
           $today = date('Y-m-d');
 
-          for ($i = 0; $i < $first_day; $i++) {
-            echo "<div class='calendar-day empty'></div>";
-          }
+          for ($i = 0; $i < $first_day; $i++) { echo "<div class='calendar-day empty'></div>"; }
 
           for ($day = 1; $day <= $days_in_month; $day++) {
-            // --- PERBAIKAN BUG: Format tanggal harus Y-m-d (2 digit) ---
-            // Gunakan sprintf untuk memastikan bulan dan tanggal selalu 2 digit (contoh: 2026-03-04)
             $date_val = sprintf("%04d-%02d-%02d", $year, $month, $day);
-            
-            $dayOfWeek = date('w', strtotime($date_val)); // 0=Min, 3=Rab, 5=Jumat
-
+            $dayOfWeek = date('w', strtotime($date_val)); 
             $classes = ['calendar-day'];
             $content = "";
 
             if ($date_val == $today) $classes[] = 'today';
 
-            // Logika Pemberian Warna
-            if (isset($rekap_harian[$date_val])) {
-              // 1. Jika ada data absensi -> HIJAU
-              $classes[] = 'bg-hadir';
-              $count = $rekap_harian[$date_val];
-              $content = "<div class='day-number'>$day</div><div class='attendance-count'>$count Hadir</div>";
-            } elseif ($dayOfWeek == 3 || $dayOfWeek == 5) {
-              // 2. Jika tidak ada data, tapi hari Rabu/Jumat -> MERAH
-              $classes[] = 'bg-tidak-hadir';
-              $content = "<div class='day-number'>$day</div><div style='font-size:0.7rem; color:#991b1b; text-align:center;'>Latihan</div>";
+            if (in_array($dayOfWeek, [3, 5])) { 
+              if ($date_val <= $today) {
+                  if (isset($rekap_harian[$date_val])) {
+                      $classes[] = 'bg-hadir';
+                      $count = $rekap_harian[$date_val];
+                      $content = "<div class='day-number'>$day</div><div class='attendance-count'>$count Hadir</div>";
+                  } else {
+                      $content = "<div class='day-number'>$day</div>";
+                  }
+              } else {
+                  $content = "<div class='day-number'>$day</div>";
+              }
             } else {
-              // 3. Hari biasa
               $content = "<div class='day-number'>$day</div>";
             }
 
@@ -399,22 +281,10 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
 
   <div class="modal" id="detailModal">
     <div class="modal-content">
-      <div class="modal-header">
-        <h3 id="modalTitle">Detail Kehadiran</h3>
-        <button class="close-modal" onclick="document.getElementById('detailModal').style.display='none'">&times;</button>
-      </div>
+      <div class="modal-header"><h3 id="modalTitle">Detail Kehadiran</h3><button class="close-modal" onclick="document.getElementById('detailModal').style.display='none'">&times;</button></div>
       <div class="modal-body">
         <table class="data-table">
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Nama</th>
-              <th>Kelas</th>
-              <th>Waktu</th>
-              <th>Foto Bukti</th>
-              <th>Status</th>
-            </tr>
-          </thead>
+          <thead><tr><th>No</th><th>Nama</th><th>Kelas</th><th>Waktu</th><th>Foto Bukti</th><th>Status</th></tr></thead>
           <tbody id="detailBody"></tbody>
         </table>
       </div>
@@ -432,39 +302,19 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
   <script>
-    // Toggle & UI Scripts
-    const menuToggle = document.querySelector('.menu-toggle');
-    const sidebar = document.querySelector('.sidebar');
-    const profileBtn = document.getElementById('profileBtn');
-    const profileDropdown = document.getElementById('profileDropdown');
-
+    const menuToggle = document.querySelector('.menu-toggle'); const sidebar = document.querySelector('.sidebar'); const profileBtn = document.getElementById('profileBtn'); const profileDropdown = document.getElementById('profileDropdown');
     menuToggle.addEventListener('click', (e) => { e.stopPropagation(); sidebar.classList.toggle('active'); profileDropdown.classList.remove('active'); });
     profileBtn.addEventListener('click', (e) => { e.stopPropagation(); profileDropdown.classList.toggle('active'); sidebar.classList.remove('active'); });
-    document.addEventListener('click', (e) => {
-      if (window.innerWidth <= 992) { if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active'); }
-      if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
-    });
+    document.addEventListener('click', (e) => { if (window.innerWidth <= 992) { if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active'); } if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active'); });
 
-    // Logout Scripts
-    function confirmLogout() { openLogoutModal(); }
-    function openLogoutModal() { document.getElementById('logoutModal').classList.add('active'); }
-    function closeLogoutModal() { document.getElementById('logoutModal').classList.remove('active'); }
-    function proceedLogout() { window.location.href = "../logout.php"; }
+    function confirmLogout() { openLogoutModal(); } function openLogoutModal() { document.getElementById('logoutModal').classList.add('active'); } function closeLogoutModal() { document.getElementById('logoutModal').classList.remove('active'); } function proceedLogout() { window.location.href = "../logout.php"; }
     document.getElementById('logoutModal').addEventListener('click', function(e) { if (e.target === this) closeLogoutModal(); });
 
-    // Status Toggle Label
-    const toggleInput = document.querySelector('input[name="status_aktif"]');
-    const statusLabel = document.getElementById('statusLabel');
-    if (toggleInput) {
-      toggleInput.addEventListener('change', function() {
-        if (this.checked) { statusLabel.textContent = "DIBUKA"; statusLabel.style.color = "var(--success-color)"; } 
-        else { statusLabel.textContent = "DITUTUP"; statusLabel.style.color = "var(--text-muted)"; }
-      });
-    }
+    const toggleInput = document.querySelector('input[name="status_aktif"]'); const statusLabel = document.getElementById('statusLabel');
+    if (toggleInput) { toggleInput.addEventListener('change', function() { if (this.checked) { statusLabel.textContent = "DIBUKA"; statusLabel.style.color = "var(--success-color)"; } else { statusLabel.textContent = "DITUTUP"; statusLabel.style.color = "var(--text-muted)"; } }); }
 
-    // Calendar Detail Logic
+    // --- PERBAIKAN MODAL GAMBAR ---
     function openDateDetail(dateStr) {
       const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       const dateObj = new Date(dateStr);
@@ -480,13 +330,17 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
           } else {
             data.forEach((item, index) => {
               let kelasDisplay = item.kelas ? item.kelas : '-';
+              
+              // PERBAIKAN: Cek jika foto ada, jika tidak pakai default
+              let photoSrc = item.foto ? `../uploads/absensi/${item.foto}` : `../Gambar/default.jpg`;
+              
               tbody.innerHTML += `
                 <tr>
                   <td>${index+1}</td>
                   <td>${item.nama}</td>
                   <td>${kelasDisplay}</td>
                   <td>${item.jam}</td>
-                  <td><img src="../uploads/absensi/${item.foto}" class="photo-thumb" onclick="viewPhoto(this.src)" onerror="this.src='../Gambar/default.jpg'"></td>
+                  <td><img src="${photoSrc}" class="photo-thumb" onclick="viewPhoto(this.src)" onerror="this.src='../Gambar/default.jpg'"></td>
                   <td><span class="status-badge">${item.status}</span></td>
                 </tr>`;
             });
@@ -501,7 +355,6 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       modal.style.display = 'flex';
     }
 
-    // Export Logic
     function exportRange(type) {
       const start = document.getElementById('exportStart').value;
       const end = document.getElementById('exportEnd').value;
