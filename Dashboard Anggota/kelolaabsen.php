@@ -23,16 +23,15 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
 // --- LOGIC HANDLE SETTINGS (POST) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_absensi'])) {
   $tanggal = $_POST['tanggal'];
-  $jam_mulai = $_POST['jam_mulai'];
-  $jam_selesai = $_POST['jam_selesai'];
-  $status = isset($_POST['status_aktif']) ? 'aktif' : 'tidak';
+  $waktu_mulai = $_POST['waktu_mulai'];
+  $waktu_selesai = $_POST['waktu_selesai'];
 
   $cek = mysqli_query($koneksi, "SELECT id FROM pengaturan_absensi LIMIT 1");
   if (mysqli_num_rows($cek) > 0) {
     $row = mysqli_fetch_assoc($cek);
-    mysqli_query($koneksi, "UPDATE pengaturan_absensi SET tanggal='$tanggal', jam_mulai='$jam_mulai', jam_selesai='$jam_selesai', status='$status' WHERE id=" . $row['id']);
+    mysqli_query($koneksi, "UPDATE pengaturan_absensi SET tanggal='$tanggal', waktu_mulai='$waktu_mulai', waktu_selesai='$waktu_selesai' WHERE id=" . $row['id']);
   } else {
-    mysqli_query($koneksi, "INSERT INTO pengaturan_absensi (tanggal, jam_mulai, jam_selesai, status) VALUES ('$tanggal', '$jam_mulai', '$jam_selesai', '$status')");
+    mysqli_query($koneksi, "INSERT INTO pengaturan_absensi (tanggal, waktu_mulai, waktu_selesai) VALUES ('$tanggal', '$waktu_mulai', '$waktu_selesai')");
   }
   echo "<script>alert('Pengaturan absensi berhasil diperbarui!'); window.location.href='kelolaabsen.php';</script>";
 }
@@ -41,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_absensi'])) {
 $set_query = mysqli_query($koneksi, "SELECT * FROM pengaturan_absensi LIMIT 1");
 $settings = mysqli_fetch_assoc($set_query);
 if (!$settings) {
-  $settings = ['tanggal' => date('Y-m-d'), 'jam_mulai' => '07:00', 'jam_selesai' => '09:00', 'status' => 'tidak'];
+  $settings = ['tanggal' => date('Y-m-d'), 'waktu_mulai' => '07:00', 'waktu_selesai' => '09:00'];
 }
 
 // Ambil data kalender
@@ -56,7 +55,6 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
   $rekap_harian[$r['tanggal']] = $r['total'];
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 
@@ -157,7 +155,6 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       cursor: pointer;
       padding: 5px;
       border-radius: 50px;
-      transition: background 0.2s;
     }
 
     .profile-btn:hover {
@@ -346,58 +343,6 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       outline: none;
     }
 
-    .toggle-switch {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 5px;
-    }
-
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 26px;
-    }
-
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: .4s;
-      border-radius: 26px;
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 4px;
-      bottom: 4px;
-      background-color: white;
-      transition: .4s;
-      border-radius: 50%;
-    }
-
-    input:checked+.slider {
-      background-color: var(--success-color);
-    }
-
-    input:checked+.slider:before {
-      transform: translateX(22px);
-    }
-
     .btn {
       padding: 10px 20px;
       border: none;
@@ -426,6 +371,26 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
 
     .btn-danger {
       background-color: #ef4444;
+    }
+
+    .status-display {
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .status-open {
+      background-color: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .status-closed {
+      background-color: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
     }
 
     .calendar-container {
@@ -459,12 +424,6 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       background: var(--bg-color);
       border-radius: 6px;
       font-weight: 600;
-      transition: 0.2s;
-    }
-
-    .calendar-nav a:hover {
-      background: var(--primary-color);
-      color: white;
     }
 
     .calendar-grid {
@@ -521,7 +480,6 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       color: var(--primary-color);
     }
 
-    /* WARNA KALENDER */
     .bg-hadir {
       background-color: #dcfce7 !important;
       border-color: #16a34a !important;
@@ -529,15 +487,6 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
 
     .bg-hadir .day-number {
       color: #166534;
-    }
-
-    .bg-tidak-hadir {
-      background-color: #fee2e2 !important;
-      border-color: #dc2626 !important;
-    }
-
-    .bg-tidak-hadir .day-number {
-      color: #991b1b;
     }
 
     .attendance-count {
@@ -551,7 +500,6 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       font-weight: 600;
     }
 
-    /* MODAL & TABLE */
     .modal {
       display: none;
       position: fixed;
@@ -586,10 +534,6 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       justify-content: space-between;
       align-items: center;
       flex-shrink: 0;
-    }
-
-    .modal-header h3 {
-      font-size: 1.1rem;
     }
 
     .close-modal {
@@ -641,12 +585,6 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       border-radius: 4px;
       cursor: pointer;
       border: 1px solid #eee;
-      transition: transform 0.2s;
-    }
-
-    .photo-thumb:hover {
-      transform: scale(1.1);
-      border-color: var(--primary-color);
     }
 
     .modal-img-content {
@@ -663,7 +601,6 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       max-width: 100%;
       max-height: 85vh;
       border-radius: 8px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     }
 
     .close-img-modal {
@@ -683,7 +620,6 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       z-index: 10;
     }
 
-    /* MODAL LOGOUT */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -713,13 +649,6 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       text-align: center;
       width: 90%;
       max-width: 400px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-      transform: scale(0.9);
-      transition: transform 0.3s ease;
-    }
-
-    .modal-overlay.active .modal-box {
-      transform: scale(1);
     }
 
     .modal-icon {
@@ -735,18 +664,6 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       font-size: 24px;
     }
 
-    .modal-box h3 {
-      margin-bottom: 10px;
-      font-size: 1.25rem;
-      color: var(--text-color);
-    }
-
-    .modal-box p {
-      color: var(--text-muted);
-      margin-bottom: 25px;
-      font-size: 0.95rem;
-    }
-
     .modal-actions {
       display: flex;
       gap: 10px;
@@ -759,8 +676,6 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       font-weight: 600;
       cursor: pointer;
       border: none;
-      transition: all 0.2s ease;
-      font-size: 0.95rem;
       flex: 1;
     }
 
@@ -769,19 +684,9 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       color: var(--text-muted);
     }
 
-    .btn-cancel:hover {
-      background-color: #e2e8f0;
-      color: var(--text-color);
-    }
-
     .btn-logout {
       background-color: var(--primary-color);
       color: white;
-    }
-
-    .btn-logout:hover {
-      background-color: var(--primary-hover);
-      transform: translateY(-2px);
     }
 
     @keyframes fadeIn {
@@ -833,9 +738,7 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       </div>
       <div class="nav-center"></div>
       <div class="nav-right">
-        <div class="profile-btn" id="profileBtn">
-          <img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img">
-        </div>
+        <div class="profile-btn" id="profileBtn"><img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img"></div>
         <div class="profile-dropdown" id="profileDropdown">
           <div class="dropdown-header">
             <p><?= $nama_user ?></p><small><?= ucfirst($role) ?></small>
@@ -871,9 +774,7 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
         <li><a href="kelolaperpus.php"><i class="fa-solid fa-book"></i> Kelola Perpustakaan</a></li>
         <li><a href="kelola_pendaftaran.php"><i class="fa-solid fa-users"></i> Kelola Pendaftaran</a></li>
         <li><a href="kelola_beranda.php"><i class="fa-solid fa-pen-to-square"></i> Edit Halaman Utama</a></li>
-        <li style="margin-top: 20px; border-top: 1px solid #eee;">
-          <a href="javascript:void(0)" onclick="confirmLogout()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
-        </li>
+        <li style="margin-top: 20px; border-top: 1px solid #eee;"><a href="javascript:void(0)" onclick="confirmLogout()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
       </ul>
     </aside>
 
@@ -884,7 +785,7 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       </div>
 
       <section class="control-box">
-        <h3><i class="fas fa-cog"></i> Pengaturan Absensi</h3>
+        <h3><i class="fas fa-cog"></i> Pengaturan Waktu Absensi</h3>
         <form method="POST" action="">
           <div class="control-grid">
             <div class="form-group">
@@ -892,43 +793,26 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
               <input type="date" name="tanggal" class="form-control" value="<?= $settings['tanggal'] ?>" required>
             </div>
             <div class="form-group">
-              <label>Jam Mulai</label>
-              <input type="time" name="jam_mulai" class="form-control" value="<?= $settings['jam_mulai'] ?>" required>
+              <label>Waktu Mulai</label>
+              <input type="time" name="waktu_mulai" class="form-control" value="<?= $settings['waktu_mulai'] ?>" required>
             </div>
             <div class="form-group">
-              <label>Jam Selesai</label>
-              <input type="time" name="jam_selesai" class="form-control" value="<?= $settings['jam_selesai'] ?>" required>
-            </div>
-            <div class="form-group">
-              <label>Status</label>
-              <div class="toggle-switch">
-                <label class="switch">
-                  <input type="checkbox" name="status_aktif" <?= $settings['status'] == 'aktif' ? 'checked' : '' ?>>
-                  <span class="slider"></span>
-                </label>
-                <span id="statusLabel" style="font-weight: 600; color: <?= $settings['status'] == 'aktif' ? 'var(--success-color)' : 'var(--text-muted)' ?>">
-                  <?= $settings['status'] == 'aktif' ? 'DIBUKA' : 'DITUTUP' ?>
-                </span>
-              </div>
+              <label>Waktu Selesai</label>
+              <input type="time" name="waktu_selesai" class="form-control" value="<?= $settings['waktu_selesai'] ?>" required>
             </div>
             <div class="form-group" style="align-self: end;">
               <button type="submit" name="update_absensi" class="btn btn-primary" style="width: 100%;"><i class="fas fa-save"></i> Simpan</button>
             </div>
           </div>
+          <div id="liveStatus" class="status-display" style="margin-top: 15px;">Memeriksa status...</div>
         </form>
       </section>
 
       <section class="control-box" style="border-left: 4px solid var(--primary-color);">
         <h3><i class="fas fa-file-export"></i> Export Rekap Data</h3>
         <div class="control-grid">
-          <div class="form-group">
-            <label>Dari Tanggal</label>
-            <input type="date" id="exportStart" class="form-control" value="<?= date('Y-m-01') ?>">
-          </div>
-          <div class="form-group">
-            <label>Sampai Tanggal</label>
-            <input type="date" id="exportEnd" class="form-control" value="<?= date('Y-m-d') ?>">
-          </div>
+          <div class="form-group"><label>Dari Tanggal</label><input type="date" id="exportStart" class="form-control" value="<?= date('Y-m-01') ?>"></div>
+          <div class="form-group"><label>Sampai Tanggal</label><input type="date" id="exportEnd" class="form-control" value="<?= date('Y-m-d') ?>"></div>
           <div class="form-group" style="align-self: end;">
             <div style="display: flex; gap: 10px;">
               <button onclick="exportRange('excel')" class="btn btn-success"><i class="fas fa-file-excel"></i> Excel</button>
@@ -981,29 +865,27 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
           }
 
           for ($day = 1; $day <= $days_in_month; $day++) {
-            // --- PERBAIKAN BUG: Format tanggal harus Y-m-d (2 digit) ---
-            // Gunakan sprintf untuk memastikan bulan dan tanggal selalu 2 digit (contoh: 2026-03-04)
             $date_val = sprintf("%04d-%02d-%02d", $year, $month, $day);
-
-            $dayOfWeek = date('w', strtotime($date_val)); // 0=Min, 3=Rab, 5=Jumat
+            $dayOfWeek = date('w', strtotime($date_val));
 
             $classes = ['calendar-day'];
             $content = "";
 
             if ($date_val == $today) $classes[] = 'today';
 
-            // Logika Pemberian Warna
-            if (isset($rekap_harian[$date_val])) {
-              // 1. Jika ada data absensi -> HIJAU
-              $classes[] = 'bg-hadir';
-              $count = $rekap_harian[$date_val];
-              $content = "<div class='day-number'>$day</div><div class='attendance-count'>$count Hadir</div>";
-            } elseif ($dayOfWeek == 3 || $dayOfWeek == 5) {
-              // 2. Jika tidak ada data, tapi hari Rabu/Jumat -> MERAH
-              $classes[] = 'bg-tidak-hadir';
-              $content = "<div class='day-number'>$day</div><div style='font-size:0.7rem; color:#991b1b; text-align:center;'>Latihan</div>";
+            if (in_array($dayOfWeek, [3, 5])) {
+              if ($date_val <= $today) {
+                if (isset($rekap_harian[$date_val])) {
+                  $classes[] = 'bg-hadir';
+                  $count = $rekap_harian[$date_val];
+                  $content = "<div class='day-number'>$day</div><div class='attendance-count'>$count Hadir</div>";
+                } else {
+                  $content = "<div class='day-number'>$day</div>";
+                }
+              } else {
+                $content = "<div class='day-number'>$day</div>";
+              }
             } else {
-              // 3. Hari biasa
               $content = "<div class='day-number'>$day</div>";
             }
 
@@ -1020,8 +902,7 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
   <div class="modal" id="detailModal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 id="modalTitle">Detail Kehadiran</h3>
-        <button class="close-modal" onclick="document.getElementById('detailModal').style.display='none'">&times;</button>
+        <h3 id="modalTitle">Detail Kehadiran</h3><button class="close-modal" onclick="document.getElementById('detailModal').style.display='none'">&times;</button>
       </div>
       <div class="modal-body">
         <table class="data-table">
@@ -1054,7 +935,7 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <script>
-    // Toggle & UI Scripts
+    // UI Scripts
     const menuToggle = document.querySelector('.menu-toggle');
     const sidebar = document.querySelector('.sidebar');
     const profileBtn = document.getElementById('profileBtn');
@@ -1077,7 +958,7 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
     });
 
-    // Logout Scripts
+    // Logout
     function confirmLogout() {
       openLogoutModal();
     }
@@ -1097,20 +978,25 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       if (e.target === this) closeLogoutModal();
     });
 
-    // Status Toggle Label
-    const toggleInput = document.querySelector('input[name="status_aktif"]');
-    const statusLabel = document.getElementById('statusLabel');
-    if (toggleInput) {
-      toggleInput.addEventListener('change', function() {
-        if (this.checked) {
-          statusLabel.textContent = "DIBUKA";
-          statusLabel.style.color = "var(--success-color)";
-        } else {
-          statusLabel.textContent = "DITUTUP";
-          statusLabel.style.color = "var(--text-muted)";
-        }
-      });
+    // Live Status Check
+    function checkLiveStatus() {
+      fetch('get_status_absen.php')
+        .then(res => res.json())
+        .then(data => {
+          const statusDiv = document.getElementById('liveStatus');
+          if (data.is_open) {
+            statusDiv.className = 'status-display status-open';
+            statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> STATUS: DIBUKA';
+          } else {
+            statusDiv.className = 'status-display status-closed';
+            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> STATUS: DITUTUP (' + (data.message || 'Di luar jadwal') + ')';
+          }
+        }).catch(err => {
+          console.error("Status Error:", err);
+        });
     }
+    checkLiveStatus();
+    setInterval(checkLiveStatus, 5000);
 
     // Calendar Detail Logic
     function openDateDetail(dateStr) {
@@ -1133,21 +1019,22 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
           } else {
             data.forEach((item, index) => {
               let kelasDisplay = item.kelas ? item.kelas : '-';
+              let photoSrc = item.foto ? `../uploads/absensi/${item.foto}` : '../Gambar/default.jpg';
               tbody.innerHTML += `
-                <tr>
-                  <td>${index+1}</td>
-                  <td>${item.nama}</td>
-                  <td>${kelasDisplay}</td>
-                  <td>${item.jam}</td>
-                  <td><img src="../uploads/absensi/${item.foto}" class="photo-thumb" onclick="viewPhoto(this.src)" onerror="this.src='../Gambar/default.jpg'"></td>
-                  <td><span class="status-badge">${item.status}</span></td>
-                </tr>`;
+                  <tr>
+                    <td>${index+1}</td>
+                    <td>${item.nama}</td>
+                    <td>${kelasDisplay}</td>
+                    <td>${item.jam}</td>
+                    <td><img src="${photoSrc}" class="photo-thumb" onclick="viewPhoto(this.src)" onerror="this.src='../Gambar/default.jpg'"></td>
+                    <td><span class="status-badge">${item.status}</span></td>
+                  </tr>`;
             });
           }
           document.getElementById('detailModal').style.display = 'flex';
         }).catch(err => {
           console.error("Error:", err);
-          alert("Gagal memuat data.");
+          alert("Gagal memuat data detail.");
         });
     }
 

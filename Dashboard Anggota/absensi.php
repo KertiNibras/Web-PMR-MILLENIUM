@@ -1,24 +1,19 @@
 <?php
-// Tambahkan Timezone agar sinkron dengan waktu lokal
 date_default_timezone_set('Asia/Jakarta');
-
 session_start();
 include '../koneksi.php';
 
-// Cek Login
 if (!isset($_SESSION['nama'])) {
   echo '<script>alert("Silakan login terlebih dahulu!"); window.location.href = "../Login/login.php";</script>';
   exit;
 }
 
-// --- LOGIKA AMBIL ID USER & ROLE ---
 if (!isset($_SESSION['id'])) {
   $nama_session = $_SESSION['nama'];
   $stmt = mysqli_prepare($koneksi, "SELECT id, role FROM users WHERE nama = ?");
   mysqli_stmt_bind_param($stmt, "s", $nama_session);
   mysqli_stmt_execute($stmt);
   $result_id = mysqli_stmt_get_result($stmt);
-
   if (mysqli_num_rows($result_id) > 0) {
     $data_user = mysqli_fetch_assoc($result_id);
     $_SESSION['id'] = $data_user['id'];
@@ -33,30 +28,23 @@ $id_user = $_SESSION['id'];
 $role = isset($_SESSION['role']) ? $_SESSION['role'] : 'anggota';
 $nama_user = htmlspecialchars($_SESSION['nama']);
 
-// Logika Foto Profil
 $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
 $foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
 if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_session)) {
   $foto_profil = "../uploads/foto_profil/" . $foto_session;
 }
 
-// LOGIC: Kalender
 $month = isset($_GET['m']) ? intval($_GET['m']) : date('m');
 $year = isset($_GET['y']) ? intval($_GET['y']) : date('Y');
 
-// Ambil riwayat absensi user di bulan/tahun tersebut
-// Hanya ambil yang statusnya 'hadir' agar sinkron dengan logika pengurus
 $query_absen = mysqli_query($koneksi, "SELECT tanggal, status FROM absensi WHERE user_id = '$id_user' AND MONTH(tanggal) = '$month' AND YEAR(tanggal) = '$year'");
 $riwayat_absen = [];
 while ($row = mysqli_fetch_assoc($query_absen)) {
-  // Hanya simpan tanggal jika statusnya 'hadir'
-  // Jika di DB pakai kapital (Hadir), gunakan strtolower
   if (strtolower($row['status']) == 'hadir') {
     $riwayat_absen[$row['tanggal']] = $row['status'];
   }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="id">
 
@@ -66,7 +54,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
   <title>Rekap Absensi | PMR Millenium</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
-
   <style>
     :root {
       --primary-color: #d90429;
@@ -104,7 +91,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       list-style: none;
     }
 
-    /* HEADER & SIDEBAR */
     header {
       background: #fff;
       box-shadow: var(--shadow-sm);
@@ -144,13 +130,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       height: 40px;
     }
 
-    .nav-center {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
     .nav-right {
       flex: 1;
       display: flex;
@@ -166,7 +145,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       cursor: pointer;
       padding: 5px;
       border-radius: 50px;
-      transition: background 0.2s;
     }
 
     .profile-btn:hover {
@@ -213,7 +191,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
 
     .dropdown-header p {
       font-weight: 600;
-      color: var(--text-color);
       font-size: 0.9rem;
     }
 
@@ -227,7 +204,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       align-items: center;
       gap: 10px;
       padding: 12px 15px;
-      color: var(--text-color);
       font-size: 0.9rem;
       transition: 0.2s;
     }
@@ -235,11 +211,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     .profile-dropdown ul li a:hover {
       background-color: #fff1f1;
       color: var(--primary-color);
-    }
-
-    .profile-dropdown ul li a i {
-      width: 20px;
-      text-align: center;
     }
 
     .menu-toggle {
@@ -273,7 +244,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     .sidebar li {
       padding: 14px 25px;
       cursor: pointer;
-      color: var(--text-color);
       font-weight: 500;
       display: flex;
       align-items: center;
@@ -296,7 +266,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       width: 100%;
     }
 
-    /* Main Content */
     .main-content {
       flex: 1;
       padding: 30px;
@@ -315,7 +284,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       margin-bottom: 25px;
     }
 
-    /* Status Box */
     .status-box {
       background: white;
       padding: 25px;
@@ -364,7 +332,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       color: var(--text-muted);
     }
 
-    /* Buttons */
     .btn {
       padding: 12px 25px;
       border: none;
@@ -381,22 +348,14 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
 
     .btn-primary {
       background-color: var(--primary-color);
-      box-shadow: 0 4px 6px rgba(217, 4, 41, 0.2);
     }
 
     .btn-primary:hover {
       background-color: var(--primary-hover);
-      transform: translateY(-1px);
     }
 
     .btn-success {
       background-color: var(--success-color);
-      box-shadow: 0 4px 6px rgba(16, 184, 129, 0.2);
-    }
-
-    .btn-success:hover {
-      background-color: #059669;
-      transform: translateY(-1px);
     }
 
     .btn:disabled {
@@ -406,7 +365,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       box-shadow: none;
     }
 
-    /* Calendar Styles */
     .calendar-container {
       background: white;
       border-radius: var(--radius);
@@ -426,7 +384,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
 
     .calendar-header h2 {
       font-size: 1.2rem;
-      color: var(--text-color);
     }
 
     .calendar-nav {
@@ -438,14 +395,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       padding: 8px 15px;
       background: var(--bg-color);
       border-radius: 6px;
-      color: var(--text-color);
       font-weight: 600;
-      transition: 0.2s;
-    }
-
-    .calendar-nav a:hover {
-      background: var(--primary-color);
-      color: white;
     }
 
     .calendar-grid {
@@ -502,17 +452,30 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       align-items: center;
       justify-content: center;
       height: calc(100% - 25px);
-      color: var(--success-color);
       font-size: 2rem;
     }
 
-    .attendance-mark i {
+    .attendance-mark.hadir {
+      color: var(--success-color);
+    }
+
+    .attendance-mark.hadir i {
       background: #dcfce7;
       padding: 10px;
       border-radius: 50%;
     }
 
-    /* Modal & Camera */
+    .attendance-mark.missed {
+      color: #dc2626;
+    }
+
+    .attendance-mark.missed i {
+      background: #fee2e2;
+      padding: 10px;
+      border-radius: 50%;
+    }
+
+    /* Modal & Camera Styles */
     .modal {
       display: none;
       position: fixed;
@@ -533,9 +496,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       max-width: 500px;
       width: 100%;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      position: relative;
       animation: fadeIn 0.3s ease;
     }
 
@@ -548,24 +508,19 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       align-items: center;
     }
 
-    .modal-header h3 {
-      font-size: 1.1rem;
-    }
-
     .close-modal {
       background: none;
       border: none;
       color: white;
       font-size: 1.5rem;
       cursor: pointer;
-      line-height: 1;
     }
 
     .modal-body {
       padding: 20px;
-      overflow-y: auto;
     }
 
+    /* Camera Container untuk Overlay */
     .camera-wrapper {
       width: 100%;
       background: #1e293b;
@@ -580,7 +535,11 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     }
 
     #video,
-    #capturedImage {
+    #capturedImage,
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
@@ -588,9 +547,17 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
 
     #video {
       transform: scaleX(-1);
+      z-index: 1;
     }
 
+    #overlay {
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Canvas untuk menggambar kotak wajah */
     #capturedImage {
+      z-index: 3;
       display: none;
     }
 
@@ -611,7 +578,28 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       z-index: 10;
     }
 
-    /* TAMBAHAN: STYLE MODAL LOGOUT */
+    /* Face Status Indicator */
+    .face-status {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      min-height: 24px;
+      transition: all 0.3s;
+    }
+
+    .face-status.detecting {
+      color: var(--text-muted);
+    }
+
+    .face-status.found {
+      color: var(--success-color);
+    }
+
+    .face-status.not-found {
+      color: var(--primary-color);
+    }
+
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -626,7 +614,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       z-index: 9999;
       opacity: 0;
       visibility: hidden;
-      transition: all 0.3s ease;
     }
 
     .modal-overlay.active {
@@ -641,13 +628,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       text-align: center;
       width: 90%;
       max-width: 400px;
-      transform: scale(0.9);
-      transition: transform 0.3s ease;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    }
-
-    .modal-overlay.active .modal-box {
-      transform: scale(1);
     }
 
     .modal-icon {
@@ -663,17 +643,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       font-size: 2rem;
     }
 
-    .modal-box h3 {
-      margin-bottom: 10px;
-      color: var(--text-color);
-    }
-
-    .modal-box p {
-      color: var(--text-muted);
-      margin-bottom: 25px;
-      font-size: 0.95rem;
-    }
-
     .modal-actions {
       display: flex;
       gap: 15px;
@@ -686,8 +655,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       font-weight: 600;
       cursor: pointer;
       border: none;
-      transition: 0.2s;
-      font-size: 0.95rem;
       flex: 1;
     }
 
@@ -696,49 +663,9 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       color: var(--text-muted);
     }
 
-    .btn-cancel:hover {
-      background-color: #e2e8f0;
-      color: var(--text-color);
-    }
-
     .btn-logout {
       background-color: var(--primary-color);
       color: white;
-    }
-
-    .btn-logout:hover {
-      background-color: var(--primary-hover);
-    }
-
-    .toast {
-      position: fixed;
-      top: 90px;
-      right: 20px;
-      background: white;
-      color: var(--text-color);
-      padding: 15px 20px;
-      border-radius: 8px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 280px;
-      z-index: 9999;
-      transform: translateX(120%);
-      transition: transform 0.3s ease-out;
-      border-left: 5px solid var(--primary-color);
-    }
-
-    .toast.show {
-      transform: translateX(0);
-    }
-
-    .toast.success {
-      border-left-color: var(--success-color);
-    }
-
-    .toast.success i {
-      color: var(--success-color);
     }
 
     @keyframes fadeIn {
@@ -754,19 +681,11 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     }
 
     @media (max-width: 992px) {
-      .main-content {
-        width: 100%;
-        padding: 20px;
-      }
-
       .sidebar {
         position: fixed;
         top: var(--header-height);
         left: auto;
         right: -260px;
-        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-        border-right: none;
-        border-left: 1px solid var(--border-color);
         transition: right 0.3s ease;
         z-index: 999;
       }
@@ -787,25 +706,17 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
 </head>
 
 <body>
-
-  <!-- HEADER -->
   <header>
     <nav class="navbar">
       <div class="nav-left">
-        <div class="logo">
-          <img src="../Gambar/logpmi.png" alt="Logo PMR">
-          <span>PMR MILLENIUM</span>
-        </div>
+        <div class="logo"><img src="../Gambar/logpmi.png" alt="Logo PMR"><span>PMR MILLENIUM</span></div>
       </div>
       <div class="nav-center"></div>
       <div class="nav-right">
-        <div class="profile-btn" id="profileBtn">
-          <img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img">
-        </div>
+        <div class="profile-btn" id="profileBtn"><img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img"></div>
         <div class="profile-dropdown" id="profileDropdown">
           <div class="dropdown-header">
-            <p><?= $nama_user ?></p>
-            <small><?= ucfirst($role) ?></small>
+            <p><?= $nama_user ?></p><small><?= ucfirst($role) ?></small>
           </div>
           <ul>
             <li><a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a></li>
@@ -818,12 +729,9 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     </nav>
   </header>
 
-  <!-- MODAL LOGOUT -->
   <div class="modal-overlay" id="logoutModal">
     <div class="modal-box">
-      <div class="modal-icon">
-        <i class="fa-solid fa-right-from-bracket"></i>
-      </div>
+      <div class="modal-icon"><i class="fa-solid fa-right-from-bracket"></i></div>
       <h3>Konfirmasi Keluar</h3>
       <p>Apakah Anda yakin ingin keluar dari akun?</p>
       <div class="modal-actions">
@@ -834,33 +742,26 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
   </div>
 
   <div class="dashboard-container">
-    <!-- SIDEBAR -->
     <aside class="sidebar">
       <ul>
         <li><a href="anggota.php"><i class="fa-solid fa-house"></i> Dashboard</a></li>
         <li class="active"><a href="absensi.php"><i class="fa-solid fa-calendar-check"></i> Rekap Absensi</a></li>
         <li><a href="perpus.php"><i class="fa-solid fa-book"></i> Perpustakaan Digital</a></li>
-        <li style="margin-top: 20px; border-top: 1px solid #eee;">
-          <!-- UBAH: onclick sekarang memanggil modal -->
-          <a href="javascript:void(0)" onclick="openLogoutModal()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
-        </li>
+        <li style="margin-top: 20px; border-top: 1px solid #eee;"><a href="javascript:void(0)" onclick="openLogoutModal()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
       </ul>
     </aside>
 
-    <!-- MAIN CONTENT -->
     <main class="main-content">
       <div class="page-title">
         <h1>Absensi & Kehadiran</h1>
         <p>Lakukan absensi harianmu dan pantau riwayat kehadiran.</p>
       </div>
 
-      <!-- Status Box -->
       <section class="status-box" id="attendanceStatus">
         <div class="status-icon"><i class="fas fa-spinner fa-spin"></i></div>
         <div class="status-title">Memeriksa status absensi...</div>
       </section>
 
-      <!-- Kalender Rekap -->
       <section class="calendar-container">
         <div class="calendar-header">
           <h2><?= date('F Y', strtotime("$year-$month-01")) ?></h2>
@@ -884,7 +785,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
             <a href="?m=<?= $next_month ?>&y=<?= $next_year ?>"><i class="fas fa-chevron-right"></i></a>
           </div>
         </div>
-
         <div class="calendar-grid">
           <div class="calendar-day-name">Min</div>
           <div class="calendar-day-name">Sen</div>
@@ -893,24 +793,26 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
           <div class="calendar-day-name">Kam</div>
           <div class="calendar-day-name">Jum</div>
           <div class="calendar-day-name">Sab</div>
-
           <?php
           $first_day = date('w', strtotime("$year-$month-01"));
           $days_in_month = cal_days_in_month(CAL_GREGORIAN, $month, $year);
           $today = date('Y-m-d');
-
           for ($i = 0; $i < $first_day; $i++) {
             echo "<div class='calendar-day empty'></div>";
           }
-
           for ($day = 1; $day <= $days_in_month; $day++) {
-            $date_val = "$year-$month-" . str_pad($day, 2, '0', STR_PAD_LEFT);
+            $date_val = sprintf("%04d-%02d-%02d", $year, $month, $day);
+            $dayOfWeek = date('w', strtotime($date_val));
             $is_today = ($date_val == $today) ? 'today' : '';
-            echo "<div class='calendar-day $is_today'>";
-            echo "<div class='day-number'>$day</div>";
-            // LOGIC: Hanya tampilkan centang jika ada di array $riwayat_absen (yg sudah difilter 'hadir')
-            if (isset($riwayat_absen[$date_val])) {
-              echo "<div class='attendance-mark' title='Hadir'><i class='fas fa-check-circle'></i></div>";
+            echo "<div class='calendar-day $is_today'><div class='day-number'>$day</div>";
+            if (in_array($dayOfWeek, [3, 5])) {
+              if (isset($riwayat_absen[$date_val])) {
+                echo "<div class='attendance-mark hadir' title='Hadir'><i class='fas fa-check-circle'></i></div>";
+              } else {
+                if ($date_val < $today) {
+                  echo "<div class='attendance-mark missed' title='Tidak Hadir'><i class='fas fa-times-circle'></i></div>";
+                }
+              }
             }
             echo "</div>";
           }
@@ -920,26 +822,28 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     </main>
   </div>
 
-  <!-- MODAL CAMERA -->
+  <!-- Modal Camera -->
   <div class="modal" id="cameraModal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Ambil Foto Absensi</h3>
-        <button class="close-modal" id="btnCloseModal">&times;</button>
+        <h3>Ambil Foto Absensi</h3><button class="close-modal" id="btnCloseModal">&times;</button>
       </div>
       <div class="modal-body">
         <div class="camera-wrapper">
           <button class="switch-cam-btn" id="btnSwitchCamera" title="Ganti Kamera"><i class="fa-solid fa-camera-rotate"></i></button>
-          <video id="video" autoplay playsinline></video>
-          <canvas id="canvas" style="display:none;"></canvas>
+          <video id="video" autoplay playsinline muted></video>
+          <canvas id="overlay"></canvas> <!-- Canvas khusus untuk overlay wajah -->
+          <canvas id="canvas" style="display:none;"></canvas> <!-- Canvas untuk capture -->
           <img id="capturedImage" alt="Capture">
         </div>
 
+        <!-- Indikator Status Wajah -->
+        <div id="faceStatus" class="face-status detecting"><i class="fas fa-spinner fa-spin"></i> Memuat deteksi wajah...</div>
+
         <div id="cameraControls" style="margin-top: 15px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
-          <button class="btn btn-primary" id="btnCapture"><i class="fa-solid fa-camera"></i> Ambil Foto</button>
+          <button class="btn btn-primary" id="btnCapture" disabled><i class="fa-solid fa-camera"></i> Ambil Foto</button>
           <button class="btn btn-success" id="btnSubmit" style="display:none; width: 100%;"><i class="fa-solid fa-paper-plane"></i> Kirim Absensi</button>
         </div>
-
         <div id="successMessage" style="display:none; text-align:center;">
           <div style="color: var(--success-color); font-size: 3rem; margin: 20px 0;"><i class="fa-solid fa-check-circle"></i></div>
           <h4>Absensi Berhasil!</h4>
@@ -949,15 +853,15 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     </div>
   </div>
 
-  <div id="toastContainer"></div>
+  <!-- Load Face-API.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
   <script>
-    // --- LOGIC DROPDOWN & SIDEBAR ---
+    // --- UI Scripts ---
     const menuToggle = document.querySelector('.menu-toggle');
     const sidebar = document.querySelector('.sidebar');
     const profileBtn = document.getElementById('profileBtn');
     const profileDropdown = document.getElementById('profileDropdown');
-
     menuToggle.addEventListener('click', (e) => {
       e.stopPropagation();
       sidebar.classList.toggle('active');
@@ -975,16 +879,14 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
     });
 
-    // --- REALTIME STATUS CHECK ---
     const statusBox = document.getElementById('attendanceStatus');
-
     async function checkAttendanceStatus() {
       try {
         const res = await fetch('get_status_absen.php');
         const data = await res.json();
         renderStatus(data);
       } catch (error) {
-        statusBox.innerHTML = `<div class="status-icon"><i class="fas fa-exclamation-triangle"></i></div><div class="status-title">Gagal memuat status</div><div class="status-time">Periksa koneksi atau file get_status_absen.php</div>`;
+        statusBox.innerHTML = `<div class="status-icon"><i class="fas fa-exclamation-triangle"></i></div><div class="status-title">Gagal memuat status</div>`;
         statusBox.className = 'status-box inactive';
       }
     }
@@ -992,30 +894,22 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     function renderStatus(data) {
       if (data.is_open) {
         statusBox.className = 'status-box active';
-        statusBox.innerHTML = `
-          <div class="status-icon"><i class="fas fa-door-open"></i></div>
-          <div class="status-title">Absensi Dibuka</div>
-          <div class="status-time">Waktu: ${data.jam_mulai} - ${data.jam_selesai} WIB</div>
-          <button class="btn btn-primary" id="btnOpenCamera"><i class="fa-solid fa-camera"></i> Absensi Sekarang</button>`;
+        statusBox.innerHTML = `<div class="status-icon"><i class="fas fa-door-open"></i></div><div class="status-title">Absensi Dibuka</div><div class="status-time">Waktu: ${data.jam_mulai} - ${data.jam_selesai} WIB</div><button class="btn btn-primary" id="btnOpenCamera"><i class="fa-solid fa-camera"></i> Absensi Sekarang</button>`;
         document.getElementById('btnOpenCamera').onclick = () => {
           document.getElementById('cameraModal').style.display = 'flex';
           resetModal();
           startCamera(useFrontCamera ? 'user' : 'environment');
+          loadFaceModels(); // Load model saat modal dibuka
         };
       } else {
         statusBox.className = 'status-box inactive';
-        let message = data.message || "Absensi Belum Dibuka";
-        statusBox.innerHTML = `
-          <div class="status-icon"><i class="fas fa-door-closed"></i></div>
-          <div class="status-title">${message}</div>
-          <div class="status-time">Silakan tunggu pengurus membuka absensi.</div>`;
+        statusBox.innerHTML = `<div class="status-icon"><i class="fas fa-door-closed"></i></div><div class="status-title">${data.message || "Absensi Belum Dibuka"}</div><div class="status-time">Silakan tunggu pengurus membuka absensi.</div>`;
       }
     }
-
     checkAttendanceStatus();
     setInterval(checkAttendanceStatus, 5000);
 
-    // --- LOGIKA KAMERA ---
+    // --- Variables ---
     let currentImageData = null;
     let stream = null;
     let useFrontCamera = true;
@@ -1023,10 +917,86 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const capturedImage = document.getElementById('capturedImage');
+    const overlay = document.getElementById('overlay'); // Canvas overlay
     const btnCapture = document.getElementById('btnCapture');
     const btnSwitch = document.getElementById('btnSwitchCamera');
     const btnSubmit = document.getElementById('btnSubmit');
+    const faceStatus = document.getElementById('faceStatus');
 
+    let modelsLoaded = false;
+    let faceDetectionInterval = null;
+
+    // --- Face API Logic ---
+    async function loadFaceModels() {
+      if (modelsLoaded) return; // Jangan load ulang jika sudah ada
+      faceStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memuat model AI...';
+      faceStatus.className = 'face-status detecting';
+
+      try {
+        // GUNAKAN LINK CDN RESMI DIBAWAH INI (Pastikan komputer terhubung internet)
+        await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/');
+        await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/');
+
+        modelsLoaded = true;
+        faceStatus.innerHTML = 'Arahkan wajah Anda ke kamera';
+        faceStatus.className = 'face-status detecting';
+        startFaceDetection();
+      } catch (err) {
+        console.error("Gagal memuat model:", err);
+        faceStatus.innerHTML = '<span style="color:red">Gagal memuat AI. Pastikan koneksi internet stabil.</span>';
+      }
+    }
+
+    function startFaceDetection() {
+      if (!modelsLoaded) return;
+
+      // Clear interval sebelumnya jika ada
+      if (faceDetectionInterval) clearInterval(faceDetectionInterval);
+
+      // Set ukuran overlay sama dengan video
+      overlay.width = video.videoWidth || 640;
+      overlay.height = video.videoHeight || 480;
+
+      faceDetectionInterval = setInterval(async () => {
+        if (video.style.display === 'none') return; // Stop jika video hidden
+
+        const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
+
+        const ctx = overlay.getContext('2d');
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+        if (detections.length > 0) {
+          // Wajah Terdeteksi
+          const detection = detections[0]; // Ambil wajah pertama
+
+          // Gambar kotak dan landmark (opsional, untuk visual)
+          const box = detection.detection.box;
+          ctx.strokeStyle = '#10b981'; // Hijau
+          ctx.lineWidth = 3;
+          ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+          // Gambar landmark titik-titik
+          ctx.fillStyle = '#10b981';
+          detection.landmarks.positions.forEach(point => {
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI);
+            ctx.fill();
+          });
+
+          // Aktifkan tombol
+          btnCapture.disabled = false;
+          faceStatus.innerHTML = '<i class="fas fa-check-circle"></i> Wajah Terdeteksi!';
+          faceStatus.className = 'face-status found';
+        } else {
+          // Wajah Tidak Terdeteksi
+          btnCapture.disabled = true;
+          faceStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Wajah tidak terdeteksi';
+          faceStatus.className = 'face-status not-found';
+        }
+      }, 300); // Scan setiap 300ms
+    }
+
+    // --- Camera Logic ---
     async function startCamera(facingMode) {
       try {
         if (stream) stream.getTracks().forEach(track => track.stop());
@@ -1044,13 +1014,16 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
         video.srcObject = stream;
         video.style.display = 'block';
         capturedImage.style.display = 'none';
+        overlay.style.display = 'block'; // Tampilkan overlay
         btnSwitch.style.display = 'flex';
         btnCapture.style.display = 'inline-flex';
         btnSubmit.style.display = 'none';
         video.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+
+        // Restart detection jika model sudah load
+        if (modelsLoaded) startFaceDetection();
       } catch (err) {
         alert("Tidak dapat mengakses kamera.");
-        console.error(err);
       }
     }
 
@@ -1070,6 +1043,9 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
         stream.getTracks().forEach(track => track.stop());
         stream = null;
       }
+      if (faceDetectionInterval) clearInterval(faceDetectionInterval); // Hentikan deteksi
+      const ctx = overlay.getContext('2d');
+      ctx.clearRect(0, 0, overlay.width, overlay.height); // Bersihkan canvas
     }
 
     btnSwitch.onclick = async () => {
@@ -1078,23 +1054,40 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     };
 
     btnCapture.onclick = () => {
+      // Double check jika button sempat di klik paksa
+      if (btnCapture.disabled) {
+        alert("Wajah tidak terdeteksi! Pastikan wajah Anda jelas.");
+        return;
+      }
+
+      clearInterval(faceDetectionInterval); // Stop detection saat capture
+
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       let ctx = canvas.getContext('2d');
+
+      // Logika flip untuk capture
       if (useFrontCamera) {
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
       }
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       if (useFrontCamera) ctx.setTransform(1, 0, 0, 1, 0, 0);
+
       currentImageData = canvas.toDataURL('image/png');
       capturedImage.src = currentImageData;
+
       video.style.display = 'none';
+      overlay.style.display = 'none'; // Sembunyikan overlay
       capturedImage.style.display = 'block';
-      stopCamera();
+      stopCamera(); // Stop kamera fisik
+
       btnSwitch.style.display = 'none';
       btnCapture.style.display = 'none';
       btnSubmit.style.display = 'inline-flex';
+
+      faceStatus.innerHTML = "Foto siap dikirim";
+      faceStatus.className = "face-status found";
     };
 
     btnSubmit.onclick = () => {
@@ -1135,16 +1128,19 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     function resetModal() {
       video.style.display = 'block';
       capturedImage.style.display = 'none';
+      overlay.style.display = 'block';
       document.getElementById('cameraControls').style.display = 'flex';
       document.getElementById('successMessage').style.display = 'none';
       btnCapture.style.display = 'inline-flex';
       btnSubmit.style.display = 'none';
       btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Absensi';
       btnSubmit.disabled = false;
+      btnCapture.disabled = true; // Default disabled sampai wajah terdeteksi
+      faceStatus.innerHTML = 'Memproses...';
+      faceStatus.className = 'face-status detecting';
       currentImageData = null;
     }
 
-    // --- FUNGSI MODAL LOGOUT ---
     function openLogoutModal() {
       document.getElementById('logoutModal').classList.add('active');
     }
@@ -1156,12 +1152,8 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     function proceedLogout() {
       window.location.href = "../logout.php";
     }
-
-    // Close modal jika klik overlay (area luar kotak)
     document.getElementById('logoutModal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        closeLogoutModal();
-      }
+      if (e.target === this) closeLogoutModal();
     });
   </script>
 </body>
