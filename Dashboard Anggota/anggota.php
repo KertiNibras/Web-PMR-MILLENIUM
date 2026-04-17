@@ -11,16 +11,16 @@ if (!isset($_SESSION['nama'])) {
 }
 
 // 2. AMBIL ROLE & DATA USER
- $role = isset($_SESSION['role']) ? $_SESSION['role'] : 'anggota';
- $user_id = isset($_SESSION['id']) ? $_SESSION['id'] : 0;
- $nama_user = htmlspecialchars($_SESSION['nama']);
+$role = isset($_SESSION['role']) ? $_SESSION['role'] : 'anggota';
+$user_id = isset($_SESSION['id']) ? $_SESSION['id'] : 0;
+$nama_user = htmlspecialchars($_SESSION['nama']);
 
 // Logika Penentuan Foto Profil
- $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
- $foto_profil = 'https://ui-avatars.com/api/?name='.urlencode($nama_user).'&background=d90429&color=fff'; // Default
+$foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
+$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff'; // Default
 
 if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_session)) {
-    $foto_profil = "../uploads/foto_profil/" . $foto_session;
+  $foto_profil = "../uploads/foto_profil/" . $foto_session;
 }
 
 // ========================================================
@@ -75,7 +75,11 @@ if ($role == 'pengurus') {
       --stat-purple: #8b5cf6;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     body {
       font-family: 'Inter', 'Segoe UI', sans-serif;
@@ -84,8 +88,14 @@ if ($role == 'pengurus') {
       line-height: 1.6;
     }
 
-    a { text-decoration: none; color: inherit; }
-    ul { list-style: none; }
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    ul {
+      list-style: none;
+    }
 
     /* --- HEADER --- */
     header {
@@ -107,98 +117,397 @@ if ($role == 'pengurus') {
       max-width: 100%;
     }
 
-    .nav-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; }
-    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #000; }
-    .logo img { height: 40px; }
+    .nav-left {
+      flex: 1;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+    }
 
-    .nav-center { flex: 1; display: flex; justify-content: center; align-items: center; }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 18px;
+      color: #000;
+    }
 
-    .nav-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 15px; position: relative; }
+    .logo img {
+      height: 40px;
+    }
 
-    .profile-btn { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 10px; border-radius: 50px; transition: background 0.2s; }
-    .profile-btn:hover { background-color: #f1f5f9; }
+    .nav-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
 
-    .profile-greeting { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
-    .profile-greeting small { color: var(--text-muted); font-size: 0.75rem; font-weight: 500; text-transform: capitalize; }
-    .profile-greeting span { font-weight: 600; font-size: 0.9rem; color: var(--text-color); }
+    .nav-right {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 15px;
+      position: relative;
+    }
 
-    .profile-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); flex-shrink: 0; }
+    .profile-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 50px;
+      transition: background 0.2s;
+    }
+
+    .profile-btn:hover {
+      background-color: #f1f5f9;
+    }
+
+    .profile-greeting {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      line-height: 1.2;
+    }
+
+    .profile-greeting small {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+
+    .profile-greeting span {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-color);
+    }
+
+    .profile-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--primary-color);
+      flex-shrink: 0;
+    }
 
     .profile-dropdown {
-      position: absolute; top: 100%; right: 0; margin-top: 10px; background: #fff;
-      border-radius: 8px; box-shadow: var(--shadow-lg); width: 220px; z-index: 1001;
-      opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.2s ease;
-      border: 1px solid var(--border-color); overflow: hidden;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 10px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      width: 220px;
+      z-index: 1001;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.2s ease;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
     }
-    .profile-dropdown.active { opacity: 1; visibility: visible; transform: translateY(0); }
 
-    .dropdown-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid var(--border-color); }
-    .dropdown-header p { font-weight: 600; color: var(--text-color); font-size: 0.9rem; }
-    .dropdown-header small { color: var(--text-muted); font-size: 0.75rem; }
+    .profile-dropdown.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
 
-    .profile-dropdown ul li a { display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: var(--text-color); font-size: 0.9rem; transition: 0.2s; }
-    .profile-dropdown ul li a:hover { background-color: #fff1f1; color: var(--primary-color); }
-    .profile-dropdown ul li a i { width: 20px; text-align: center; }
+    .dropdown-header {
+      padding: 15px;
+      background: #f8f9fa;
+      border-bottom: 1px solid var(--border-color);
+    }
 
-    .menu-toggle { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--primary-color); z-index: 1001; }
+    .dropdown-header p {
+      font-weight: 600;
+      color: var(--text-color);
+      font-size: 0.9rem;
+    }
+
+    .dropdown-header small {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .profile-dropdown ul li a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 15px;
+      color: var(--text-color);
+      font-size: 0.9rem;
+      transition: 0.2s;
+    }
+
+    .profile-dropdown ul li a:hover {
+      background-color: #fff1f1;
+      color: var(--primary-color);
+    }
+
+    .profile-dropdown ul li a i {
+      width: 20px;
+      text-align: center;
+    }
+
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--primary-color);
+      z-index: 1001;
+    }
 
     /* --- LAYOUT CONTAINER --- */
-    .dashboard-container { display: flex; min-height: 100vh; padding-top: var(--header-height); }
+    .dashboard-container {
+      display: flex;
+      min-height: 100vh;
+      padding-top: var(--header-height);
+    }
 
     /* --- SIDEBAR --- */
     .sidebar {
-      width: var(--sidebar-width); background: #fff; border-right: 1px solid var(--border-color);
-      position: sticky; top: var(--header-height); height: calc(100vh - var(--header-height));
-      overflow-y: auto; z-index: 900; flex-shrink: 0;
+      width: var(--sidebar-width);
+      background: #fff;
+      border-right: 1px solid var(--border-color);
+      position: sticky;
+      top: var(--header-height);
+      height: calc(100vh - var(--header-height));
+      overflow-y: auto;
+      z-index: 900;
+      flex-shrink: 0;
     }
 
     .sidebar li {
-      padding: 14px 25px; cursor: pointer; color: var(--text-color); font-weight: 500;
-      display: flex; align-items: center; gap: 12px; border-left: 4px solid transparent; transition: all 0.2s;
+      padding: 14px 25px;
+      cursor: pointer;
+      color: var(--text-color);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-left: 4px solid transparent;
+      transition: all 0.2s;
     }
-    .sidebar li:hover, .sidebar li.active { background-color: #fff1f1; color: var(--primary-color); border-left-color: var(--primary-color); }
-    .sidebar a { display: flex; align-items: center; gap: 10px; width: 100%; }
+
+    .sidebar li:hover,
+    .sidebar li.active {
+      background-color: #fff1f1;
+      color: var(--primary-color);
+      border-left-color: var(--primary-color);
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
 
     /* --- MAIN CONTENT --- */
-    .main-content { flex: 1; padding: 30px; width: 100%; }
+    .main-content {
+      flex: 1;
+      padding: 30px;
+      width: 100%;
+    }
 
-    .dashboard-welcome { margin-bottom: 30px; }
-    .dashboard-welcome h1 { font-size: 1.75rem; color: var(--primary-color); margin-bottom: 5px; }
+    .dashboard-welcome {
+      margin-bottom: 30px;
+    }
+
+    .dashboard-welcome h1 {
+      font-size: 1.75rem;
+      color: var(--primary-color);
+      margin-bottom: 5px;
+    }
 
     /* --- STATISTIK --- */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 35px; }
-    .stat-card { background: var(--card-bg); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 20px; transition: transform 0.2s; }
-    .stat-card:hover { transform: translateY(-3px); }
-    .stat-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #fff; flex-shrink: 0; }
-    .stat-info h2 { font-size: 1.5rem; margin-bottom: 2px; color: var(--text-color); }
-    .stat-info p { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 35px;
+    }
 
-    .bg-red { background-color: var(--primary-color); }
-    .bg-blue { background-color: var(--stat-blue); }
-    .bg-green { background-color: var(--stat-green); }
-    .bg-orange { background-color: var(--stat-orange); }
-    .bg-purple { background-color: var(--stat-purple); }
+    .stat-card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      transition: transform 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .stat-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .stat-info h2 {
+      font-size: 1.5rem;
+      margin-bottom: 2px;
+      color: var(--text-color);
+    }
+
+    .stat-info p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .bg-red {
+      background-color: var(--primary-color);
+    }
+
+    .bg-blue {
+      background-color: var(--stat-blue);
+    }
+
+    .bg-green {
+      background-color: var(--stat-green);
+    }
+
+    .bg-orange {
+      background-color: var(--stat-orange);
+    }
+
+    .bg-purple {
+      background-color: var(--stat-purple);
+    }
 
     /* --- CARDS --- */
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
-    .card { background: var(--card-bg); border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); transition: all 0.3s ease; display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
-    .card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); border-color: rgba(217, 4, 41, 0.3); }
-    .card-icon-wrapper { width: 48px; height: 48px; background-color: #ffebee; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary-color); font-size: 1.4rem; margin-bottom: 20px; }
-    .card h3 { font-size: 1.15rem; margin-bottom: 8px; color: var(--text-color); }
-    .card p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; flex-grow: 1; }
-    .card-btn { background-color: var(--primary-color); color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; transition: 0.3s; border: none; cursor: pointer; }
-    .card-btn:hover { background-color: var(--primary-hover); }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 25px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-md);
+      border-color: rgba(217, 4, 41, 0.3);
+    }
+
+    .card-icon-wrapper {
+      width: 48px;
+      height: 48px;
+      background-color: #ffebee;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary-color);
+      font-size: 1.4rem;
+      margin-bottom: 20px;
+    }
+
+    .card h3 {
+      font-size: 1.15rem;
+      margin-bottom: 8px;
+      color: var(--text-color);
+    }
+
+    .card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      flex-grow: 1;
+    }
+
+    .card-btn {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: 0.3s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .card-btn:hover {
+      background-color: var(--primary-hover);
+    }
 
     /* --- NOTIFICATION LOGIN --- */
     .notification {
-      position: fixed; top: 85px; right: 20px; background: white; border-left: 5px solid #10b981;
-      color: #333; padding: 15px 20px; border-radius: 4px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-      z-index: 1100; display: none; align-items: center; gap: 12px; animation: slideIn 0.4s ease forwards;
+      position: fixed;
+      top: 85px;
+      right: 20px;
+      background: white;
+      border-left: 5px solid #10b981;
+      color: #333;
+      padding: 15px 20px;
+      border-radius: 4px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      z-index: 1100;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.4s ease forwards;
       min-width: 280px;
     }
-    .notification i { color: #10b981; font-size: 1.2rem; }
-    @keyframes slideIn { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
-    @keyframes fadeOut { to { opacity: 0; transform: translateX(50px); } }
+
+    .notification i {
+      color: #10b981;
+      font-size: 1.2rem;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(50px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        transform: translateX(50px);
+      }
+    }
 
     /* --- STYLE MODAL LOGOUT (DIUBAH MIRIP LOGIN) --- */
     .modal-overlay {
@@ -225,11 +534,12 @@ if ($role == 'pengurus') {
     .modal-box {
       background: #fff;
       padding: 40px 30px;
-      border-radius: var(--radius); /* Pakai radius yang sama dengan card login */
+      border-radius: var(--radius);
+      /* Pakai radius yang sama dengan card login */
       width: 90%;
       max-width: 400px;
       text-align: center;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
       border: 1px solid var(--border-color);
       transform: scale(0.9);
       transition: transform 0.3s ease;
@@ -242,7 +552,8 @@ if ($role == 'pengurus') {
     .modal-icon {
       width: 80px;
       height: 80px;
-      background: #fee2e2; /* Warna background soft red */
+      background: #fee2e2;
+      /* Warna background soft red */
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -270,16 +581,20 @@ if ($role == 'pengurus') {
       display: flex;
       gap: 15px;
       justify-content: center;
-      flex-direction: column; /* Default column untuk mobile feel, bisa diubah row jika lebar */
+      flex-direction: column;
+      /* Default column untuk mobile feel, bisa diubah row jika lebar */
     }
-    
+
     @media (min-width: 400px) {
-        .modal-actions { flex-direction: row; }
+      .modal-actions {
+        flex-direction: row;
+      }
     }
 
     .btn-modal {
       padding: 13px;
-      border-radius: 10px; /* Sama seperti button login */
+      border-radius: 10px;
+      /* Sama seperti button login */
       font-weight: 600;
       cursor: pointer;
       border: none;
@@ -293,6 +608,7 @@ if ($role == 'pengurus') {
       background-color: #f1f5f9;
       color: var(--text-muted);
     }
+
     .btn-cancel:hover {
       background-color: #e2e8f0;
       color: var(--text-color);
@@ -303,6 +619,7 @@ if ($role == 'pengurus') {
       background-color: var(--primary-color);
       color: white;
     }
+
     .btn-logout:hover {
       background-color: var(--primary-hover);
       transform: translateY(-2px);
@@ -310,16 +627,37 @@ if ($role == 'pengurus') {
 
     /* --- RESPONSIVE --- */
     @media (max-width: 992px) {
-      .main-content { width: 100%; padding: 20px; }
-      .sidebar {
-        position: fixed; top: var(--header-height); left: auto; right: -260px;
-        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1); border-right: none;
-        border-left: 1px solid var(--border-color); transition: right 0.3s ease;
+      .main-content {
+        width: 100%;
+        padding: 20px;
       }
-      .sidebar.active { right: 0; }
-      .menu-toggle { display: block; }
-      .logo span { display: none; }
-      .profile-greeting { display: none; }
+
+      .sidebar {
+        position: fixed;
+        top: var(--header-height);
+        left: auto;
+        right: -260px;
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+        border-right: none;
+        border-left: 1px solid var(--border-color);
+        transition: right 0.3s ease;
+      }
+
+      .sidebar.active {
+        right: 0;
+      }
+
+      .menu-toggle {
+        display: block;
+      }
+
+      .logo span {
+        display: none;
+      }
+
+      .profile-greeting {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -399,8 +737,10 @@ if ($role == 'pengurus') {
 
         <?php if ($role == 'pengurus'): ?>
           <li><a href="kelolaabsen.php"><i class="fa-solid fa-calendar-check"></i> Kelola Absensi</a></li>
-          <li><a href="kelolaperpus.php"><i class="fa-solid fa-book"></i> Kelola Perpustakaan Digital</a></li>
+          <li><a href="kelolaperpus.php"><i class="fa-solid fa-book"></i> Kelola Perpustakaan</a></li>
           <li><a href="kelola_pendaftaran.php"><i class="fa-solid fa-users"></i> Kelola Pendaftaran</a></li>
+          <li><a href="kelola_beranda.php"><i class="fa-solid fa-pen-to-square"></i> Edit Halaman Utama</a></li>
+          
         <?php else: ?>
           <li><a href="absensi.php"><i class="fa-solid fa-calendar-check"></i> Rekap Absensi</a></li>
           <li><a href="perpus.php"><i class="fa-solid fa-book"></i> Perpustakaan Digital</a></li>
@@ -426,32 +766,53 @@ if ($role == 'pengurus') {
         <?php if ($role == 'pengurus'): ?>
           <div class="stat-card">
             <div class="stat-icon bg-blue"><i class="fa-solid fa-users"></i></div>
-            <div class="stat-info"><h2><?= $stat_total_anggota ?></h2><p>Total Anggota</p></div>
+            <div class="stat-info">
+              <h2><?= $stat_total_anggota ?></h2>
+              <p>Total Anggota</p>
+            </div>
           </div>
           <div class="stat-card">
             <div class="stat-icon bg-green"><i class="fa-solid fa-calendar-check"></i></div>
-            <div class="stat-info"><h2><?= $stat_total_hadir_bulan_ini ?></h2><p>Kehadiran Bulan Ini</p></div>
+            <div class="stat-info">
+              <h2><?= $stat_total_hadir_bulan_ini ?></h2>
+              <p>Kehadiran Bulan Ini</p>
+            </div>
           </div>
           <div class="stat-card">
             <div class="stat-icon bg-orange"><i class="fa-solid fa-book"></i></div>
-            <div class="stat-info"><h2><?= $stat_total_buku ?></h2><p>Total Materi</p></div>
+            <div class="stat-info">
+              <h2><?= $stat_total_buku ?></h2>
+              <p>Total Materi</p>
+            </div>
           </div>
           <div class="stat-card">
             <div class="stat-icon bg-purple"><i class="fa-solid fa-user-plus"></i></div>
-            <div class="stat-info"><h2><?= $stat_pendaftaran_baru ?></h2><p>Pendaftaran Baru</p></div>
+            <div class="stat-info">
+              <h2><?= $stat_pendaftaran_baru ?></h2>
+              <p>Pendaftaran Baru</p>
+            </div>
           </div>
         <?php else: ?>
           <div class="stat-card">
             <div class="stat-icon bg-green"><i class="fa-solid fa-check-circle"></i></div>
-            <div class="stat-info"><h2><?= $stat_hadir_saya ?></h2><p>Total Kehadiran Saya</p></div>
+            <div class="stat-info">
+              <h2><?= $stat_hadir_saya ?></h2>
+              <p>Total Kehadiran Saya</p>
+            </div>
           </div>
           <div class="stat-card">
             <div class="stat-icon bg-blue"><i class="fa-solid fa-percent"></i></div>
-            <div class="stat-info"><h2><?= $stat_persentase ?>%</h2><p>Persentase Kehadiran</p></div>
+            <div class="stat-info">
+              <h2><?= $stat_persentase ?>%</h2>
+              <p>Persentase Kehadiran</p>
+            </div>
           </div>
           <div class="stat-card">
             <div class="stat-icon bg-orange"><i class="fa-solid fa-star"></i></div>
-            <div class="stat-info"><h2><?= $stat_status ?></h2><p>Status Keaktifan</p></div>
+            <div class="stat-info">
+              <h2><?= $stat_status ?></h2>
+              <p>Status Keaktifan</p>
+            </div>
           </div>
         <?php endif; ?>
       </div>
@@ -504,12 +865,12 @@ if ($role == 'pengurus') {
       const profileDropdown = document.getElementById('profileDropdown');
 
       // Toggle Sidebar
-      if(menuToggle) {
-          menuToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            sidebar.classList.toggle('active');
-            profileDropdown.classList.remove('active');
-          });
+      if (menuToggle) {
+        menuToggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          sidebar.classList.toggle('active');
+          profileDropdown.classList.remove('active');
+        });
       }
 
       // Toggle Profile Dropdown
@@ -558,13 +919,14 @@ if ($role == 'pengurus') {
     function proceedLogout() {
       window.location.href = "../logout.php";
     }
-    
+
     // Tutup modal jika klik overlay
     document.getElementById('logoutModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeLogoutModal();
-        }
+      if (e.target === this) {
+        closeLogoutModal();
+      }
     });
   </script>
 </body>
+
 </html>

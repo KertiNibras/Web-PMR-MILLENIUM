@@ -232,6 +232,18 @@ if (isset($_POST['login'])) {
             box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
             color: #fff;
         }
+        /* Solusi: Override style untuk tombol di dalam box error */
+.error .btn {
+    background-color: #dc2626; /* Warna merah solid */
+    color: #fff; /* Tulisan putih */
+    border: none;
+    box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+}
+
+.error .btn:hover {
+    background-color: #b91c1c; /* Warna merah lebih gelap saat hover */
+    transform: translateY(-2px);
+}
 
         .btn-primary {
             background-color: var(--primary-color);
