@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 17, 2026 at 03:11 AM
+-- Generation Time: Apr 22, 2026 at 02:54 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -44,7 +44,9 @@ CREATE TABLE `absensi` (
 --
 
 INSERT INTO `absensi` (`id`, `user_id`, `kegiatan`, `tanggal`, `jam`, `foto`, `status`, `keterangan`, `created_at`) VALUES
-(27, 1, '', '2026-03-04', '13:39:14', 'absen_1_1772606354.png', 'hadir', '-', '2026-03-04 06:39:14');
+(26, 1, 'Absensi Harian', '2026-03-04', '11:09:34', 'absen_1_1772597374.jpeg', 'hadir', '-', '2026-03-04 04:09:34'),
+(27, 1, '', '2026-03-04', '13:39:14', 'absen_1_1772606354.png', 'hadir', '-', '2026-03-04 06:39:14'),
+(28, 1, '', '2026-04-17', '09:50:25', 'absen_1_1776394225.png', 'hadir', '-', '2026-04-17 02:50:25');
 
 -- --------------------------------------------------------
 
@@ -69,8 +71,8 @@ CREATE TABLE `form_questions` (
 INSERT INTO `form_questions` (`id`, `question_text`, `question_type`, `options`, `is_required`, `ordering`, `created_at`) VALUES
 (10, 'Nama Lengkap', 'text', '[]', 1, 1, '2026-02-23 13:21:02'),
 (12, 'Kelas & Jurusan', 'select', '[\"XI RPL 1\",\"XI RPL 2\",\"X RPL 1\",\"X RPL 2\"]', 1, 2, '2026-02-23 13:21:48'),
-(18, 'Prestasi', 'file', '[]', 0, 4, '2026-02-27 03:49:16'),
-(19, 'Alasan', 'text', '[]', 1, 4, '2026-04-17 01:03:03');
+(13, 'Alasan \"Opsional\"', 'text', '[]', 0, 4, '2026-02-23 14:48:48'),
+(18, 'Prestasi', 'file', '[]', 0, 4, '2026-02-27 03:49:16');
 
 -- --------------------------------------------------------
 
@@ -135,6 +137,13 @@ CREATE TABLE `pendaftaran` (
   `submission_date` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `pendaftaran`
+--
+
+INSERT INTO `pendaftaran` (`id`, `nama_lengkap`, `kelas`, `jurusan`, `no_whatsapp`, `answers`, `submission_date`) VALUES
+(18, 'kemala', 'XI RPL 1', '-', '-', '{\"Nama Lengkap\":\"kemala\",\"Kelas & Jurusan\":\"XI RPL 1\",\"Alasan \\\"Opsional\\\"\":\"gabut\"}', '2026-04-01 03:06:40');
+
 -- --------------------------------------------------------
 
 --
@@ -144,17 +153,17 @@ CREATE TABLE `pendaftaran` (
 CREATE TABLE `pengaturan_absensi` (
   `id` int(11) NOT NULL,
   `tanggal` date NOT NULL,
-  `jam_mulai` time NOT NULL,
-  `jam_selesai` time NOT NULL,
-  `status` enum('aktif','tidak') NOT NULL DEFAULT 'tidak'
+  `waktu_mulai` time NOT NULL,
+  `waktu_selesai` time NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `pengaturan_absensi`
 --
 
-INSERT INTO `pengaturan_absensi` (`id`, `tanggal`, `jam_mulai`, `jam_selesai`, `status`) VALUES
-(0, '2026-03-04', '13:28:00', '14:00:00', 'tidak');
+INSERT INTO `pengaturan_absensi` (`id`, `tanggal`, `waktu_mulai`, `waktu_selesai`) VALUES
+(1, '2026-04-17', '09:20:00', '11:30:00'),
+(2, '2026-03-05', '11:05:00', '11:10:00');
 
 -- --------------------------------------------------------
 
@@ -292,6 +301,12 @@ ALTER TABLE `pendaftaran`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `pengaturan_absensi`
+--
+ALTER TABLE `pengaturan_absensi`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `pengurus`
 --
 ALTER TABLE `pengurus`
@@ -323,7 +338,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `absensi`
 --
 ALTER TABLE `absensi`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `form_questions`
@@ -347,13 +362,19 @@ ALTER TABLE `kegiatan`
 -- AUTO_INCREMENT for table `lomba`
 --
 ALTER TABLE `lomba`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `pendaftaran`
 --
 ALTER TABLE `pendaftaran`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+
+--
+-- AUTO_INCREMENT for table `pengaturan_absensi`
+--
+ALTER TABLE `pengaturan_absensi`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `pengurus`
