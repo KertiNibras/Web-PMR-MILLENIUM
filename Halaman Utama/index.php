@@ -1,32 +1,48 @@
 <?php
 session_start();
-include '../koneksi.php'; // Pastikan path ke koneksi benar
+include '../koneksi.php';
 
-// Cek status login
-$is_logged_in = isset($_SESSION['nama']);
-$role = isset($_SESSION['role']) ? $_SESSION['role'] : '';
-$nama_user = $is_logged_in ? htmlspecialchars($_SESSION['nama']) : 'Guest';
-
-// Tentukan link dashboard berdasarkan role
-$dashboard_link = '../Login/login.php';
+// Cek Login
+ $is_logged_in = isset($_SESSION['nama']);
+ $role = isset($_SESSION['role']) ? $_SESSION['role'] : '';
+ $nama_user = $is_logged_in ? htmlspecialchars($_SESSION['nama']) : 'Guest';
+ $dashboard_link = '../Login/login.php';
 if ($is_logged_in) {
-  if ($role == 'pengurus') {
-    $dashboard_link = '../Dashboard Anggota/anggota.php';
+  $dashboard_link = ($role == 'pengurus') ? '../Dashboard Anggota/anggota.php' : '../Dashboard Anggota/anggota.php';
+}
+
+// LOGIC: Ambil Data
+ $hero_query = mysqli_query($koneksi, "SELECT file_name FROM hero_background ORDER BY urutan ASC");
+ $hero_images = [];
+while ($row = mysqli_fetch_assoc($hero_query)) {
+  if (!empty($row['file_name']) && file_exists('../Gambar/' . $row['file_name'])) {
+    $hero_images[] = '../Gambar/' . htmlspecialchars($row['file_name']);
+  }
+}
+if (empty($hero_images)) {
+  $hero_images[] = '../Gambar/background.png';
+}
+
+// Ambil Pengaturan Animasi
+ $set_effect = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT setting_value FROM settings WHERE setting_key='hero_effect'"));
+ $set_delay = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT setting_value FROM settings WHERE setting_key='hero_delay'"));
+ $hero_effect = $set_effect ? $set_effect['setting_value'] : 'slide';
+ $hero_delay = $set_delay ? intval($set_delay['setting_value']) : 5000;
+
+// Logic Footer
+ $social_query = mysqli_query($koneksi, "SELECT * FROM social_links ORDER BY urutan ASC");
+ $social_links = [];
+while ($row = mysqli_fetch_assoc($social_query)) {
+  if (!empty($row['icon_url'])) {
+    $row['icon_src'] = (strpos($row['icon_url'], 'http') === 0) ? $row['icon_url'] : '../Gambar/' . $row['icon_url'];
   } else {
-    $dashboard_link = '../Dashboard Anggota/anggota.php';
+    $row['icon_src'] = '';
   }
+  $social_links[] = $row;
 }
-
-// LOGIC: Ambil gambar hero dari database
-$hero_query = mysqli_query($koneksi, "SELECT file_name FROM hero_background ORDER BY id DESC LIMIT 1");
-$hero_data = mysqli_fetch_assoc($hero_query);
-$hero_image = '../Gambar/background.png'; // Default fallback
-
-if ($hero_data && !empty($hero_data['file_name'])) {
-  if (file_exists('../Gambar/' . $hero_data['file_name'])) {
-    $hero_image = '../Gambar/' . htmlspecialchars($hero_data['file_name']);
-  }
-}
+ $setting_query = mysqli_query($koneksi, "SELECT setting_value FROM settings WHERE setting_key = 'footer_copyright'");
+ $setting_data = mysqli_fetch_assoc($setting_query);
+ $copyright_text = $setting_data ? $setting_data['setting_value'] : '© 2026 PMR Millenium';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -35,25 +51,18 @@ if ($hero_data && !empty($hero_data['file_name'])) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PMR Millenium - SMKN 1 Cibinong</title>
-
-  <!-- Libraries CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.css" />
-
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
-
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
     :root {
       --primary: #c1121f;
       --primary-dark: #9b0d18;
-      --secondary: #f5f5f5;
       --text-dark: #333333;
-      --text-light: #777777;
       --white: #ffffff;
-      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     }
 
     * {
@@ -66,10 +75,6 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       scroll-behavior: smooth;
     }
 
-    section {
-      scroll-margin-top: 80px;
-    }
-
     body {
       font-family: 'Poppins', sans-serif;
       background-color: #fafafa;
@@ -77,7 +82,7 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       overflow-x: hidden;
     }
 
-    /* --- NAVBAR --- */
+    /* NAVBAR */
     header {
       background: var(--white);
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
@@ -101,7 +106,6 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       align-items: center;
       gap: 10px;
       font-weight: 700;
-      color: var(--text-dark);
       font-size: 18px;
     }
 
@@ -118,12 +122,9 @@ if ($hero_data && !empty($hero_data['file_name'])) {
 
     .nav-links li a {
       text-decoration: none;
-      color: var(--text-dark);
+      color: var(--text_dark);
       font-weight: 500;
       font-size: 14px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
       transition: color 0.3s;
     }
 
@@ -134,38 +135,91 @@ if ($hero_data && !empty($hero_data['file_name'])) {
     .btn-header {
       background-color: var(--primary);
       color: white !important;
-      text-decoration: none;
       padding: 10px 20px;
       border-radius: 8px;
       font-weight: 600;
       font-size: 14px;
-      transition: background-color 0.3s;
       display: inline-flex;
       align-items: center;
       gap: 8px;
     }
 
-    .btn-header:hover {
-      background-color: var(--primary-dark);
-    }
-
-    /* --- HERO SECTION --- */
+    /* HERO SWIPER */
     .hero {
-      min-height: 100vh;
-      background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6));
-      background-position: center;
-      background-size: cover;
-      background-repeat: no-repeat;
-      display: flex;
-      align-items: center;
-      padding: 0 10%;
-      color: var(--white);
+      height: 100vh;
       position: relative;
+      overflow: hidden;
+      background: #000;
     }
 
-    .hero-content {
-      max-width: 700px;
+    .heroSwiper {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    .heroSwiper .swiper-slide {
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .heroSwiper .swiper-pagination {
+      display: none;
+    }
+
+    /* Hapus Titik */
+
+    /* LOGIC ANIMASI ZOOM */
+    .heroSwiper.zoom-mode .swiper-slide-active {
+      animation: kenburns 10s ease-in-out infinite alternate;
+    }
+
+    @keyframes kenburns {
+      0% {
+        transform: scale(1);
+      }
+
+      100% {
+        transform: scale(1.1);
+      }
+    }
+
+    .hero-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6));
       z-index: 2;
+    }
+
+    /* [REVISED] TEKS RATA KIRI SEJAJAR NAVBAR */
+    .hero-content {
+      position: relative;
+      z-index: 3;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      /* Posisi Tengah Vertikal */
+      align-items: flex-start;
+      /* [FIX] Posisi Kiri Horisontal */
+
+      /* [FIX] Align dengan Navbar */
+      max-width: 1300px;
+      /* Samakan dengan max-width navbar */
+      width: 100%;
+      margin: 0 auto;
+      /* Pusatkan container agar sejajar dengan header */
+      padding: 0 20px;
+      /* Samakan padding dengan navbar */
+
+      color: var(--white);
     }
 
     .hero-title {
@@ -173,6 +227,10 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       font-weight: 700;
       line-height: 1.2;
       margin-bottom: 20px;
+      text-align: left;
+      /* Pastikan teks rata kiri */
+      max-width: 700px;
+      /* Batasi lebar agar tidak terlalu panjang */
     }
 
     .hero-title span {
@@ -188,6 +246,10 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       margin-bottom: 30px;
       opacity: 0.9;
       line-height: 1.6;
+      text-align: left;
+      /* Pastikan teks rata kiri */
+      max-width: 600px;
+      /* Batasi lebar paragraf */
     }
 
     .btn-secondary {
@@ -207,7 +269,7 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       color: var(--primary);
     }
 
-    /* --- GENERAL SECTION --- */
+    /* SECTIONS */
     .section {
       padding: 80px 5%;
     }
@@ -217,12 +279,11 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       font-size: 32px;
       font-weight: 700;
       margin-bottom: 10px;
-      color: var(--text-dark);
     }
 
     .section-subtitle {
       text-align: center;
-      color: var(--text-light);
+      color: #777;
       margin-bottom: 50px;
       font-size: 16px;
     }
@@ -232,11 +293,6 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       margin: 0 auto;
     }
 
-    /* --- VISI MISI --- */
-    .visi-misi-section {
-      background: var(--white);
-    }
-
     .card-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -244,30 +300,12 @@ if ($hero_data && !empty($hero_data['file_name'])) {
     }
 
     .card-visi-misi {
-      background: var(--white);
+      background: white;
       border-radius: 15px;
       padding: 30px;
-      box-shadow: var(--shadow);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
       border-top: 4px solid var(--primary);
-      transition: transform 0.3s;
     }
-
-    .card-visi-misi:hover {
-      transform: translateY(-5px);
-    }
-    .top-staff-grid {
-  display: flex;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 20px;
-  max-width: 1200px;
-  margin: 0 auto 30px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-.top-staff-grid .card-pengurus {
-  width: 200px;
-}
-
 
     .icon-title {
       display: flex;
@@ -288,49 +326,27 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       font-size: 20px;
     }
 
-    .card-visi-misi h3 {
-      font-size: 20px;
-      margin: 0;
-      color: var(--text-dark);
-    }
-
-    .card-visi-misi p,
-    .card-visi-misi ul {
-      color: var(--text-light);
-      font-size: 15px;
-      line-height: 1.8;
-    }
-
-    .card-visi-misi ul {
-      padding-left: 20px;
-    }
-
-    /* --- PENGURUS --- */
+    /* PENGURUS */
     .pengurus-section {
       background-color: #f0f2f5;
-    }
-
-    .leader-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 30px;
-      max-width: 800px;
-      margin: 0 auto 50px;
     }
 
     .staff-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 25px;
+      justify-items: center;
     }
 
     .card-pengurus {
-      background: var(--white);
+      background: white;
       border-radius: 15px;
       padding: 20px;
       text-align: center;
-      box-shadow: var(--shadow);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
       transition: transform 0.3s;
+      width: 100%;
+      max-width: 280px;
     }
 
     .card-pengurus:hover {
@@ -343,19 +359,13 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       object-fit: cover;
       border-radius: 50%;
       margin: 20px auto 15px;
-      border: 5px solid var(--secondary);
+      border: 5px solid #f5f5f5;
       cursor: pointer;
-      transition: border-color 0.3s;
-    }
-
-    .card-pengurus img:hover {
-      border-color: var(--primary);
     }
 
     .card-pengurus h3 {
       font-size: 18px;
       margin-bottom: 5px;
-      color: var(--text-dark);
     }
 
     .card-pengurus .jabatan {
@@ -371,7 +381,7 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       align-items: center;
       gap: 5px;
       font-size: 12px;
-      color: var(--text-light);
+      color: #777;
       background: #f5f5f5;
       padding: 4px 10px;
       border-radius: 20px;
@@ -385,9 +395,8 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       margin: 0;
     }
 
-    /* --- SWIPER CAROUSEL --- */
-    .swiper {
-      width: 100%;
+    /* KEGIATAN SWIPER */
+    .swiper.kegiatanSwiper {
       padding: 20px 0 50px;
     }
 
@@ -404,13 +413,7 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       width: 100%;
       height: 250px;
       object-fit: cover;
-      display: block;
       cursor: pointer;
-      transition: transform 0.3s;
-    }
-
-    .swiper-slide img:hover {
-      transform: scale(1.02);
     }
 
     .swiper-slide-content {
@@ -420,25 +423,15 @@ if ($hero_data && !empty($hero_data['file_name'])) {
     .swiper-slide-content h3 {
       font-size: 18px;
       margin-bottom: 8px;
-      color: var(--text-dark);
     }
 
     .swiper-slide-content p {
       font-size: 14px;
-      color: var(--text-light);
+      color: #777;
       line-height: 1.6;
     }
 
-    .swiper-pagination-bullet {
-      background-color: var(--primary);
-      opacity: 0.3;
-    }
-
-    .swiper-pagination-bullet-active {
-      opacity: 1;
-    }
-
-    /* --- MODAL STYLING --- */
+    /* MODAL */
     .modal {
       display: none;
       position: fixed;
@@ -454,7 +447,7 @@ if ($hero_data && !empty($hero_data['file_name'])) {
     }
 
     .modal-content-box {
-      background: var(--white);
+      background: white;
       border-radius: 12px;
       max-width: 600px;
       width: 90%;
@@ -480,16 +473,18 @@ if ($hero_data && !empty($hero_data['file_name'])) {
 
     .modal-image-container {
       width: 100%;
-      max-height: 400px;
+      max-height: 70vh;
       overflow: hidden;
       background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     .modal-image-container img {
-      width: 100%;
-      height: auto;
-      object-fit: cover;
-      display: block;
+      max-width: 100%;
+      max-height: 70vh;
+      object-fit: contain;
     }
 
     .modal-text-container {
@@ -499,12 +494,11 @@ if ($hero_data && !empty($hero_data['file_name'])) {
 
     .modal-text-container h3 {
       margin-bottom: 10px;
-      color: var(--text-dark);
       font-size: 20px;
     }
 
     .modal-text-container p {
-      color: var(--text-light);
+      color: #777;
       font-size: 14px;
       line-height: 1.6;
       margin: 0;
@@ -518,26 +512,16 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       font-size: 35px;
       font-weight: bold;
       cursor: pointer;
-      transition: 0.3s;
       z-index: 10;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
 
-    .modal .close-btn:hover {
-      color: var(--primary);
-    }
-
-    /* --- FOOTER --- */
+    /* FOOTER */
     .footer {
       background: #222;
       color: #aaa;
       text-align: center;
       padding: 40px 20px;
       font-size: 14px;
-    }
-
-    .footer .social-icons {
-      margin-bottom: 15px;
     }
 
     .footer .social-icons a {
@@ -548,17 +532,11 @@ if ($hero_data && !empty($hero_data['file_name'])) {
     .footer .social-icons img {
       width: 24px;
       height: 24px;
-      filter: brightness(0) invert(1);
       opacity: 0.7;
       transition: 0.3s;
     }
 
-    .footer .social-icons a:hover img {
-      opacity: 1;
-      transform: scale(1.1);
-    }
-
-    /* --- MOBILE MENU --- */
+    /* MOBILE */
     .hamburger {
       display: none;
       font-size: 24px;
@@ -606,30 +584,12 @@ if ($hero_data && !empty($hero_data['file_name'])) {
 
     .mobile-menu a {
       text-decoration: none;
-      color: var(--text-dark);
+      color: #333;
       font-size: 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
       padding: 10px 0;
       border-bottom: 1px solid #eee;
     }
 
-    .mobile-menu a:hover {
-      color: var(--primary);
-    }
-
-    .mobile-close {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      font-size: 24px;
-      background: none;
-      border: none;
-      cursor: pointer;
-    }
-
-    /* --- RESPONSIVE --- */
     @media (max-width: 768px) {
       .hamburger {
         display: block;
@@ -640,31 +600,27 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       }
 
       .hero {
+        padding: 0;
+      }
+
+      .hero-content {
+        align-items: center;
+        /* Di mobile balik ke tengah agar cantik */
         padding: 0 20px;
-        text-align: center;
+        margin: 0;
       }
 
       .hero-title {
         font-size: 32px;
+        text-align: center;
       }
 
       .hero-content p {
-        font-size: 16px;
+        text-align: center;
       }
 
-      .leader-grid,
-      .staff-grid {
-        grid-template-columns: 1fr;
-        padding: 0 10px;
-      }
-
-      .modal-content-box {
-        width: 95%;
-        max-height: 85vh;
-      }
-
-      .modal-text-container {
-        padding: 15px;
+      .btn-secondary {
+        text-align: center;
       }
     }
   </style>
@@ -675,10 +631,7 @@ if ($hero_data && !empty($hero_data['file_name'])) {
   <!-- NAVBAR -->
   <header>
     <nav class="navbar">
-      <div class="logo">
-        <img src="../Gambar/logpmi.png" alt="Logo PMR">
-        <span>PMR MILLENIUM</span>
-      </div>
+      <div class="logo"><img src="../Gambar/logpmi.png" alt="Logo"><span>PMR MILLENIUM</span></div>
       <ul class="nav-links">
         <li><a href="#beranda"><i class="fas fa-home"></i> Beranda</a></li>
         <li><a href="#visi-misi"><i class="fas fa-bullseye"></i> Tentang</a></li>
@@ -698,79 +651,62 @@ if ($hero_data && !empty($hero_data['file_name'])) {
 
   <div class="menu-overlay" id="menu-overlay"></div>
   <div class="mobile-menu" id="mobile-menu">
-    <button class="mobile-close" id="close-btn"><i class="fas fa-times"></i></button>
-    <a href="#beranda"><i class="fas fa-home"></i> Beranda</a>
-    <a href="#visi-misi"><i class="fas fa-bullseye"></i> Tentang</a>
-    <a href="#pengurus"><i class="fas fa-users"></i> Pengurus</a>
-    <a href="#kegiatan"><i class="fas fa-images"></i> Kegiatan</a>
-    <a href="https://uks-smartcare.smkn1cibinong.sch.id/" target="_blank"><i class="fas fa-heartbeat"></i> UKS</a>
-
-    <?php if ($is_logged_in): ?>
-      <a href="<?= $dashboard_link ?>" class="btn-header" style="justify-content: center; margin-top: 20px; color: white !important;"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-    <?php else: ?>
-      <a href="../Login/login.php" class="btn-header" style="justify-content: center; margin-top: 20px; color: white !important;"><i class="fas fa-sign-in-alt"></i> Login</a>
-    <?php endif; ?>
+    <button style="position:absolute; top:15px; right:15px; font-size:24px; background:none; border:none; cursor:pointer;" id="close-btn"><i class="fas fa-times"></i></button>
+    <a href="#beranda"><i class="fas fa-home"></i> Beranda</a><a href="#visi-misi"><i class="fas fa-bullseye"></i> Tentang</a><a href="#pengurus"><i class="fas fa-users"></i> Pengurus</a><a href="#kegiatan"><i class="fas fa-images"></i> Kegiatan</a>
+    <?php if ($is_logged_in): ?><a href="<?= $dashboard_link ?>" class="btn-header" style="text-align:center;"><i class="fas fa-tachometer-alt"></i> Dashboard</a><?php else: ?><a href="../Login/login.php" class="btn-header" style="text-align:center;"><i class="fas fa-sign-in-alt"></i> Login</a><?php endif; ?>
   </div>
 
   <!-- HERO -->
-  <section class="hero" id="beranda" style="background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('<?= $hero_image ?>');">
+  <section class="hero" id="beranda">
+    <div class="swiper heroSwiper">
+      <div class="swiper-wrapper">
+        <?php foreach ($hero_images as $img_src): ?>
+          <div class="swiper-slide" style="background-image: url('<?= $img_src ?>');"></div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+    <div class="hero-overlay"></div>
     <div class="hero-content">
       <h1 class="hero-title" data-aos="fade-right">Bersama Membangun <span>Generasi Peduli</span></h1>
-      <p data-aos="fade-right" data-aos-delay="100">
-        PMR Millenium - Wadah pembinaan generasi muda yang tangguh, mandiri, dan memiliki jiwa kemanusiaan yang tinggi.
-      </p>
-      <a href="../Daftar/register.php" class="btn-secondary" data-aos="fade-right" data-aos-delay="200">
-        Bergabung Sekarang <i class="fas fa-arrow-right" style="margin-left:8px"></i>
-      </a>
+      <p data-aos="fade-right" data-aos-delay="100">PMR Millenium - Wadah pembinaan generasi muda yang tangguh, mandiri, dan memiliki jiwa kemanusiaan yang tinggi.</p>
+      <a href="../Daftar/register.php" class="btn-secondary" data-aos="fade-right" data-aos-delay="200">Bergabung Sekarang <i class="fas fa-arrow-right" style="margin-left:8px"></i></a>
     </div>
   </section>
 
   <!-- VISI MISI -->
-  <section class="section visi-misi-section" id="visi-misi">
+  <section class="section" id="visi-misi">
     <div class="container">
       <h2 class="section-title" data-aos="fade-up">Tentang PMR</h2>
       <p class="section-subtitle" data-aos="fade-up">Memahami tujuan dan arah organisasi kita</p>
-
       <?php
       $q_tentang = mysqli_query($koneksi, "SELECT * FROM tentang_pmr LIMIT 1");
       $tentang = mysqli_fetch_assoc($q_tentang);
-      $misi_arr = isset($tentang['misi']) ? explode("\n", $tentang['misi']) : [];
-      $proker_arr = isset($tentang['program_kerja']) ? explode("\n", $tentang['program_kerja']) : [];
       ?>
-
       <div class="card-container">
         <div class="card-visi-misi" data-aos="fade-up">
           <div class="icon-title">
             <div class="icon-circle"><i class="fas fa-bullseye"></i></div>
             <h3>Visi</h3>
           </div>
-          <p><?= isset($tentang['visi']) ? htmlspecialchars($tentang['visi']) : 'Visi belum diatur.' ?></p>
+          <p><?= isset($tentang['visi']) ? htmlspecialchars($tentang['visi']) : '-' ?></p>
         </div>
-
         <div class="card-visi-misi" data-aos="fade-up" data-aos-delay="100">
           <div class="icon-title">
             <div class="icon-circle"><i class="fas fa-tasks"></i></div>
             <h3>Program Kerja</h3>
           </div>
-          <ul>
-            <?php foreach ($proker_arr as $item): if (trim($item)): ?>
-                <li><?= htmlspecialchars(trim($item)) ?></li>
-            <?php endif;
-            endforeach; ?>
-          </ul>
+          <ul><?php $proker_arr = isset($tentang['program_kerja']) ? explode("\n", $tentang['program_kerja']) : [];
+              foreach ($proker_arr as $item): if (trim($item)): ?><li><?= htmlspecialchars(trim($item)) ?></li><?php endif;
+                                                                                                                                                                                                                  endforeach; ?></ul>
         </div>
-
         <div class="card-visi-misi" data-aos="fade-up" data-aos-delay="200">
           <div class="icon-title">
             <div class="icon-circle"><i class="fas fa-user-friends"></i></div>
             <h3>Misi</h3>
           </div>
-          <ul>
-            <?php foreach ($misi_arr as $item): if (trim($item)): ?>
-                <li><?= htmlspecialchars(trim($item)) ?></li>
-            <?php endif;
-            endforeach; ?>
-          </ul>
+          <ul><?php $misi_arr = isset($tentang['misi']) ? explode("\n", $tentang['misi']) : [];
+              foreach ($misi_arr as $item): if (trim($item)): ?><li><?= htmlspecialchars(trim($item)) ?></li><?php endif;
+                                                                                                                                                                                            endforeach; ?></ul>
         </div>
       </div>
     </div>
@@ -780,7 +716,6 @@ if ($hero_data && !empty($hero_data['file_name'])) {
   <section class="section pengurus-section" id="pengurus">
     <h2 class="section-title" data-aos="fade-down">Struktur Organisasi</h2>
     <p class="section-subtitle" data-aos="fade-up">Kepengurusan PMR Millenium Tahun 2026</p>
-
     <div class="container">
       <?php
       $q_all = mysqli_query($koneksi, "SELECT * FROM pengurus ORDER BY urutan ASC");
@@ -788,61 +723,41 @@ if ($hero_data && !empty($hero_data['file_name'])) {
       while ($row = mysqli_fetch_assoc($q_all)) {
         $all_data[] = $row;
       }
-
       $leaders = array_slice($all_data, 0, 2);
       $top_staff = array_slice($all_data, 2, 4);
       $staff = array_slice($all_data, 6);
       ?>
-
-      <!-- Level 1: Pimpinan Utama -->
       <?php if (count($leaders) > 0): ?>
-        <div class="leader-grid">
+        <!-- [FIX] Ukuran container diperkecil dari 800px menjadi 650px agar kartu lebih dempet -->
+        <div class="staff-grid" style="max-width: 650px; margin: 0 auto 50px; gap: 20px;">
           <?php foreach ($leaders as $p): ?>
             <div class="card-pengurus" data-aos="zoom-in">
-              <img src="../Gambar/<?= htmlspecialchars($p['foto']) ?>" alt="<?= htmlspecialchars($p['nama']) ?>"
-                onclick="openModalDetail(this.src, '<?= htmlspecialchars(addslashes($p['nama'])) ?>', 'Jabatan: <?= htmlspecialchars(addslashes($p['jabatan'])) ?> - Kelas: <?= htmlspecialchars(addslashes($p['kelas'])) ?>')">
+              <img src="../Gambar/<?= htmlspecialchars($p['foto']) ?>" onclick="openModalDetail(this.src, '<?= htmlspecialchars(addslashes($p['nama'])) ?>', '<?= htmlspecialchars(addslashes($p['jabatan'])) ?>')">
               <h3><?= htmlspecialchars($p['nama']) ?></h3>
               <span class="jabatan"><?= htmlspecialchars($p['jabatan']) ?></span>
-              <div class="kelas">
-                <span><?= htmlspecialchars($p['kelas']) ?></span>
-                <img src="../Gambar/<?= htmlspecialchars($p['logo_kelas']) ?>" alt="Logo">
-              </div>
+              <div class="kelas"><span><?= htmlspecialchars($p['kelas']) ?></span><img src="../Gambar/<?= htmlspecialchars($p['logo_kelas']) ?>"></div>
             </div>
           <?php endforeach; ?>
         </div>
       <?php endif; ?>
-
-      <!-- Level 2: Pejabat Tinggi -->
       <?php if (count($top_staff) > 0): ?>
-       <div class="top-staff-grid">
+        <div class="staff-grid" style="margin-bottom: 30px;">
           <?php foreach ($top_staff as $p): ?>
             <div class="card-pengurus" data-aos="fade-up">
-              <img src="../Gambar/<?= htmlspecialchars($p['foto']) ?>" alt="<?= htmlspecialchars($p['nama']) ?>"
-                onclick="openModalDetail(this.src, '<?= htmlspecialchars(addslashes($p['nama'])) ?>', 'Jabatan: <?= htmlspecialchars(addslashes($p['jabatan'])) ?> - Kelas: <?= htmlspecialchars(addslashes($p['kelas'])) ?>')">
-              <h3><?= htmlspecialchars($p['nama']) ?></h3>
-              <span class="jabatan"><?= htmlspecialchars($p['jabatan']) ?></span>
-              <div class="kelas">
-                <?= htmlspecialchars($p['kelas']) ?>
-                <img src="../Gambar/<?= htmlspecialchars($p['logo_kelas']) ?>" alt="Logo">
-              </div>
+              <img src="../Gambar/<?= htmlspecialchars($p['foto']) ?>" onclick="openModalDetail(this.src, '<?= htmlspecialchars(addslashes($p['nama'])) ?>', '<?= htmlspecialchars(addslashes($p['jabatan'])) ?>')">
+              <h3><?= htmlspecialchars($p['nama']) ?></h3><span class="jabatan"><?= htmlspecialchars($p['jabatan']) ?></span>
+              <div class="kelas"><?= htmlspecialchars($p['kelas']) ?><img src="../Gambar/<?= htmlspecialchars($p['logo_kelas']) ?>"></div>
             </div>
           <?php endforeach; ?>
         </div>
       <?php endif; ?>
-
-      <!-- Level 3: Anggota/Sie -->
       <?php if (count($staff) > 0): ?>
         <div class="staff-grid">
           <?php foreach ($staff as $p): ?>
             <div class="card-pengurus" data-aos="fade-up">
-              <img src="../Gambar/<?= htmlspecialchars($p['foto']) ?>" alt="<?= htmlspecialchars($p['nama']) ?>"
-                onclick="openModalDetail(this.src, '<?= htmlspecialchars(addslashes($p['nama'])) ?>', 'Jabatan: <?= htmlspecialchars(addslashes($p['jabatan'])) ?> - Kelas: <?= htmlspecialchars(addslashes($p['kelas'])) ?>')">
-              <h3><?= htmlspecialchars($p['nama']) ?></h3>
-              <span class="jabatan"><?= htmlspecialchars($p['jabatan']) ?></span>
-              <div class="kelas">
-                <?= htmlspecialchars($p['kelas']) ?>
-                <img src="../Gambar/<?= htmlspecialchars($p['logo_kelas']) ?>" alt="Logo">
-              </div>
+              <img src="../Gambar/<?= htmlspecialchars($p['foto']) ?>" onclick="openModalDetail(this.src, '<?= htmlspecialchars(addslashes($p['nama'])) ?>', '<?= htmlspecialchars(addslashes($p['jabatan'])) ?>')">
+              <h3><?= htmlspecialchars($p['nama']) ?></h3><span class="jabatan"><?= htmlspecialchars($p['jabatan']) ?></span>
+              <div class="kelas"><?= htmlspecialchars($p['kelas']) ?><img src="../Gambar/<?= htmlspecialchars($p['logo_kelas']) ?>"></div>
             </div>
           <?php endforeach; ?>
         </div>
@@ -850,21 +765,17 @@ if ($hero_data && !empty($hero_data['file_name'])) {
     </div>
   </section>
 
-  <!-- KEGIATAN SECTION -->
-  <section class="section carousel-section" id="kegiatan" style="background: #fff;">
+  <!-- KEGIATAN -->
+  <section class="section" id="kegiatan" style="background: #fff;">
     <div class="container">
       <h2 class="section-title" data-aos="fade-down">Dokumentasi Kegiatan</h2>
       <p class="section-subtitle" data-aos="fade-up">Momen penting dan aktivitas rutin PMR Millenium</p>
-
       <div class="swiper kegiatanSwiper" data-aos="fade-up">
         <div class="swiper-wrapper">
-          <?php
-          $keg = mysqli_query($koneksi, "SELECT * FROM kegiatan ORDER BY id DESC");
-          while ($k = mysqli_fetch_assoc($keg)):
-          ?>
+          <?php $keg = mysqli_query($koneksi, "SELECT * FROM kegiatan ORDER BY id DESC");
+          while ($k = mysqli_fetch_assoc($keg)): ?>
             <div class="swiper-slide">
-              <img src="../Gambar/<?= htmlspecialchars($k['gambar']) ?>" alt="<?= htmlspecialchars($k['judul']) ?>"
-                onclick="openModalDetail(this.src, '<?= htmlspecialchars(addslashes($k['judul'])) ?>', '<?= htmlspecialchars(addslashes($k['deskripsi'])) ?>')">
+              <img src="../Gambar/<?= htmlspecialchars($k['gambar']) ?>" onclick="openModalDetail(this.src, '<?= htmlspecialchars(addslashes($k['judul'])) ?>', '<?= htmlspecialchars(addslashes($k['deskripsi'])) ?>')">
               <div class="swiper-slide-content">
                 <h3><?= htmlspecialchars($k['judul']) ?></h3>
                 <p><?= htmlspecialchars($k['deskripsi']) ?></p>
@@ -877,21 +788,17 @@ if ($hero_data && !empty($hero_data['file_name'])) {
     </div>
   </section>
 
-  <!-- LOMBA SECTION -->
+  <!-- LOMBA -->
   <section class="section" style="background-color: #f0f2f5;" id="lomba">
     <div class="container">
       <h2 class="section-title" data-aos="fade-down">Prestasi & Lomba</h2>
       <p class="section-subtitle" data-aos="fade-up">Pencapaian membanggakan PMR Millenium</p>
-
-      <div class="swiper lombaSwiper" data-aos="fade-up">
+      <div class="swiper kegiatanSwiper" data-aos="fade-up">
         <div class="swiper-wrapper">
-          <?php
-          $lom = mysqli_query($koneksi, "SELECT * FROM lomba ORDER BY id DESC");
-          while ($l = mysqli_fetch_assoc($lom)):
-          ?>
+          <?php $lom = mysqli_query($koneksi, "SELECT * FROM lomba ORDER BY id DESC");
+          while ($l = mysqli_fetch_assoc($lom)): ?>
             <div class="swiper-slide">
-              <img src="../Gambar/<?= htmlspecialchars($l['gambar']) ?>" alt="<?= htmlspecialchars($l['judul']) ?>"
-                onclick="openModalDetail(this.src, '<?= htmlspecialchars(addslashes($l['judul'])) ?>', '<?= htmlspecialchars(addslashes($l['deskripsi'])) ?>')">
+              <img src="../Gambar/<?= htmlspecialchars($l['gambar']) ?>" onclick="openModalDetail(this.src, '<?= htmlspecialchars(addslashes($l['judul'])) ?>', '<?= htmlspecialchars(addslashes($l['deskripsi'])) ?>')">
               <div class="swiper-slide-content">
                 <h3><?= htmlspecialchars($l['judul']) ?></h3>
                 <p><?= htmlspecialchars($l['deskripsi']) ?></p>
@@ -904,16 +811,13 @@ if ($hero_data && !empty($hero_data['file_name'])) {
     </div>
   </section>
 
-  <!-- MODAL PREVIEW -->
-  <div id="fullPreview" class="modal">
-    <span class="close-btn" onclick="closeModal()">&times;</span>
+  <!-- MODAL -->
+  <div id="fullPreview" class="modal"><span class="close-btn" onclick="closeModal()">&times;</span>
     <div class="modal-content-box">
-      <div class="modal-image-container">
-        <img id="modal-img" src="" alt="Preview">
-      </div>
+      <div class="modal-image-container"><img id="modal-img" src=""></div>
       <div class="modal-text-container">
-        <h3 id="modal-title">Judul Disini</h3>
-        <p id="modal-desc">Deskripsi disini...</p>
+        <h3 id="modal-title"></h3>
+        <p id="modal-desc"></p>
       </div>
     </div>
   </div>
@@ -921,30 +825,23 @@ if ($hero_data && !empty($hero_data['file_name'])) {
   <!-- FOOTER -->
   <footer class="footer">
     <div class="social-icons">
-      <a href="https://www.instagram.com/pmrmillenium" target="_blank"><img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/instagram.svg" alt="IG"></a>
-      <a href="#"><img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/youtube.svg" alt="YT"></a>
-      <a href="#"><img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/facebook.svg" alt="FB"></a>
+      <?php if (count($social_links) > 0): ?><?php foreach ($social_links as $sosmed): ?><a href="<?= htmlspecialchars($sosmed['url']) ?>" target="_blank"><?php if (!empty($sosmed['icon_src'])): ?><img src="<?= $sosmed['icon_src'] ?>"><?php endif; ?></a><?php endforeach; ?><?php endif; ?>
     </div>
-    <p>© 2026 PMR Millenium SMKN 1 Cibinong. All Rights Reserved.</p>
+    <p><?= htmlspecialchars($copyright_text) ?></p>
   </footer>
 
   <!-- Scripts -->
   <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/swiper@9/swiper-bundle.min.js"></script>
-
   <script>
-    // Init AOS
     AOS.init({
       once: true,
       duration: 800
     });
-
-    // Mobile Menu
     const hamburger = document.getElementById('hamburger-btn');
     const mobileMenu = document.getElementById('mobile-menu');
     const overlay = document.getElementById('menu-overlay');
     const closeBtn = document.getElementById('close-btn');
-
     hamburger.addEventListener('click', () => {
       mobileMenu.classList.add('active');
       overlay.classList.add('active');
@@ -956,32 +853,43 @@ if ($hero_data && !empty($hero_data['file_name'])) {
     }
     overlay.addEventListener('click', closeMenu);
     closeBtn.addEventListener('click', closeMenu);
-    document.querySelectorAll('.mobile-menu a').forEach(link => {
-      link.addEventListener('click', closeMenu);
-    });
 
-    // Modal Functions
     function openModalDetail(src, title, desc) {
       document.getElementById('modal-img').src = src;
       document.getElementById('modal-title').innerText = title;
       document.getElementById('modal-desc').innerText = desc;
       document.getElementById('fullPreview').style.display = 'flex';
-      document.body.style.overflow = 'hidden';
     }
 
     function closeModal() {
       document.getElementById('fullPreview').style.display = 'none';
-      document.body.style.overflow = 'auto';
     }
-
     document.getElementById('fullPreview').addEventListener('click', (e) => {
-      if (e.target.closest('.modal-content-box') === null) {
-        closeModal();
+      if (e.target.closest('.modal-content-box') === null) closeModal();
+    });
+
+    // HERO SWIPER
+    var heroEffectMode = '<?= $hero_effect ?>';
+    var heroSwiper = new Swiper(".heroSwiper", {
+      spaceBetween: 0,
+      centeredSlides: true,
+      autoplay: {
+        delay: <?= $hero_delay ?>,
+        disableOnInteraction: false
+      },
+      effect: 'slide',
+      grabCursor: true,
+      loop: true,
+      on: {
+        init: function() {
+          if (heroEffectMode === 'zoom') {
+            this.el.classList.add('zoom-mode');
+          }
+        }
       }
     });
 
-    // Swiper Init
-    var swiperConfig = {
+    var swiperKegiatan = new Swiper(".kegiatanSwiper", {
       slidesPerView: 1,
       spaceBetween: 20,
       loop: true,
@@ -998,9 +906,7 @@ if ($hero_data && !empty($hero_data['file_name'])) {
           slidesPerView: 3
         }
       }
-    };
-    var swiperKegiatan = new Swiper(".kegiatanSwiper", swiperConfig);
-    var swiperLomba = new Swiper(".lombaSwiper", swiperConfig);
+    });
   </script>
 </body>
 

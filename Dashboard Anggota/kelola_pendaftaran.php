@@ -15,10 +15,15 @@ if ($_SESSION['role'] != 'pengurus') {
 // Ambil Data User untuk Header
  $nama_user = htmlspecialchars($_SESSION['nama']);
  $role = $_SESSION['role'];
- $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
- $foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
-if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_session)) {
-  $foto_profil = "../uploads/foto_profil/" . $foto_session;
+ $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : ''; 
+$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff'; // Default UI Avatar
+
+// Pastikan path ke ../uploads/foto_profil/
+if (!empty($foto_session)) {
+    $path_foto = "../uploads/foto_profil/" . $foto_session;
+    if (file_exists($path_foto)) {
+        $foto_profil = $path_foto . "?t=" . time(); // Tambah timestamp supaya anti-cache
+    }
 }
 
 // ================== BLOK PROSES AJAX (SUDAH DIPERBAIKI) ==================
@@ -837,6 +842,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
           <!-- Diubah memanggil fungsi custom -->
           <a href="javascript:void(0)" onclick="confirmLogout()">
             <i class="fa-solid fa-right-from-bracket"></i> Log Out
+          </a>
+        </li>
+        <li>
+          <a href="../Halaman Utama/index.php">
+            <i class="fa-solid fa-globe"></i>Halaman Utama
           </a>
         </li>
       </ul>

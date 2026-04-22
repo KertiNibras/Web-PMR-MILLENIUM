@@ -14,6 +14,14 @@ header('Content-Type: application/json');
 
 // Ambil pengaturan dari database
  $sql = mysqli_query($koneksi, "SELECT * FROM pengaturan_absensi LIMIT 1");
+
+if (!$sql) {
+    // Jika query gagal (misal tabel tidak ada)
+    $response['message'] = 'Error DB: ' . mysqli_error($koneksi);
+    echo json_encode($response);
+    exit;
+}
+
 if (mysqli_num_rows($sql) > 0) {
     $setting = mysqli_fetch_assoc($sql);
     
@@ -24,15 +32,12 @@ if (mysqli_num_rows($sql) > 0) {
     $current_date = date('Y-m-d');
     $current_time = date('H:i:s');
 
-    // LOGICA OTOMATIS
-    // 1. Cek apakah tanggal setting sama dengan tanggal hari ini
+    // Logika Otomatis
     if ($tanggal_setting == $current_date) {
-        // 2. Cek apakah waktu sekarang di antara waktu mulai dan selesai
         if ($current_time >= $setting['waktu_mulai'] && $current_time <= $setting['waktu_selesai']) {
             $response['is_open'] = true;
             $response['message'] = 'Absensi sedang dibuka.';
         } else {
-            // Jika waktu sudah lewat atau belum tiba
             if ($current_time > $setting['waktu_selesai']) {
                  $response['message'] = 'Waktu absensi sudah berakhir.';
             } else {

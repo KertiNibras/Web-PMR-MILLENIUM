@@ -24,8 +24,9 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete_photo') {
     $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
     
     if (!empty($foto_session)) {
-        $file_path = __DIR__ . "/../foto_profil/" . $foto_session;
-        if (file_exists($file_path)) unlink($file_path);
+    // Path diperbaiki ke ../uploads/foto_profil/
+    $file_path = __DIR__ . "/../uploads/foto_profil/" . $foto_session;
+    if (file_exists($file_path)) unlink($file_path);
         
         $query = "UPDATE users SET foto_profil = NULL WHERE id = $id_user";
         if (mysqli_query($koneksi, $query)) {
@@ -50,9 +51,10 @@ if (isset($_POST['image_base64'])) {
     $image = str_replace(' ', '+', $image);
     $data = base64_decode($image);
 
-    $new_file_name = "user_" . $id_user . ".jpg"; 
-    $upload_dir = __DIR__ . "/../foto_profil/";
-    $destination = $upload_dir . $new_file_name;
+   
+$new_file_name = "user_" . $id_user . ".jpg"; 
+$upload_dir = __DIR__ . "/../uploads/foto_profil/";
+$destination = $upload_dir . $new_file_name;
 
     if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
 
@@ -80,7 +82,8 @@ if (isset($_POST['image_base64'])) {
  $foto_display = "https://ui-avatars.com/api/?name=" . urlencode($nama_user) . "&background=d90429&color=fff&size=300";
 
 if (!empty($foto_session)) {
-    $path_check = "../foto_profil/" . $foto_session;
+    // Path diperbaiki ke ../uploads/foto_profil/
+    $path_check = "../uploads/foto_profil/" . $foto_session;
     if (file_exists($path_check)) {
         $foto_display = $path_check . "?t=" . time();
         $has_custom_photo = true;

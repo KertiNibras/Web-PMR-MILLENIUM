@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 22, 2026 at 02:54 AM
+-- Generation Time: Apr 22, 2026 at 05:32 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -44,9 +44,8 @@ CREATE TABLE `absensi` (
 --
 
 INSERT INTO `absensi` (`id`, `user_id`, `kegiatan`, `tanggal`, `jam`, `foto`, `status`, `keterangan`, `created_at`) VALUES
-(26, 1, 'Absensi Harian', '2026-03-04', '11:09:34', 'absen_1_1772597374.jpeg', 'hadir', '-', '2026-03-04 04:09:34'),
 (27, 1, '', '2026-03-04', '13:39:14', 'absen_1_1772606354.png', 'hadir', '-', '2026-03-04 06:39:14'),
-(28, 1, '', '2026-04-17', '09:50:25', 'absen_1_1776394225.png', 'hadir', '-', '2026-04-17 02:50:25');
+(29, 1, '', '2026-04-22', '08:11:14', 'absen_1_1776820274.png', 'hadir', '-', '2026-04-22 01:11:14');
 
 -- --------------------------------------------------------
 
@@ -71,8 +70,8 @@ CREATE TABLE `form_questions` (
 INSERT INTO `form_questions` (`id`, `question_text`, `question_type`, `options`, `is_required`, `ordering`, `created_at`) VALUES
 (10, 'Nama Lengkap', 'text', '[]', 1, 1, '2026-02-23 13:21:02'),
 (12, 'Kelas & Jurusan', 'select', '[\"XI RPL 1\",\"XI RPL 2\",\"X RPL 1\",\"X RPL 2\"]', 1, 2, '2026-02-23 13:21:48'),
-(13, 'Alasan \"Opsional\"', 'text', '[]', 0, 4, '2026-02-23 14:48:48'),
-(18, 'Prestasi', 'file', '[]', 0, 4, '2026-02-27 03:49:16');
+(18, 'Prestasi', 'file', '[]', 0, 3, '2026-02-27 03:49:16'),
+(19, 'Alasan', 'text', '[]', 1, 4, '2026-04-17 01:03:03');
 
 -- --------------------------------------------------------
 
@@ -83,17 +82,18 @@ INSERT INTO `form_questions` (`id`, `question_text`, `question_type`, `options`,
 CREATE TABLE `hero_background` (
   `id` int(11) NOT NULL,
   `file_name` varchar(255) NOT NULL,
-  `uploaded_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `uploaded_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `urutan` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `hero_background`
 --
 
-INSERT INTO `hero_background` (`id`, `file_name`, `uploaded_at`) VALUES
-(1, 'background.png', '2026-04-16 05:49:59'),
-(2, 'Windows 7 cat user profile.jpg', '2026-04-16 05:53:16'),
-(3, '69e1797ce3fc7_background.png', '2026-04-17 00:06:20');
+INSERT INTO `hero_background` (`id`, `file_name`, `uploaded_at`, `urutan`) VALUES
+(6, '69e762f119361_background2.png', '2026-04-21 11:43:45', 0),
+(7, '69e7630cc26f7_background3.png', '2026-04-21 11:44:12', 0),
+(8, '69e7632ea539d_background.png', '2026-04-21 11:44:46', 0);
 
 -- --------------------------------------------------------
 
@@ -162,7 +162,7 @@ CREATE TABLE `pengaturan_absensi` (
 --
 
 INSERT INTO `pengaturan_absensi` (`id`, `tanggal`, `waktu_mulai`, `waktu_selesai`) VALUES
-(1, '2026-04-17', '09:20:00', '11:30:00'),
+(1, '2026-04-22', '08:08:00', '11:30:00'),
 (2, '2026-03-05', '11:05:00', '11:10:00');
 
 -- --------------------------------------------------------
@@ -191,7 +191,8 @@ INSERT INTO `pengurus` (`id`, `nama`, `jabatan`, `kelas`, `logo_kelas`, `foto`, 
 (9, 'Mochammad Naufal Hanif', 'Sekretaris 1', 'XI RPL 1', 'rpl.png', '69e17aabdb4f4.jpg', 3),
 (10, 'Aurelia Zahra', 'Sekretaris 2', 'X DKV 3', 'dkv.png', '69e17ade6199f.png', 4),
 (11, 'Sharhana Hajarani', 'Bendahara 1', 'XI DPIB 1', 'dpib.png', '69e17b6e50a20.png', 5),
-(12, 'Anindia Rahma Alliya', 'Bendahara 2', ' X RPL 1', 'rpl.png', '69e17bb142340.png', 6);
+(12, 'Anindia Rahma Alliya', 'Bendahara 2', ' X RPL 1', 'rpl.png', '69e17bb142340.png', 6),
+(15, 'Bama', 'Nganggur', 'XI RPL 1', 'rpl.png', '69e76948d68c6.jpg', 7);
 
 -- --------------------------------------------------------
 
@@ -214,6 +215,48 @@ CREATE TABLE `perpustakaan` (
 
 INSERT INTO `perpustakaan` (`id`, `judul`, `deskripsi`, `kategori`, `file_pdf`, `created_at`) VALUES
 (2, 'Cara Self Healing', 'Self Healing adalah ketika kamu sedang knock, kamu bisa menyembuhkan diri tanpa bantuan orang lain.', 'Kepalangmerahan', '1771747666_Laporan_Absensi.pdf', '2026-02-22 08:07:46');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `settings`
+--
+
+CREATE TABLE `settings` (
+  `setting_key` varchar(50) NOT NULL,
+  `setting_value` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `settings`
+--
+
+INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
+('footer_copyright', '© 2026 PMR Millenium SMKN 1 Cibinong. All Rights Reserved.'),
+('hero_delay', '5000'),
+('hero_effect', 'slide');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `social_links`
+--
+
+CREATE TABLE `social_links` (
+  `id` int(11) NOT NULL,
+  `platform` varchar(50) NOT NULL,
+  `url` varchar(255) NOT NULL,
+  `icon_url` varchar(255) DEFAULT NULL,
+  `urutan` int(11) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `social_links`
+--
+
+INSERT INTO `social_links` (`id`, `platform`, `url`, `icon_url`, `urutan`) VALUES
+(0, 'Tiktok', 'https://www.tiktok.com/en/', 'tiktok.png', 0),
+(0, 'Instagram', 'https://www.instagram.com/?hl=en', 'instagram.png', 0);
 
 -- --------------------------------------------------------
 
@@ -245,6 +288,7 @@ CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `username` varchar(30) NOT NULL,
   `nama` varchar(100) NOT NULL,
+  `kelas` varchar(50) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `foto_profil` varchar(255) DEFAULT 'default.jpg',
   `role` enum('anggota','pengurus') NOT NULL
@@ -254,10 +298,10 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `nama`, `password`, `foto_profil`, `role`) VALUES
-(1, '1024012342', 'Bama Kerti', 'anggota123', 'user_1.jpg', 'anggota'),
-(2, 'pengurus', 'Naufal Hanif', 'pengurus123', 'user_2.jpg', 'pengurus'),
-(3, '1024012321', 'Inka Dayungitas', 'anggota1234', 'default.jpg', 'anggota');
+INSERT INTO `users` (`id`, `username`, `nama`, `kelas`, `password`, `foto_profil`, `role`) VALUES
+(1, '1024012342', 'Bama Kerti', 'XI RPL 1', 'anggota123', 'user_1.jpg', 'anggota'),
+(2, 'pengurus', 'Naufal Hanif', NULL, 'pengurus123', NULL, 'pengurus'),
+(3, '1024012321', 'Inka Dayungitas', 'XI DKV 1', 'anggota1234', 'default.jpg', 'anggota');
 
 --
 -- Indexes for dumped tables
@@ -319,6 +363,12 @@ ALTER TABLE `perpustakaan`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `settings`
+--
+ALTER TABLE `settings`
+  ADD PRIMARY KEY (`setting_key`);
+
+--
 -- Indexes for table `tentang_pmr`
 --
 ALTER TABLE `tentang_pmr`
@@ -338,7 +388,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `absensi`
 --
 ALTER TABLE `absensi`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT for table `form_questions`
@@ -350,7 +400,7 @@ ALTER TABLE `form_questions`
 -- AUTO_INCREMENT for table `hero_background`
 --
 ALTER TABLE `hero_background`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `kegiatan`
@@ -380,7 +430,7 @@ ALTER TABLE `pengaturan_absensi`
 -- AUTO_INCREMENT for table `pengurus`
 --
 ALTER TABLE `pengurus`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `perpustakaan`
