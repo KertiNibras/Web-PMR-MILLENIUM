@@ -1067,7 +1067,11 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
             return;
           }
           if (type === 'excel') exportToExcel(data, start, end);
-          else if (type === 'pdf') exportToPDF(data, start, end);
+          else   if (type === 'pdf') {
+     // Ganti window.location.href jadi window.open
+     window.open(`export_pdf.php?start=${start}&end=${end}`, '_blank'); 
+     return;
+  }
         }).catch(err => {
           console.error("Error:", err);
           alert("Gagal export.");

@@ -15,7 +15,7 @@ if ($_SESSION['role'] != 'pengurus') {
 // Ambil Data User untuk Header
 $nama_user = htmlspecialchars($_SESSION['nama']);
 $role = $_SESSION['role'];
-$foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : ''; 
+$foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
 $foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff'; // Default UI Avatar
 
 // Pastikan path ke ../uploads/foto_profil/
