@@ -27,21 +27,67 @@ if (!empty($foto_session)) {
 }
 
   // ========================================================
-  // LOGIKA STATISTIK
+  // LOGIKA STATISTIK REALTIME
   // ========================================================
+  $bulan_ini = date('m');
+  $tahun_ini = date('Y');
+  $hari_ini = date('Y-m-d');
 
   if ($role == 'pengurus') {
-    $stat_total_anggota = 25;
-    $stat_total_hadir_bulan_ini = 150;
-    $stat_total_buku = 12;
-    $stat_pendaftaran_baru = 3;
+    // Hitung Total Anggota
+    $q_anggota = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM users WHERE role='anggota'");
+    $stat_total_anggota = mysqli_fetch_assoc($q_anggota)['total'];
+
+    // Hitung Kehadiran Bulan Ini
+    $q_hadir = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM absensi WHERE MONTH(tanggal)='$bulan_ini' AND YEAR(tanggal)='$tahun_ini'");
+    $stat_total_hadir_bulan_ini = mysqli_fetch_assoc($q_hadir)['total'];
+
+    // Hitung Materi
+    $q_buku = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM perpustakaan"); // Sesuaikan nama tabel
+    $stat_total_buku = mysqli_fetch_assoc($q_buku)['total'];
+
+    // Hitung Pendaftar Baru (Pending)
+    $q_daftar = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM pendaftaran WHERE status='pending'");
+    $stat_pendaftaran_baru = mysqli_fetch_assoc($q_daftar)['total'];
+
   } else {
-    $stat_hadir_saya = 8;
-    $stat_total_pertemuan = 10;
-    $stat_persentase = ($stat_total_pertemuan > 0) ? round(($stat_hadir_saya / $stat_total_pertemuan) * 100) : 0;
+    // LOGIKA ANGGOTA (Perhitungan Pertemuan Realtime)
+    
+    // 1. Hitung Hari Libur di bulan ini
+    $tgl_libur_arr = [];
+    $q_libur = mysqli_query($koneksi, "SELECT tanggal FROM hari_libur WHERE MONTH(tanggal)='$bulan_ini' AND YEAR(tanggal)='$tahun_ini'");
+    while($l = mysqli_fetch_assoc($q_libur)) $tgl_libur_arr[] = $l['tanggal'];
+
+    // 2. Loop tanggal bulan ini
+    $total_pertemuan_seharusnya = 0;
+    $days_in_month = cal_days_in_month(CAL_GREGORIAN, $bulan_ini, $tahun_ini);
+    
+    for ($d = 1; $d <= $days_in_month; $d++) {
+        $tgl_check = sprintf("%04d-%02d-%02d", $tahun_ini, $bulan_ini, $d);
+        $dayOfWeek = date('w', strtotime($tgl_check)); // 0=Minggu, 3=Rabu, 5=Jumat
+        
+        // Hanya hitung jika sudah lewat/sampai hari ini
+        if ($tgl_check <= $hari_ini) {
+            // Jika Hari Rabu (3) atau Jumat (5)
+            if (in_array($dayOfWeek, [3, 5])) {
+                // Jika BUKAN hari libur
+                if (!in_array($tgl_check, $tgl_libur_arr)) {
+                    $total_pertemuan_seharusnya++;
+                }
+            }
+        }
+    }
+
+    // 3. Hitung Kehadiran Saya
+    $q_hadir_saya = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM absensi WHERE user_id='$user_id' AND MONTH(tanggal)='$bulan_ini' AND YEAR(tanggal)='$tahun_ini'");
+    $stat_hadir_saya = mysqli_fetch_assoc($q_hadir_saya)['total'];
+
+    // 4. Persentase
+    $stat_persentase = ($total_pertemuan_seharusnya > 0) ? round(($stat_hadir_saya / $total_pertemuan_seharusnya) * 100) : 0;
     $stat_status = ($stat_persentase >= 80) ? 'Baik' : 'Perlu Ditingkatkan';
+    $stat_total_pertemuan = $total_pertemuan_seharusnya; // Kirim ke view
   }
-  ?>
+?>
 
   <!DOCTYPE html>
   <html lang="id">

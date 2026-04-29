@@ -14,33 +14,41 @@ if ($_SESSION['role'] != 'pengurus') {
 
 $nama_user = htmlspecialchars($_SESSION['nama']);
 $role = $_SESSION['role'];
-$foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : ''; 
+$foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
 $foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff'; // Default UI Avatar
 
 // Pastikan path ke ../uploads/foto_profil/
 if (!empty($foto_session)) {
-    $path_foto = "../uploads/foto_profil/" . $foto_session;
-    if (file_exists($path_foto)) {
-        $foto_profil = $path_foto . "?t=" . time(); // Tambah timestamp supaya anti-cache
-    }
+  $path_foto = "../uploads/foto_profil/" . $foto_session;
+  if (file_exists($path_foto)) {
+    $foto_profil = $path_foto . "?t=" . time(); // Tambah timestamp supaya anti-cache
+  }
+}
+
+// --- LOGIC HANDLE TOGGLE LIBUR (AJAX) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_libur'])) {
+  header('Content-Type: application/json');
+  $tgl = mysqli_real_escape_string($koneksi, $_POST['tanggal']);
+
+  $cek = mysqli_query($koneksi, "SELECT id FROM hari_libur WHERE tanggal='$tgl'");
+  if (mysqli_num_rows($cek) > 0) {
+    mysqli_query($koneksi, "DELETE FROM hari_libur WHERE tanggal='$tgl'");
+    echo json_encode(['status' => 'removed']);
+  } else {
+    mysqli_query($koneksi, "INSERT INTO hari_libur (tanggal, keterangan) VALUES ('$tgl', 'Libur Manual')");
+    echo json_encode(['status' => 'added']);
+  }
+  exit;
+}
+
+// --- Ambil data hari libur untuk kalender ---
+$q_libur = mysqli_query($koneksi, "SELECT tanggal FROM hari_libur WHERE MONTH(tanggal)='$month' AND YEAR(tanggal)='$year'");
+$hari_libur_arr = [];
+while ($l = mysqli_fetch_assoc($q_libur)) {
+  $hari_libur_arr[] = $l['tanggal'];
 }
 
 // --- LOGIC HANDLE SETTINGS (POST) ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_absensi'])) {
-  $tanggal = $_POST['tanggal'];
-  $waktu_mulai = $_POST['waktu_mulai'];
-  $waktu_selesai = $_POST['waktu_selesai'];
-
-  $cek = mysqli_query($koneksi, "SELECT id FROM pengaturan_absensi LIMIT 1");
-  if (mysqli_num_rows($cek) > 0) {
-    $row = mysqli_fetch_assoc($cek);
-    mysqli_query($koneksi, "UPDATE pengaturan_absensi SET tanggal='$tanggal', waktu_mulai='$waktu_mulai', waktu_selesai='$waktu_selesai' WHERE id=" . $row['id']);
-  } else {
-    mysqli_query($koneksi, "INSERT INTO pengaturan_absensi (tanggal, waktu_mulai, waktu_selesai) VALUES ('$tanggal', '$waktu_mulai', '$waktu_selesai')");
-  }
-  echo "<script>alert('Pengaturan absensi berhasil diperbarui!'); window.location.href='kelolaabsen.php';</script>";
-}
-
 // Ambil Pengaturan Saat Ini
 $set_query = mysqli_query($koneksi, "SELECT * FROM pengaturan_absensi LIMIT 1");
 $settings = mysqli_fetch_assoc($set_query);
@@ -59,6 +67,22 @@ $res_rekap = mysqli_query($koneksi, $sql_rekap);
 while ($r = mysqli_fetch_assoc($res_rekap)) {
   $rekap_harian[$r['tanggal']] = $r['total'];
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_absensi'])) {
+  $tanggal = $_POST['tanggal'];
+  $waktu_mulai = $_POST['waktu_mulai'];
+  $waktu_selesai = $_POST['waktu_selesai'];
+
+  $cek = mysqli_query($koneksi, "SELECT id FROM pengaturan_absensi LIMIT 1");
+  if (mysqli_num_rows($cek) > 0) {
+    $row = mysqli_fetch_assoc($cek);
+    mysqli_query($koneksi, "UPDATE pengaturan_absensi SET tanggal='$tanggal', waktu_mulai='$waktu_mulai', waktu_selesai='$waktu_selesai' WHERE id=" . $row['id']);
+  } else {
+    mysqli_query($koneksi, "INSERT INTO pengaturan_absensi (tanggal, waktu_mulai, waktu_selesai) VALUES ('$tanggal', '$waktu_mulai', '$waktu_selesai')");
+  }
+  echo "<script>alert('Pengaturan absensi berhasil diperbarui!'); window.location.href='kelolaabsen.php';</script>";
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -873,9 +897,26 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
           for ($day = 1; $day <= $days_in_month; $day++) {
             $date_val = sprintf("%04d-%02d-%02d", $year, $month, $day);
             $dayOfWeek = date('w', strtotime($date_val));
-
             $classes = ['calendar-day'];
-            $content = "";
+            $content = "<div class='day-number'>$day</div>";
+            $is_libur = in_array($date_val, $hari_libur_arr);
+            $is_meeting = in_array($dayOfWeek, [3, 5]); // Rabu/Jumat
+
+            if ($is_libur) {
+              $classes[] = 'bg-libur'; // CSS baru
+              $content .= "<div style='font-size:10px; color:red; font-weight:bold;'>LIBUR</div>";
+            } elseif ($is_meeting) {
+              // Tampilkan logika hadir seperti biasa
+              if (isset($rekap_harian[$date_val])) {
+                $classes[] = 'bg-hadir';
+                $content .= "<div class='attendance-count'>" . $rekap_harian[$date_val] . " Hadir</div>";
+              }
+            }
+
+            // Tambahkan onclick untuk toggle libur
+            echo "<div class='" . implode(' ', $classes) . "' onclick=\"toggleLibur('$date_val')\">";
+            echo $content;
+            echo "</div>";
 
             if ($date_val == $today) $classes[] = 'today';
 
@@ -1106,6 +1147,16 @@ while ($r = mysqli_fetch_assoc($res_rekap)) {
       });
       doc.save(`Rekap_Absensi_${start}_sd_${end}.pdf`);
     }
+
+    function toggleLibur(dateStr) {
+    if(!confirm("Ubah status libur tanggal " + dateStr + "?")) return;
+    const data = new FormData();
+    data.append('toggle_libur', true);
+    data.append('tanggal', dateStr);
+    fetch('', { method: 'POST', body: data })
+    .then(res => res.json())
+    .then(res => { location.reload(); }); // Reload untuk update hitungan
+}
   </script>
 </body>
 
