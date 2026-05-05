@@ -3,6 +3,17 @@ date_default_timezone_set('Asia/Jakarta');
 session_start();
 include '../koneksi.php';
 
+// ========================================================
+// PENGATURAN LOKASI & RADIUS (HARDCODED)
+// ========================================================
+$config = [
+  'nama_lokasi' => 'SMKN 1 Cibinong',
+  'latitude'    => -6.521931983598002, // Sesuaikan jika perlu
+  'longitude'   => 106.8075377172776, // Sesuaikan jika perlu
+  'radius'      => 50 // Radius dalam Meter
+];
+// ========================================================
+
 if (!isset($_SESSION['nama'])) {
   echo '<script>alert("Silakan login terlebih dahulu!"); window.location.href = "../Login/login.php";</script>';
   exit;
@@ -54,7 +65,11 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
   <title>Rekap Absensi | PMR Millenium</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
+
+  <!-- LEAFLET JS & CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <style>
+    /* CSS VARIABLES & RESET */
     :root {
       --primary-color: #d90429;
       --primary-hover: #c92a2a;
@@ -63,6 +78,8 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       --text-muted: #64748b;
       --border-color: #e2e8f0;
       --success-color: #10b981;
+      --warning-color: #f59e0b;
+      --cyan-color: #06b6d4;
       --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
       --radius: 12px;
       --header-height: 70px;
@@ -91,6 +108,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       list-style: none;
     }
 
+    /* HEADER & NAVBAR */
     header {
       background: #fff;
       box-shadow: var(--shadow-sm);
@@ -223,6 +241,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       z-index: 1001;
     }
 
+    /* LAYOUT */
     .dashboard-container {
       display: flex;
       min-height: 100vh;
@@ -272,6 +291,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       width: 100%;
     }
 
+    /* CONTENT STYLES */
     .page-title h1 {
       font-size: 1.75rem;
       color: var(--primary-color);
@@ -284,6 +304,85 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       margin-bottom: 25px;
     }
 
+    /* WIDGET INFO LOKASI */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .info-card {
+      background: white;
+      padding: 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .info-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .info-content h3 {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .info-content p {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-color);
+    }
+
+    .bg-cyan {
+      background-color: var(--cyan-color);
+    }
+
+    .bg-green {
+      background-color: var(--success-color);
+    }
+
+    /* MAP CONTAINER */
+    .map-container {
+      height: 300px;
+      width: 100%;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      margin-bottom: 25px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .user-marker-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-marker-icon .dot {
+      width: 16px;
+      height: 16px;
+      background: #3b82f6;
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    /* STATUS BOX */
     .status-box {
       background: white;
       padding: 25px;
@@ -308,6 +407,11 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       border-color: #bbf7d0;
     }
 
+    .status-box.warning {
+      background: #fffbeb;
+      border-color: #fcd34d;
+    }
+
     .status-icon {
       font-size: 3rem;
       margin-bottom: 10px;
@@ -319,6 +423,10 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
 
     .status-box.active .status-icon {
       color: var(--success-color);
+    }
+
+    .status-box.warning .status-icon {
+      color: var(--warning-color);
     }
 
     .status-title {
@@ -365,6 +473,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       box-shadow: none;
     }
 
+    /* CALENDAR */
     .calendar-container {
       background: white;
       border-radius: var(--radius);
@@ -475,7 +584,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       border-radius: 50%;
     }
 
-    /* Modal & Camera Styles */
+    /* MODAL CAMERA */
     .modal {
       display: none;
       position: fixed;
@@ -520,7 +629,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       padding: 20px;
     }
 
-    /* Camera Container untuk Overlay */
     .camera-wrapper {
       width: 100%;
       background: #1e293b;
@@ -555,7 +663,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       pointer-events: none;
     }
 
-    /* Canvas untuk menggambar kotak wajah */
     #capturedImage {
       z-index: 3;
       display: none;
@@ -578,7 +685,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       z-index: 10;
     }
 
-    /* Face Status Indicator */
     .face-status {
       text-align: center;
       margin-top: 10px;
@@ -588,18 +694,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       transition: all 0.3s;
     }
 
-    .face-status.detecting {
-      color: var(--text-muted);
-    }
-
-    .face-status.found {
-      color: var(--success-color);
-    }
-
-    .face-status.not-found {
-      color: var(--primary-color);
-    }
-
+    /* MODAL LOGOUT (Style dari kelolaperpus.php) */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -609,11 +704,12 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       background: rgba(0, 0, 0, 0.5);
       backdrop-filter: blur(4px);
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       z-index: 9999;
       opacity: 0;
       visibility: hidden;
+      transition: all 0.3s ease;
     }
 
     .modal-overlay.active {
@@ -628,11 +724,19 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       text-align: center;
       width: 90%;
       max-width: 400px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+      border: 1px solid var(--border-color);
+    }
+
+    .modal-overlay.active .modal-box {
+      transform: scale(1);
     }
 
     .modal-icon {
-      width: 70px;
-      height: 70px;
+      width: 60px;
+      height: 60px;
       background: #fee2e2;
       color: var(--primary-color);
       border-radius: 50%;
@@ -640,21 +744,35 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       align-items: center;
       justify-content: center;
       margin: 0 auto 20px;
-      font-size: 2rem;
+      font-size: 24px;
+    }
+
+    .modal-box h3 {
+      margin-bottom: 10px;
+      font-size: 1.25rem;
+      color: var(--text-color);
+    }
+
+    .modal-box p {
+      color: var(--text-muted);
+      margin-bottom: 25px;
+      font-size: 0.95rem;
     }
 
     .modal-actions {
       display: flex;
-      gap: 15px;
+      gap: 10px;
       justify-content: center;
     }
 
     .btn-modal {
       padding: 12px 20px;
-      border-radius: 8px;
+      border-radius: 10px;
       font-weight: 600;
       cursor: pointer;
       border: none;
+      transition: all 0.2s ease;
+      font-size: 0.95rem;
       flex: 1;
     }
 
@@ -663,9 +781,19 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       color: var(--text-muted);
     }
 
+    .btn-cancel:hover {
+      background-color: #e2e8f0;
+      color: var(--text-color);
+    }
+
     .btn-logout {
       background-color: var(--primary-color);
       color: white;
+    }
+
+    .btn-logout:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
     }
 
     @keyframes fadeIn {
@@ -701,6 +829,10 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       .logo span {
         display: none;
       }
+
+      .map-container {
+        height: 250px;
+      }
     }
   </style>
 </head>
@@ -729,6 +861,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     </nav>
   </header>
 
+  <!-- MODAL LOGOUT (New Design) -->
   <div class="modal-overlay" id="logoutModal">
     <div class="modal-box">
       <div class="modal-icon"><i class="fa-solid fa-right-from-bracket"></i></div>
@@ -747,7 +880,12 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
         <li><a href="anggota.php"><i class="fa-solid fa-house"></i> Dashboard</a></li>
         <li class="active"><a href="absensi.php"><i class="fa-solid fa-calendar-check"></i> Rekap Absensi</a></li>
         <li><a href="perpus.php"><i class="fa-solid fa-book"></i> Perpustakaan Digital</a></li>
-        <li style="margin-top: 20px; border-top: 1px solid #eee;"><a href="javascript:void(0)" onclick="openLogoutModal()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
+        <li style="margin-top: 20px; border-top: 1px solid #eee;">
+          <a href="javascript:void(0)" onclick="openLogoutModal()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
+        </li>
+        <li>
+          <a href="../Halaman Utama/index.php"><i class="fa-solid fa-globe"></i>Halaman Utama</a>
+        </li>
       </ul>
     </aside>
 
@@ -756,6 +894,27 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
         <h1>Absensi & Kehadiran</h1>
         <p>Lakukan absensi harianmu dan pantau riwayat kehadiran.</p>
       </div>
+
+      <!-- WIDGET INFO LOKASI -->
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="info-icon bg-cyan"><i class="fa-solid fa-location-crosshairs"></i></div>
+          <div class="info-content">
+            <h3>Akurasi GPS</h3>
+            <p id="accuracy-display">Memuat...</p>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="info-icon bg-green"><i class="fa-solid fa-route"></i></div>
+          <div class="info-content">
+            <h3>Jarak ke <?= $config['nama_lokasi'] ?></h3>
+            <p id="distance-display">Menghitung...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAP CONTAINER -->
+      <div id="map" class="map-container"></div>
 
       <section class="status-box" id="attendanceStatus">
         <div class="status-icon"><i class="fas fa-spinner fa-spin"></i></div>
@@ -805,7 +964,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
             $dayOfWeek = date('w', strtotime($date_val));
             $is_today = ($date_val == $today) ? 'today' : '';
             echo "<div class='calendar-day $is_today'><div class='day-number'>$day</div>";
-            if (in_array($dayOfWeek, [3, 5])) {
+            if (in_array($dayOfWeek, [3, 5])) { // Rabu(3) & Jumat(5)
               if (isset($riwayat_absen[$date_val])) {
                 echo "<div class='attendance-mark hadir' title='Hadir'><i class='fas fa-check-circle'></i></div>";
               } else {
@@ -832,14 +991,11 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
         <div class="camera-wrapper">
           <button class="switch-cam-btn" id="btnSwitchCamera" title="Ganti Kamera"><i class="fa-solid fa-camera-rotate"></i></button>
           <video id="video" autoplay playsinline muted></video>
-          <canvas id="overlay"></canvas> <!-- Canvas khusus untuk overlay wajah -->
-          <canvas id="canvas" style="display:none;"></canvas> <!-- Canvas untuk capture -->
+          <canvas id="overlay"></canvas>
+          <canvas id="canvas" style="display:none;"></canvas>
           <img id="capturedImage" alt="Capture">
         </div>
-
-        <!-- Indikator Status Wajah -->
         <div id="faceStatus" class="face-status detecting"><i class="fas fa-spinner fa-spin"></i> Memuat deteksi wajah...</div>
-
         <div id="cameraControls" style="margin-top: 15px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
           <button class="btn btn-primary" id="btnCapture" disabled><i class="fa-solid fa-camera"></i> Ambil Foto</button>
           <button class="btn btn-success" id="btnSubmit" style="display:none; width: 100%;"><i class="fa-solid fa-paper-plane"></i> Kirim Absensi</button>
@@ -853,7 +1009,8 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     </div>
   </div>
 
-  <!-- Load Face-API.js -->
+  <!-- LEAFLET JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
   <script>
@@ -862,6 +1019,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     const sidebar = document.querySelector('.sidebar');
     const profileBtn = document.getElementById('profileBtn');
     const profileDropdown = document.getElementById('profileDropdown');
+
     menuToggle.addEventListener('click', (e) => {
       e.stopPropagation();
       sidebar.classList.toggle('active');
@@ -880,36 +1038,160 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     });
 
     const statusBox = document.getElementById('attendanceStatus');
+    const accuracyDisplay = document.getElementById('accuracy-display');
+    const distanceDisplay = document.getElementById('distance-display');
+
+    // --- CONFIG FROM PHP ---
+    const SCHOOL_LAT = <?= $config['latitude'] ?>;
+    const SCHOOL_LNG = <?= $config['longitude'] ?>;
+    const MAX_RADIUS = <?= $config['radius'] ?>;
+
+    // --- MAP SETUP (LEAFLET) ---
+    const map = L.map('map').setView([SCHOOL_LAT, SCHOOL_LNG], 17);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // 1. Marker Sekolah
+    const schoolIcon = L.divIcon({
+      className: 'custom-icon',
+      html: '<div style="background-color:#d90429; width:30px; height:30px; border-radius:50%; border:3px solid white; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,0.3);"><i class="fas fa-school" style="color:white; font-size:14px;"></i></div>',
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
+    });
+    L.marker([SCHOOL_LAT, SCHOOL_LNG], {
+      icon: schoolIcon
+    }).addTo(map).bindPopup("<b>Lokasi Absensi</b><br>SMKN 1 Cibinong");
+
+    // 2. Lingkaran Radius
+    const radiusCircle = L.circle([SCHOOL_LAT, SCHOOL_LNG], {
+      color: '#10b981',
+      fillColor: '#10b981',
+      fillOpacity: 0.15,
+      radius: MAX_RADIUS
+    }).addTo(map);
+
+    // 3. Marker User
+    const userIcon = L.divIcon({
+      className: 'user-marker-icon',
+      html: '<div class="dot"></div>',
+      iconSize: [16, 16],
+      iconAnchor: [8, 8]
+    });
+    const userMarker = L.marker([0, 0], {
+      icon: userIcon
+    }).addTo(map);
+
+    // Fungsi Hitung Jarak
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3;
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    // --- MAIN LOGIC ---
+    let currentPosition = null;
+
     async function checkAttendanceStatus() {
       try {
         const res = await fetch('get_status_absen.php');
         const data = await res.json();
-        renderStatus(data);
+
+        if (!data.is_open) {
+          renderStatusClosed(data.message);
+          accuracyDisplay.innerText = "-";
+          distanceDisplay.innerText = "-";
+          return;
+        }
+
+        renderStatusLocating();
+
+        if (!navigator.geolocation) {
+          renderStatusError("Browser tidak mendukung GPS.");
+          return;
+        }
+
+        navigator.geolocation.watchPosition(
+          (position) => {
+            currentPosition = position;
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+            const distance = calculateDistance(userLat, userLng, SCHOOL_LAT, SCHOOL_LNG);
+
+            // Update UI
+            accuracyDisplay.innerHTML = `± ${accuracy.toFixed(0)} meter`;
+            distanceDisplay.innerHTML = `${distance.toFixed(0)} meter`;
+
+            // Update Map
+            userMarker.setLatLng([userLat, userLng]);
+            map.setView([userLat, userLng]);
+
+            if (distance <= MAX_RADIUS) {
+              renderStatusOpen(data);
+            } else {
+              renderStatusTooFar(distance);
+            }
+          },
+          (error) => {
+            let msg = "Gagal mendapatkan lokasi.";
+            if (error.code === 1) msg = "Izin lokasi ditolak.";
+            renderStatusError(msg);
+          }, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+
       } catch (error) {
-        statusBox.innerHTML = `<div class="status-icon"><i class="fas fa-exclamation-triangle"></i></div><div class="status-title">Gagal memuat status</div>`;
-        statusBox.className = 'status-box inactive';
+        console.error(error);
+        renderStatusError("Gagal memuat data.");
       }
     }
 
-    function renderStatus(data) {
-      if (data.is_open) {
-        statusBox.className = 'status-box active';
-        statusBox.innerHTML = `<div class="status-icon"><i class="fas fa-door-open"></i></div><div class="status-title">Absensi Dibuka</div><div class="status-time">Waktu: ${data.jam_mulai} - ${data.jam_selesai} WIB</div><button class="btn btn-primary" id="btnOpenCamera"><i class="fa-solid fa-camera"></i> Absensi Sekarang</button>`;
-        document.getElementById('btnOpenCamera').onclick = () => {
-          document.getElementById('cameraModal').style.display = 'flex';
-          resetModal();
-          startCamera(useFrontCamera ? 'user' : 'environment');
-          loadFaceModels(); // Load model saat modal dibuka
-        };
-      } else {
-        statusBox.className = 'status-box inactive';
-        statusBox.innerHTML = `<div class="status-icon"><i class="fas fa-door-closed"></i></div><div class="status-title">${data.message || "Absensi Belum Dibuka"}</div><div class="status-time">Silakan tunggu pengurus membuka absensi.</div>`;
-      }
+    // --- RENDER FUNCTIONS ---
+    function renderStatusClosed(msg) {
+      statusBox.className = 'status-box inactive';
+      statusBox.innerHTML = `<div class="status-icon"><i class="fas fa-door-closed"></i></div><div class="status-title">${msg || "Absensi Belum Dibuka"}</div><div class="status-time">Silakan tunggu pengurus membuka absensi.</div>`;
     }
+
+    function renderStatusLocating() {
+      statusBox.className = 'status-box warning';
+      statusBox.innerHTML = `<div class="status-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="status-title">Mendeteksi Lokasi...</div><div class="status-time">Pastikan GPS aktif.</div>`;
+    }
+
+    function renderStatusError(msg) {
+      statusBox.className = 'status-box inactive';
+      statusBox.innerHTML = `<div class="status-icon"><i class="fas fa-exclamation-triangle"></i></div><div class="status-title">Error Lokasi</div><div class="status-time">${msg}</div>`;
+    }
+
+    function renderStatusTooFar(distance) {
+      statusBox.className = 'status-box inactive';
+      statusBox.innerHTML = `<div class="status-icon"><i class="fas fa-map-marker-alt"></i></div><div class="status-title">Di Luar Area</div><div class="status-time">Jarak Anda ${distance.toFixed(0)} meter. Radius maksimal ${MAX_RADIUS} meter.</div>`;
+    }
+
+    function renderStatusOpen(data) {
+      statusBox.className = 'status-box active';
+      statusBox.innerHTML = `<div class="status-icon"><i class="fas fa-door-open"></i></div><div class="status-title">Absensi Dibuka</div><div class="status-time">Waktu: ${data.jam_mulai} - ${data.jam_selesai} WIB</div><button class="btn btn-primary" id="btnOpenCamera"><i class="fa-solid fa-camera"></i> Absensi Sekarang</button>`;
+
+      document.getElementById('btnOpenCamera').onclick = () => {
+        document.getElementById('cameraModal').style.display = 'flex';
+        resetModal();
+        startCamera(useFrontCamera ? 'user' : 'environment');
+        loadFaceModels();
+      };
+    }
+
     checkAttendanceStatus();
-    setInterval(checkAttendanceStatus, 5000);
 
-    // --- Variables ---
+    // --- Variables & Camera Logic ---
     let currentImageData = null;
     let stream = null;
     let useFrontCamera = true;
@@ -917,86 +1199,64 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const capturedImage = document.getElementById('capturedImage');
-    const overlay = document.getElementById('overlay'); // Canvas overlay
+    const overlay = document.getElementById('overlay');
     const btnCapture = document.getElementById('btnCapture');
     const btnSwitch = document.getElementById('btnSwitchCamera');
     const btnSubmit = document.getElementById('btnSubmit');
     const faceStatus = document.getElementById('faceStatus');
-
     let modelsLoaded = false;
     let faceDetectionInterval = null;
 
-    // --- Face API Logic ---
     async function loadFaceModels() {
-      if (modelsLoaded) return; // Jangan load ulang jika sudah ada
+      if (modelsLoaded) return;
       faceStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memuat model AI...';
       faceStatus.className = 'face-status detecting';
-
       try {
-        // GUNAKAN LINK CDN RESMI DIBAWAH INI (Pastikan komputer terhubung internet)
         await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/');
         await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/');
-
         modelsLoaded = true;
         faceStatus.innerHTML = 'Arahkan wajah Anda ke kamera';
         faceStatus.className = 'face-status detecting';
         startFaceDetection();
       } catch (err) {
         console.error("Gagal memuat model:", err);
-        faceStatus.innerHTML = '<span style="color:red">Gagal memuat AI. Pastikan koneksi internet stabil.</span>';
+        faceStatus.innerHTML = '<span style="color:red">Gagal memuat AI.</span>';
       }
     }
 
     function startFaceDetection() {
       if (!modelsLoaded) return;
-
-      // Clear interval sebelumnya jika ada
       if (faceDetectionInterval) clearInterval(faceDetectionInterval);
-
-      // Set ukuran overlay sama dengan video
       overlay.width = video.videoWidth || 640;
       overlay.height = video.videoHeight || 480;
-
       faceDetectionInterval = setInterval(async () => {
-        if (video.style.display === 'none') return; // Stop jika video hidden
-
+        if (video.style.display === 'none') return;
         const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
-
         const ctx = overlay.getContext('2d');
         ctx.clearRect(0, 0, overlay.width, overlay.height);
-
         if (detections.length > 0) {
-          // Wajah Terdeteksi
-          const detection = detections[0]; // Ambil wajah pertama
-
-          // Gambar kotak dan landmark (opsional, untuk visual)
+          const detection = detections[0];
           const box = detection.detection.box;
-          ctx.strokeStyle = '#10b981'; // Hijau
+          ctx.strokeStyle = '#10b981';
           ctx.lineWidth = 3;
           ctx.strokeRect(box.x, box.y, box.width, box.height);
-
-          // Gambar landmark titik-titik
           ctx.fillStyle = '#10b981';
           detection.landmarks.positions.forEach(point => {
             ctx.beginPath();
             ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI);
             ctx.fill();
           });
-
-          // Aktifkan tombol
           btnCapture.disabled = false;
           faceStatus.innerHTML = '<i class="fas fa-check-circle"></i> Wajah Terdeteksi!';
           faceStatus.className = 'face-status found';
         } else {
-          // Wajah Tidak Terdeteksi
           btnCapture.disabled = true;
           faceStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Wajah tidak terdeteksi';
           faceStatus.className = 'face-status not-found';
         }
-      }, 300); // Scan setiap 300ms
+      }, 300);
     }
 
-    // --- Camera Logic ---
     async function startCamera(facingMode) {
       try {
         if (stream) stream.getTracks().forEach(track => track.stop());
@@ -1014,13 +1274,11 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
         video.srcObject = stream;
         video.style.display = 'block';
         capturedImage.style.display = 'none';
-        overlay.style.display = 'block'; // Tampilkan overlay
+        overlay.style.display = 'block';
         btnSwitch.style.display = 'flex';
         btnCapture.style.display = 'inline-flex';
         btnSubmit.style.display = 'none';
         video.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
-
-        // Restart detection jika model sudah load
         if (modelsLoaded) startFaceDetection();
       } catch (err) {
         alert("Tidak dapat mengakses kamera.");
@@ -1043,9 +1301,9 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
         stream.getTracks().forEach(track => track.stop());
         stream = null;
       }
-      if (faceDetectionInterval) clearInterval(faceDetectionInterval); // Hentikan deteksi
+      if (faceDetectionInterval) clearInterval(faceDetectionInterval);
       const ctx = overlay.getContext('2d');
-      ctx.clearRect(0, 0, overlay.width, overlay.height); // Bersihkan canvas
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
     }
 
     btnSwitch.onclick = async () => {
@@ -1054,38 +1312,29 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     };
 
     btnCapture.onclick = () => {
-      // Double check jika button sempat di klik paksa
       if (btnCapture.disabled) {
-        alert("Wajah tidak terdeteksi! Pastikan wajah Anda jelas.");
+        alert("Wajah tidak terdeteksi!");
         return;
       }
-
-      clearInterval(faceDetectionInterval); // Stop detection saat capture
-
+      clearInterval(faceDetectionInterval);
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       let ctx = canvas.getContext('2d');
-
-      // Logika flip untuk capture
       if (useFrontCamera) {
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
       }
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       if (useFrontCamera) ctx.setTransform(1, 0, 0, 1, 0, 0);
-
       currentImageData = canvas.toDataURL('image/png');
       capturedImage.src = currentImageData;
-
       video.style.display = 'none';
-      overlay.style.display = 'none'; // Sembunyikan overlay
+      overlay.style.display = 'none';
       capturedImage.style.display = 'block';
-      stopCamera(); // Stop kamera fisik
-
+      stopCamera();
       btnSwitch.style.display = 'none';
       btnCapture.style.display = 'none';
       btnSubmit.style.display = 'inline-flex';
-
       faceStatus.innerHTML = "Foto siap dikirim";
       faceStatus.className = "face-status found";
     };
@@ -1097,14 +1346,19 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       }
       btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
       btnSubmit.disabled = true;
+
+      const payload = {
+        foto: currentImageData,
+        lat: currentPosition ? currentPosition.coords.latitude : null,
+        lng: currentPosition ? currentPosition.coords.longitude : null
+      };
+
       fetch('proses_absensi.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            foto: currentImageData
-          })
+          body: JSON.stringify(payload)
         })
         .then(res => res.json())
         .then(data => {
@@ -1135,7 +1389,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       btnSubmit.style.display = 'none';
       btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Absensi';
       btnSubmit.disabled = false;
-      btnCapture.disabled = true; // Default disabled sampai wajah terdeteksi
+      btnCapture.disabled = true;
       faceStatus.innerHTML = 'Memproses...';
       faceStatus.className = 'face-status detecting';
       currentImageData = null;

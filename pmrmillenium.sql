@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 22, 2026 at 05:32 AM
+-- Generation Time: May 04, 2026 at 03:54 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -134,6 +134,10 @@ CREATE TABLE `pendaftaran` (
   `jurusan` varchar(50) NOT NULL,
   `no_whatsapp` varchar(20) NOT NULL,
   `answers` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`answers`)),
+  `status` enum('pending','diterima','ditolak') NOT NULL DEFAULT 'pending',
+  `generated_username` varchar(50) DEFAULT NULL,
+  `generated_password` varchar(50) DEFAULT NULL,
+  `card_sent` tinyint(1) NOT NULL DEFAULT 0,
   `submission_date` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -141,8 +145,8 @@ CREATE TABLE `pendaftaran` (
 -- Dumping data for table `pendaftaran`
 --
 
-INSERT INTO `pendaftaran` (`id`, `nama_lengkap`, `kelas`, `jurusan`, `no_whatsapp`, `answers`, `submission_date`) VALUES
-(18, 'kemala', 'XI RPL 1', '-', '-', '{\"Nama Lengkap\":\"kemala\",\"Kelas & Jurusan\":\"XI RPL 1\",\"Alasan \\\"Opsional\\\"\":\"gabut\"}', '2026-04-01 03:06:40');
+INSERT INTO `pendaftaran` (`id`, `nama_lengkap`, `kelas`, `jurusan`, `no_whatsapp`, `answers`, `status`, `generated_username`, `generated_password`, `card_sent`, `submission_date`) VALUES
+(44, 'ada', 'XI RPL 1', '-', '-', '{\"Nama Lengkap\":\"ada\",\"Kelas & Jurusan\":\"XI RPL 1\",\"Alasan\":\"ada\"}', 'pending', NULL, NULL, 0, '2026-04-29 03:16:06');
 
 -- --------------------------------------------------------
 
@@ -162,7 +166,7 @@ CREATE TABLE `pengaturan_absensi` (
 --
 
 INSERT INTO `pengaturan_absensi` (`id`, `tanggal`, `waktu_mulai`, `waktu_selesai`) VALUES
-(1, '2026-04-22', '08:08:00', '11:30:00'),
+(1, '2026-05-01', '16:39:00', '20:30:00'),
 (2, '2026-03-05', '11:05:00', '11:10:00');
 
 -- --------------------------------------------------------
@@ -187,12 +191,11 @@ CREATE TABLE `pengurus` (
 
 INSERT INTO `pengurus` (`id`, `nama`, `jabatan`, `kelas`, `logo_kelas`, `foto`, `urutan`) VALUES
 (7, 'Kemala Putri Oktaviani', 'Ketua PMR', 'XI RPL 1', 'rpl.png', '69e17a18a2d60.jpeg', 1),
-(8, 'Muhammad Alif Alghifari', 'Wakil Ketua', 'X RPL 1', 'rpl.png', '69e17a78ec0ff.png', 2),
-(9, 'Mochammad Naufal Hanif', 'Sekretaris 1', 'XI RPL 1', 'rpl.png', '69e17aabdb4f4.jpg', 3),
-(10, 'Aurelia Zahra', 'Sekretaris 2', 'X DKV 3', 'dkv.png', '69e17ade6199f.png', 4),
-(11, 'Sharhana Hajarani', 'Bendahara 1', 'XI DPIB 1', 'dpib.png', '69e17b6e50a20.png', 5),
-(12, 'Anindia Rahma Alliya', 'Bendahara 2', ' X RPL 1', 'rpl.png', '69e17bb142340.png', 6),
-(15, 'Bama', 'Nganggur', 'XI RPL 1', 'rpl.png', '69e76948d68c6.jpg', 7);
+(8, 'Muhammad Alif Alghifari', 'Wakil Ketua', 'X RPL 1', 'rpl.png', '69f151abd4359.jpeg', 2),
+(9, 'Mochammad Naufal Hanif', 'Sekretaris 1', 'XI RPL 1', 'rpl.png', '69f151cba6ace.jpeg', 3),
+(10, 'Aurelia Zahra', 'Sekretaris 2', 'X DKV 3', 'dkv.png', '69f1521492db3.jpeg', 4),
+(11, 'Sharhana Hajarani', 'Bendahara 1', 'XI DPIB 1', 'dpib.png', '69f15224a982f.jpeg', 5),
+(12, 'Anindia Rahma Alliya', 'Bendahara 2', ' X RPL 1', 'rpl.png', '69f1532500d35.jpeg', 6);
 
 -- --------------------------------------------------------
 
@@ -214,7 +217,7 @@ CREATE TABLE `perpustakaan` (
 --
 
 INSERT INTO `perpustakaan` (`id`, `judul`, `deskripsi`, `kategori`, `file_pdf`, `created_at`) VALUES
-(2, 'Cara Self Healing', 'Self Healing adalah ketika kamu sedang knock, kamu bisa menyembuhkan diri tanpa bantuan orang lain.', 'Kepalangmerahan', '1771747666_Laporan_Absensi.pdf', '2026-02-22 08:07:46');
+(15, 'Cara Self Healing', 'ada', 'P3K', '1777429808_Mengenal-Gerakan.pdf', '2026-04-29 02:29:43');
 
 -- --------------------------------------------------------
 
@@ -249,14 +252,6 @@ CREATE TABLE `social_links` (
   `icon_url` varchar(255) DEFAULT NULL,
   `urutan` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `social_links`
---
-
-INSERT INTO `social_links` (`id`, `platform`, `url`, `icon_url`, `urutan`) VALUES
-(0, 'Tiktok', 'https://www.tiktok.com/en/', 'tiktok.png', 0),
-(0, 'Instagram', 'https://www.instagram.com/?hl=en', 'instagram.png', 0);
 
 -- --------------------------------------------------------
 
@@ -406,7 +401,7 @@ ALTER TABLE `hero_background`
 -- AUTO_INCREMENT for table `kegiatan`
 --
 ALTER TABLE `kegiatan`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `lomba`
@@ -418,7 +413,7 @@ ALTER TABLE `lomba`
 -- AUTO_INCREMENT for table `pendaftaran`
 --
 ALTER TABLE `pendaftaran`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
 
 --
 -- AUTO_INCREMENT for table `pengaturan_absensi`
@@ -436,7 +431,7 @@ ALTER TABLE `pengurus`
 -- AUTO_INCREMENT for table `perpustakaan`
 --
 ALTER TABLE `perpustakaan`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `tentang_pmr`

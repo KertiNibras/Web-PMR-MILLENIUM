@@ -1060,30 +1060,12 @@ if (!empty($foto_session)) {
       if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
     });
 
-    // --- FUNGSI LOGOUT (FIXED) ---
-    function confirmLogout() {
-      openLogoutModal();
-    }
-
-    function openLogoutModal() {
-      const modal = document.getElementById('logoutModal');
-      modal.classList.add('active');
-    }
-
-    function closeLogoutModal() {
-      const modal = document.getElementById('logoutModal');
-      modal.classList.remove('active');
-    }
-
-    function proceedLogout() {
-      window.location.href = "../logout.php";
-    }
-
-    // Tutup modal jika klik overlay
+    function confirmLogout() { openLogoutModal(); }
+    function openLogoutModal() { document.getElementById('logoutModal').classList.add('active'); }
+    function closeLogoutModal() { document.getElementById('logoutModal').classList.remove('active'); }
+    function proceedLogout() { window.location.href = "../logout.php"; }
     document.getElementById('logoutModal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        closeLogoutModal();
-      }
+      if (e.target === this) closeLogoutModal();
     });
 
     /* ================= DATA & LOGIC ================= */
@@ -1106,25 +1088,31 @@ if (!empty($foto_session)) {
       setupEventListeners();
     });
 
+    // --- PERBAIKAN: Ambil data dengan lebih aman ---
     function loadMaterials() {
       fetch('get_materi.php')
         .then(res => res.json())
         .then(data => {
+          if (!Array.isArray(data)) {
+             console.error("Error dari server:", data);
+             showToast("Gagal memuat data dari server", "error");
+             return;
+          }
+          
           materials = data.map(m => ({
-            id: m.id,
+            id: m.id, // PASTIKAN INI ADA
             title: m.judul,
             description: m.deskripsi,
             category: m.kategori,
-            date: new Date(m.created_at).toLocaleDateString('id-ID', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric'
-            }),
+            date: new Date(m.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
             fileName: m.file_pdf
           }));
           renderMaterials();
         })
-        .catch(err => console.error('Gagal load:', err));
+        .catch(err => {
+            console.error('Gagal load:', err);
+            showToast("Gagal terhubung ke server", "error");
+        });
     }
 
     function renderMaterials(list = materials) {
@@ -1135,9 +1123,12 @@ if (!empty($foto_session)) {
       }
 
       list.forEach(m => {
-        if (!m.id) return;
-        materialsGrid.innerHTML += `
-          <div class="material-card">
+        // Cek jika ID tidak ada, skip render
+        if (!m.id) return; 
+
+        const card = document.createElement('div');
+        card.className = 'material-card';
+        card.innerHTML = `
             <div class="card-top">
               <div class="file-icon"><i class="fas fa-file-pdf"></i></div>
               <div class="card-header-content">
@@ -1151,11 +1142,17 @@ if (!empty($foto_session)) {
             <div class="card-footer">
               <small class="card-meta"><i class="far fa-clock"></i> ${m.date}</small>
               <div class="card-actions">
-                <button class="action-btn btn-edit" onclick="openEditModal(${m.id})" title="Edit"><i class="fas fa-pen"></i></button>
-                <button class="action-btn btn-delete" onclick="deleteMaterial(${m.id})" title="Hapus"><i class="fas fa-trash"></i></button>
+                <button class="action-btn btn-edit" title="Edit"><i class="fas fa-pen"></i></button>
+                <button class="action-btn btn-delete" title="Hapus"><i class="fas fa-trash"></i></button>
               </div>
-            </div>
-          </div>`;
+            </div>`;
+
+        // Event Listener untuk tombol Edit
+        card.querySelector('.btn-edit').addEventListener('click', () => openEditModal(m.id));
+        // Event Listener untuk tombol Hapus
+        card.querySelector('.btn-delete').addEventListener('click', () => deleteMaterial(m.id));
+
+        materialsGrid.appendChild(card);
       });
     }
 
@@ -1201,7 +1198,7 @@ if (!empty($foto_session)) {
       }
 
       isEditMode = true;
-      currentMaterialId = id;
+      currentMaterialId = id; // ID disimpan di sini
       formModalTitle.textContent = 'Edit Materi';
       submitBtn.textContent = 'Update';
       document.getElementById('materialTitle').value = m.title;
@@ -1215,54 +1212,58 @@ if (!empty($foto_session)) {
       materialFormModal.style.display = 'none';
     }
 
-    function saveMaterial() {
+        function saveMaterial() {
       const fd = new FormData();
       fd.append('judul', document.getElementById('materialTitle').value);
       fd.append('deskripsi', document.getElementById('materialDescription').value);
       fd.append('kategori', document.getElementById('materialCategory').value);
-      if (materialFile.files[0]) fd.append('file', materialFile.files[0]);
+      
+      if (materialFile.files[0]) {
+          fd.append('file', materialFile.files[0]);
+      }
 
-      let url = 'upload_materi.php';
+      let url = 'upload_materi.php'; // Pastikan nama file ini sama persis dengan nama file fisik
       if (isEditMode) {
+        if (!currentMaterialId) {
+            showToast("ID Materi tidak ditemukan.", "error");
+            return;
+        }
         fd.append('id', currentMaterialId);
         url = 'update_materi.php';
       }
 
-      fetch(url, {
-          method: 'POST',
-          body: fd
-        })
+      // Debugging: Tampilkan loading
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Menyimpan...";
+
+      fetch(url, { method: 'POST', body: fd })
         .then(res => res.text())
         .then(res => {
-          if (res.trim() === 'success') {
+          submitBtn.disabled = false;
+          submitBtn.textContent = isEditMode ? "Update" : "Simpan";
+
+          let response = res.trim();
+          
+          // DEBUG: Jika bukan success, tampilkan pesan error dari server
+          if (response !== 'success') {
+              alert("Server Error/Response:\n\n" + response); 
+              console.log("Respon mentah:", res);
+          }
+
+          if (response === 'success') {
             showToast(isEditMode ? 'Materi berhasil diupdate!' : 'Materi berhasil disimpan!');
             closeModal();
             loadMaterials();
           } else {
-            showToast('Terjadi kesalahan: ' + res, 'error');
+            showToast('Gagal menyimpan. Lihat alert untuk detail.', 'error');
           }
+        })
+        .catch(err => {
+            submitBtn.disabled = false;
+            console.error(err);
+            showToast("Gagal mengirim data (Fetch Error)", "error");
         });
     }
-
-    window.deleteMaterial = function(id) {
-      if (!confirm('Yakin ingin menghapus materi ini?')) return;
-      fetch('delete_materi.php', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: 'id=' + id
-        })
-        .then(res => res.text())
-        .then(res => {
-          if (res.trim() === 'success') {
-            showToast('Materi berhasil dihapus');
-            loadMaterials();
-          } else {
-            showToast('Gagal menghapus', 'error');
-          }
-        });
-    };
 
     function filterMaterials() {
       const cat = document.getElementById('categoryFilter').value;
@@ -1288,7 +1289,7 @@ if (!empty($foto_session)) {
         setTimeout(() => t.remove(), 300);
       }, 3000);
     }
-  </script>
+</script>
 </body>
 
 </html>

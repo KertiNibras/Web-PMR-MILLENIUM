@@ -16,657 +16,192 @@
   $nama_user = htmlspecialchars($_SESSION['nama']);
 
   $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : ''; 
-$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff'; // Default UI Avatar
+  $foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
 
-// Pastikan path ke ../uploads/foto_profil/
-if (!empty($foto_session)) {
-    $path_foto = "../uploads/foto_profil/" . $foto_session;
-    if (file_exists($path_foto)) {
-        $foto_profil = $path_foto . "?t=" . time(); // Tambah timestamp supaya anti-cache
-    }
-}
+  if (!empty($foto_session)) {
+      $path_foto = "../uploads/foto_profil/" . $foto_session;
+      if (file_exists($path_foto)) {
+          $foto_profil = $path_foto . "?t=" . time();
+      }
+  }
 
   // ========================================================
-  // LOGIKA STATISTIK
+  // 3. LOGIKA STATISTIK REALTIME (SUDAH DIPERBAIKI)
   // ========================================================
 
-  if ($role == 'pengurus') {
-    $stat_total_anggota = 25;
-    $stat_total_hadir_bulan_ini = 150;
-    $stat_total_buku = 12;
-    $stat_pendaftaran_baru = 3;
-  } else {
-    $stat_hadir_saya = 8;
-    $stat_total_pertemuan = 10;
-    $stat_persentase = ($stat_total_pertemuan > 0) ? round(($stat_hadir_saya / $stat_total_pertemuan) * 100) : 0;
-    $stat_status = ($stat_persentase >= 80) ? 'Baik' : 'Perlu Ditingkatkan';
+  // Default value untuk menghindari error jika query gagal
+  $stat_total_anggota = 0;
+  $stat_total_hadir_bulan_ini = 0;
+  $stat_total_buku = 0;
+  $stat_pendaftaran_baru = 0;
+  $stat_hadir_saya = 0;
+  $stat_total_pertemuan = 0;
+  $stat_persentase = 0;
+  $stat_status = '-';
+
+  try {
+      if ($role == 'pengurus') {
+          // --- STATISTIK PENGURUS ---
+
+          // 1. Total Anggota (Asumsi tabel: users)
+          $q_anggota = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM users WHERE role='anggota'");
+          if ($q_anggota) {
+              $d_anggota = mysqli_fetch_assoc($q_anggota);
+              $stat_total_anggota = $d_anggota['total'] ?? 0;
+          }
+
+          // 2. Total Kehadiran Bulan Ini (Asumsi tabel: absensi)
+          $bulan_ini = date('m');
+          $tahun_ini = date('Y');
+          $q_hadir = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM absensi WHERE MONTH(tanggal)='$bulan_ini' AND YEAR(tanggal)='$tahun_ini'");
+          if ($q_hadir) {
+              $d_hadir = mysqli_fetch_assoc($q_hadir);
+              $stat_total_hadir_bulan_ini = $d_hadir['total'] ?? 0;
+          }
+
+          // 3. Total Buku/Materi (PERBAHARUI: Nama tabel diubah menjadi 'perpustakaan' sesuai error)
+          $q_buku = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM perpustakaan");
+          if ($q_buku) {
+              $d_buku = mysqli_fetch_assoc($q_buku);
+              $stat_total_buku = $d_buku['total'] ?? 0;
+          }
+
+          // 4. Pendaftaran Baru (Asumsi tabel: users, filter tanggal daftar)
+          $q_daftar = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM users WHERE role='anggota' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)");
+          if ($q_daftar) {
+              $d_daftar = mysqli_fetch_assoc($q_daftar);
+              $stat_pendaftaran_baru = $d_daftar['total'] ?? 0;
+          }
+
+      } else {
+          // --- STATISTIK ANGGOTA ---
+
+          // 1. Total Hadir Saya (Asumsi tabel: absensi)
+          $q_hadir_saya = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM absensi WHERE user_id='$user_id'");
+          if ($q_hadir_saya) {
+              $d_hadir_saya = mysqli_fetch_assoc($q_hadir_saya);
+              $stat_hadir_saya = $d_hadir_saya['total'] ?? 0;
+          }
+
+          // 2. Total Pertemuan (Hitung tanggal unik di tabel absensi)
+          $q_pertemuan = mysqli_query($koneksi, "SELECT COUNT(DISTINCT tanggal) as total FROM absensi");
+          if ($q_pertemuan) {
+              $d_pertemuan = mysqli_fetch_assoc($q_pertemuan);
+              $stat_total_pertemuan = $d_pertemuan['total'] ?? 0;
+          }
+
+          // 3. Persentase & Status
+          $stat_persentase = ($stat_total_pertemuan > 0) ? round(($stat_hadir_saya / $stat_total_pertemuan) * 100) : 0;
+          $stat_status = ($stat_persentase >= 80) ? 'Baik' : 'Perlu Ditingkatkan';
+      }
+  } catch (Exception $e) {
+      // Jika ada error lain, bisa log di sini atau biarkan tetap menampilkan 0
+      // error_log($e->getMessage());
   }
   ?>
-
-  <!DOCTYPE html>
-  <html lang="id">
-
-  <head>
+<!DOCTYPE html>
+<html lang="id">
+<!-- Bagian Head dan Style tetap sama persis seperti kode sebelumnya -->
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard - PMR Millenium</title>
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <!-- Icon Tab -->
     <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
-
     <style>
-      /* --- CSS VARIABLES --- */
+      /* Salin CSS yang sama dari kode asli kamu di sini */
+      /* (Saya singkat agar respon tidak terlalu panjang, tapi pastikan CSS dari jawaban sebelumnya ada di sini) */
       :root {
-        --primary-color: #d90429;
-        --primary-hover: #c92a2a;
-        --bg-color: #f8f9fa;
-        --card-bg: #ffffff;
-        --text-color: #1e293b;
-        --text-muted: #64748b;
-        --border-color: #e2e8f0;
-        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
-        --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
-        --radius: 12px;
-        --header-height: 70px;
-        --sidebar-width: 250px;
-
-        --stat-blue: #3b82f6;
-        --stat-green: #10b981;
-        --stat-orange: #f59e0b;
-        --stat-purple: #8b5cf6;
-      }
-
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: 'Inter', 'Segoe UI', sans-serif;
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        line-height: 1.6;
-      }
-
-      a {
-        text-decoration: none;
-        color: inherit;
-      }
-
-      ul {
-        list-style: none;
-      }
-
-      /* --- HEADER --- */
-      header {
-        background: #fff;
-        box-shadow: var(--shadow-sm);
-        position: fixed;
-        width: 100%;
-        top: 0;
-        z-index: 1000;
-        height: var(--header-height);
-      }
-
-      .navbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        height: 100%;
-        padding: 0 20px;
-        max-width: 100%;
-      }
-
-      .nav-left {
-        flex: 1;
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-      }
-
-      .logo {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-weight: 700;
-        font-size: 18px;
-        color: #000;
-      }
-
-      .logo img {
-        height: 40px;
-      }
-
-      .nav-center {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-
-      .nav-right {
-        flex: 1;
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        gap: 15px;
-        position: relative;
-      }
-
-      .profile-btn {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        cursor: pointer;
-        padding: 5px 10px;
-        border-radius: 50px;
-        transition: background 0.2s;
-      }
-
-      .profile-btn:hover {
-        background-color: #f1f5f9;
-      }
-
-      .profile-greeting {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        line-height: 1.2;
-      }
-
-      .profile-greeting small {
-        color: var(--text-muted);
-        font-size: 0.75rem;
-        font-weight: 500;
-        text-transform: capitalize;
-      }
-
-      .profile-greeting span {
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: var(--text-color);
-      }
-
-      .profile-img {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid var(--primary-color);
-        flex-shrink: 0;
-      }
-
-      .profile-dropdown {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        margin-top: 10px;
-        background: #fff;
-        border-radius: 8px;
-        box-shadow: var(--shadow-lg);
-        width: 220px;
-        z-index: 1001;
-        opacity: 0;
-        visibility: hidden;
-        transform: translateY(-10px);
-        transition: all 0.2s ease;
-        border: 1px solid var(--border-color);
-        overflow: hidden;
-      }
-
-      .profile-dropdown.active {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
-      }
-
-      .dropdown-header {
-        padding: 15px;
-        background: #f8f9fa;
-        border-bottom: 1px solid var(--border-color);
-      }
-
-      .dropdown-header p {
-        font-weight: 600;
-        color: var(--text-color);
-        font-size: 0.9rem;
-      }
-
-      .dropdown-header small {
-        color: var(--text-muted);
-        font-size: 0.75rem;
-      }
-
-      .profile-dropdown ul li a {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 12px 15px;
-        color: var(--text-color);
-        font-size: 0.9rem;
-        transition: 0.2s;
-      }
-
-      .profile-dropdown ul li a:hover {
-        background-color: #fff1f1;
-        color: var(--primary-color);
-      }
-
-      .profile-dropdown ul li a i {
-        width: 20px;
-        text-align: center;
-      }
-
-      .menu-toggle {
-        display: none;
-        background: none;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        color: var(--primary-color);
-        z-index: 1001;
-      }
-
-      /* --- LAYOUT CONTAINER --- */
-      .dashboard-container {
-        display: flex;
-        min-height: 100vh;
-        padding-top: var(--header-height);
-      }
-
-      /* --- SIDEBAR --- */
-      .sidebar {
-        width: var(--sidebar-width);
-        background: #fff;
-        border-right: 1px solid var(--border-color);
-        position: sticky;
-        top: var(--header-height);
-        height: calc(100vh - var(--header-height));
-        overflow-y: auto;
-        z-index: 900;
-        flex-shrink: 0;
-      }
-
-      .sidebar li {
-        padding: 14px 25px;
-        cursor: pointer;
-        color: var(--text-color);
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        border-left: 4px solid transparent;
-        transition: all 0.2s;
-      }
-
-      .sidebar li:hover,
-      .sidebar li.active {
-        background-color: #fff1f1;
-        color: var(--primary-color);
-        border-left-color: var(--primary-color);
-      }
-
-      .sidebar a {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-      }
-
-      /* --- MAIN CONTENT --- */
-      .main-content {
-        flex: 1;
-        padding: 30px;
-        width: 100%;
-      }
-
-      .dashboard-welcome {
-        margin-bottom: 30px;
-      }
-
-      .dashboard-welcome h1 {
-        font-size: 1.75rem;
-        color: var(--primary-color);
-        margin-bottom: 5px;
-      }
-
-      /* --- STATISTIK --- */
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 20px;
-        margin-bottom: 35px;
-      }
-
-      .stat-card {
-        background: var(--card-bg);
-        padding: 20px;
-        border-radius: var(--radius);
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--border-color);
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        transition: transform 0.2s;
-      }
-
-      .stat-card:hover {
-        transform: translateY(-3px);
-      }
-
-      .stat-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        color: #fff;
-        flex-shrink: 0;
-      }
-
-      .stat-info h2 {
-        font-size: 1.5rem;
-        margin-bottom: 2px;
-        color: var(--text-color);
-      }
-
-      .stat-info p {
-        font-size: 0.85rem;
-        color: var(--text-muted);
-        font-weight: 500;
-      }
-
-      .bg-red {
-        background-color: var(--primary-color);
-      }
-
-      .bg-blue {
-        background-color: var(--stat-blue);
-      }
-
-      .bg-green {
-        background-color: var(--stat-green);
-      }
-
-      .bg-orange {
-        background-color: var(--stat-orange);
-      }
-
-      .bg-purple {
-        background-color: var(--stat-purple);
-      }
-
-      /* --- CARDS --- */
-      .cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 25px;
-      }
-
-      .card {
-        background: var(--card-bg);
-        border-radius: var(--radius);
-        padding: 25px;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--border-color);
-        transition: all 0.3s ease;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        text-align: left;
-      }
-
-      .card:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--shadow-md);
-        border-color: rgba(217, 4, 41, 0.3);
-      }
-
-      .card-icon-wrapper {
-        width: 48px;
-        height: 48px;
-        background-color: #ffebee;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--primary-color);
-        font-size: 1.4rem;
-        margin-bottom: 20px;
-      }
-
-      .card h3 {
-        font-size: 1.15rem;
-        margin-bottom: 8px;
-        color: var(--text-color);
-      }
-
-      .card p {
-        font-size: 0.9rem;
-        color: var(--text-muted);
-        margin-bottom: 20px;
-        flex-grow: 1;
-      }
-
-      .card-btn {
-        background-color: var(--primary-color);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: 0.3s;
-        border: none;
-        cursor: pointer;
-      }
-
-      .card-btn:hover {
-        background-color: var(--primary-hover);
-      }
-
-      /* --- NOTIFICATION LOGIN --- */
-      .notification {
-        position: fixed;
-        top: 85px;
-        right: 20px;
-        background: white;
-        border-left: 5px solid #10b981;
-        color: #333;
-        padding: 15px 20px;
-        border-radius: 4px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        z-index: 1100;
-        display: none;
-        align-items: center;
-        gap: 12px;
-        animation: slideIn 0.4s ease forwards;
-        min-width: 280px;
-      }
-
-      .notification i {
-        color: #10b981;
-        font-size: 1.2rem;
-      }
-
-      @keyframes slideIn {
-        from {
-          opacity: 0;
-          transform: translateX(50px);
-        }
-
-        to {
-          opacity: 1;
-          transform: translateX(0);
-        }
-      }
-
-      @keyframes fadeOut {
-        to {
-          opacity: 0;
-          transform: translateX(50px);
-        }
-      }
-
-      /* --- STYLE MODAL LOGOUT (DIUBAH MIRIP LOGIN) --- */
-      .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(3px);
-        z-index: 2000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      }
-
-      .modal-overlay.active {
-        display: flex;
-        opacity: 1;
-      }
-
-      .modal-box {
-        background: #fff;
-        padding: 40px 30px;
-        border-radius: var(--radius);
-        /* Pakai radius yang sama dengan card login */
-        width: 90%;
-        max-width: 400px;
-        text-align: center;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        border: 1px solid var(--border-color);
-        transform: scale(0.9);
-        transition: transform 0.3s ease;
-      }
-
-      .modal-overlay.active .modal-box {
-        transform: scale(1);
-      }
-
-      .modal-icon {
-        width: 80px;
-        height: 80px;
-        background: #fee2e2;
-        /* Warna background soft red */
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 20px;
-        color: var(--primary-color);
-        font-size: 2rem;
-      }
-
-      .modal-box h3 {
-        margin-bottom: 10px;
-        font-size: 1.5rem;
-        color: var(--text-color);
-        font-weight: 700;
-      }
-
-      .modal-box p {
-        color: var(--text-muted);
-        margin-bottom: 30px;
-        font-size: 0.95rem;
-        line-height: 1.5;
-      }
-
-      .modal-actions {
-        display: flex;
-        gap: 15px;
-        justify-content: center;
-        flex-direction: column;
-        /* Default column untuk mobile feel, bisa diubah row jika lebar */
-      }
-
-      @media (min-width: 400px) {
-        .modal-actions {
-          flex-direction: row;
-        }
-      }
-
-      .btn-modal {
-        padding: 13px;
-        border-radius: 10px;
-        /* Sama seperti button login */
-        font-weight: 600;
-        cursor: pointer;
-        border: none;
-        transition: all 0.2s ease;
-        font-size: 1rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      }
-
-      /* Tombol Batal -> Mirip tombol secondary/back */
-      .btn-cancel {
-        background-color: #f1f5f9;
-        color: var(--text-muted);
-      }
-
-      .btn-cancel:hover {
-        background-color: #e2e8f0;
-        color: var(--text-color);
-      }
-
-      /* Tombol Logout -> Mirip tombol Login (Merah) */
-      .btn-logout {
-        background-color: var(--primary-color);
-        color: white;
-      }
-
-      .btn-logout:hover {
-        background-color: var(--primary-hover);
-        transform: translateY(-2px);
-      }
-
-      /* --- RESPONSIVE --- */
+        --primary-color: #d90429; --primary-hover: #c92a2a; --bg-color: #f8f9fa; --card-bg: #ffffff;
+        --text-color: #1e293b; --text-muted: #64748b; --border-color: #e2e8f0;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05); --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
+        --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15); --radius: 12px;
+        --header-height: 70px; --sidebar-width: 250px;
+        --stat-blue: #3b82f6; --stat-green: #10b981; --stat-orange: #f59e0b; --stat-purple: #8b5cf6;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; }
+      a { text-decoration: none; color: inherit; }
+      ul { list-style: none; }
+      header { background: #fff; box-shadow: var(--shadow-sm); position: fixed; width: 100%; top: 0; z-index: 1000; height: var(--header-height); }
+      .navbar { display: flex; justify-content: space-between; align-items: center; height: 100%; padding: 0 20px; max-width: 100%; }
+      .nav-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; }
+      .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #000; }
+      .logo img { height: 40px; }
+      .nav-center { flex: 1; display: flex; justify-content: center; align-items: center; }
+      .nav-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 15px; position: relative; }
+      .profile-btn { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px 10px; border-radius: 50px; transition: background 0.2s; }
+      .profile-btn:hover { background-color: #f1f5f9; }
+      .profile-greeting { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+      .profile-greeting small { color: var(--text-muted); font-size: 0.75rem; font-weight: 500; text-transform: capitalize; }
+      .profile-greeting span { font-weight: 600; font-size: 0.9rem; color: var(--text-color); }
+      .profile-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); flex-shrink: 0; }
+      .profile-dropdown { position: absolute; top: 100%; right: 0; margin-top: 10px; background: #fff; border-radius: 8px; box-shadow: var(--shadow-lg); width: 220px; z-index: 1001; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.2s ease; border: 1px solid var(--border-color); overflow: hidden; }
+      .profile-dropdown.active { opacity: 1; visibility: visible; transform: translateY(0); }
+      .dropdown-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid var(--border-color); }
+      .dropdown-header p { font-weight: 600; color: var(--text-color); font-size: 0.9rem; }
+      .dropdown-header small { color: var(--text-muted); font-size: 0.75rem; }
+      .profile-dropdown ul li a { display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: var(--text-color); font-size: 0.9rem; transition: 0.2s; }
+      .profile-dropdown ul li a:hover { background-color: #fff1f1; color: var(--primary-color); }
+      .profile-dropdown ul li a i { width: 20px; text-align: center; }
+      .menu-toggle { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--primary-color); z-index: 1001; }
+      .dashboard-container { display: flex; min-height: 100vh; padding-top: var(--header-height); }
+      .sidebar { width: var(--sidebar-width); background: #fff; border-right: 1px solid var(--border-color); position: sticky; top: var(--header-height); height: calc(100vh - var(--header-height)); overflow-y: auto; z-index: 900; flex-shrink: 0; }
+      .sidebar li { padding: 14px 25px; cursor: pointer; color: var(--text-color); font-weight: 500; display: flex; align-items: center; gap: 12px; border-left: 4px solid transparent; transition: all 0.2s; }
+      .sidebar li:hover, .sidebar li.active { background-color: #fff1f1; color: var(--primary-color); border-left-color: var(--primary-color); }
+      .sidebar a { display: flex; align-items: center; gap: 10px; width: 100%; }
+      .main-content { flex: 1; padding: 30px; width: 100%; }
+      .dashboard-welcome { margin-bottom: 30px; }
+      .dashboard-welcome h1 { font-size: 1.75rem; color: var(--primary-color); margin-bottom: 5px; }
+      .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 35px; }
+      .stat-card { background: var(--card-bg); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 20px; transition: transform 0.2s; }
+      .stat-card:hover { transform: translateY(-3px); }
+      .stat-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #fff; flex-shrink: 0; }
+      .stat-info h2 { font-size: 1.5rem; margin-bottom: 2px; color: var(--text-color); }
+      .stat-info p { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+      .bg-red { background-color: var(--primary-color); }
+      .bg-blue { background-color: var(--stat-blue); }
+      .bg-green { background-color: var(--stat-green); }
+      .bg-orange { background-color: var(--stat-orange); }
+      .bg-purple { background-color: var(--stat-purple); }
+      .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
+      .card { background: var(--card-bg); border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); transition: all 0.3s ease; display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
+      .card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); border-color: rgba(217, 4, 41, 0.3); }
+      .card-icon-wrapper { width: 48px; height: 48px; background-color: #ffebee; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--primary-color); font-size: 1.4rem; margin-bottom: 20px; }
+      .card h3 { font-size: 1.15rem; margin-bottom: 8px; color: var(--text-color); }
+      .card p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; flex-grow: 1; }
+      .card-btn { background-color: var(--primary-color); color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; transition: 0.3s; border: none; cursor: pointer; }
+      .card-btn:hover { background-color: var(--primary-hover); }
+      .notification { position: fixed; top: 85px; right: 20px; background: white; border-left: 5px solid #10b981; color: #333; padding: 15px 20px; border-radius: 4px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); z-index: 1100; display: none; align-items: center; gap: 12px; animation: slideIn 0.4s ease forwards; min-width: 280px; }
+      .notification i { color: #10b981; font-size: 1.2rem; }
+      @keyframes slideIn { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+      @keyframes fadeOut { to { opacity: 0; transform: translateX(50px); } }
+      .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); z-index: 2000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; }
+      .modal-overlay.active { display: flex; opacity: 1; }
+      .modal-box { background: #fff; padding: 40px 30px; border-radius: var(--radius); width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); border: 1px solid var(--border-color); transform: scale(0.9); transition: transform 0.3s ease; }
+      .modal-overlay.active .modal-box { transform: scale(1); }
+      .modal-icon { width: 80px; height: 80px; background: #fee2e2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: var(--primary-color); font-size: 2rem; }
+      .modal-box h3 { margin-bottom: 10px; font-size: 1.5rem; color: var(--text-color); font-weight: 700; }
+      .modal-box p { color: var(--text-muted); margin-bottom: 30px; font-size: 0.95rem; line-height: 1.5; }
+      .modal-actions { display: flex; gap: 15px; justify-content: center; flex-direction: column; }
+      @media (min-width: 400px) { .modal-actions { flex-direction: row; } }
+      .btn-modal { padding: 13px; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s ease; font-size: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+      .btn-cancel { background-color: #f1f5f9; color: var(--text-muted); }
+      .btn-cancel:hover { background-color: #e2e8f0; color: var(--text-color); }
+      .btn-logout { background-color: var(--primary-color); color: white; }
+      .btn-logout:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
       @media (max-width: 992px) {
-        .main-content {
-          width: 100%;
-          padding: 20px;
-        }
-
-        .sidebar {
-          position: fixed;
-          top: var(--header-height);
-          left: auto;
-          right: -260px;
-          box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-          border-right: none;
-          border-left: 1px solid var(--border-color);
-          transition: right 0.3s ease;
-        }
-
-        .sidebar.active {
-          right: 0;
-        }
-
-        .menu-toggle {
-          display: block;
-        }
-
-        .logo span {
-          display: none;
-        }
-
-        .profile-greeting {
-          display: none;
-        }
+        .main-content { width: 100%; padding: 20px; }
+        .sidebar { position: fixed; top: var(--header-height); left: auto; right: -260px; box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1); border-right: none; border-left: 1px solid var(--border-color); transition: right 0.3s ease; }
+        .sidebar.active { right: 0; }
+        .menu-toggle { display: block; }
+        .logo span { display: none; }
+        .profile-greeting { display: none; }
       }
     </style>
-  </head>
+</head>
 
-  <body>
-
+<body>
     <!-- HEADER -->
     <header>
       <nav class="navbar">
@@ -676,9 +211,7 @@ if (!empty($foto_session)) {
             <span>PMR MILLENIUM</span>
           </div>
         </div>
-
         <div class="nav-center"></div>
-
         <div class="nav-right">
           <div class="profile-btn" id="profileBtn">
             <div class="profile-greeting">
@@ -687,7 +220,6 @@ if (!empty($foto_session)) {
             </div>
             <img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img">
           </div>
-
           <div class="profile-dropdown" id="profileDropdown">
             <div class="dropdown-header">
               <p><?= $nama_user ?></p>
@@ -699,7 +231,6 @@ if (!empty($foto_session)) {
               <li><a href="ganti_password.php"><i class="fa-solid fa-key"></i> Ganti Password</a></li>
             </ul>
           </div>
-
           <button class="menu-toggle" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
         </div>
       </nav>
@@ -717,12 +248,10 @@ if (!empty($foto_session)) {
       <?php unset($_SESSION['login_success']); ?>
     <?php endif; ?>
 
-    <!-- MODAL LOGOUT (STYLE BARU) -->
+    <!-- MODAL LOGOUT -->
     <div class="modal-overlay" id="logoutModal">
       <div class="modal-box">
-        <div class="modal-icon">
-          <i class="fa-solid fa-right-from-bracket"></i>
-        </div>
+        <div class="modal-icon"><i class="fa-solid fa-right-from-bracket"></i></div>
         <h3>Konfirmasi Keluar</h3>
         <p>Apakah Anda yakin ingin keluar dari akun?</p>
         <div class="modal-actions">
@@ -737,27 +266,20 @@ if (!empty($foto_session)) {
       <aside class="sidebar">
         <ul>
           <li class="active"><a href="anggota.php"><i class="fa-solid fa-house"></i> Dashboard</a></li>
-
           <?php if ($role == 'pengurus'): ?>
             <li><a href="kelolaabsen.php"><i class="fa-solid fa-calendar-check"></i> Kelola Absensi</a></li>
             <li><a href="kelolaperpus.php"><i class="fa-solid fa-book"></i> Kelola Perpustakaan</a></li>
             <li><a href="kelola_pendaftaran.php"><i class="fa-solid fa-users"></i> Kelola Pendaftaran</a></li>
             <li><a href="kelola_beranda.php"><i class="fa-solid fa-pen-to-square"></i> Edit Halaman Utama</a></li>
-            
           <?php else: ?>
             <li><a href="absensi.php"><i class="fa-solid fa-calendar-check"></i> Rekap Absensi</a></li>
             <li><a href="perpus.php"><i class="fa-solid fa-book"></i> Perpustakaan Digital</a></li>
           <?php endif; ?>
-
           <li style="margin-top: 20px; border-top: 1px solid #eee;">
-            <a href="javascript:void(0)" onclick="openLogoutModal()">
-              <i class="fa-solid fa-right-from-bracket"></i> Log Out
-            </a>
+            <a href="javascript:void(0)" onclick="openLogoutModal()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
           </li>
           <li>
-            <a href="../Halaman Utama/index.php">
-              <i class="fa-solid fa-globe"></i>Halaman Utama
-            </a>
+            <a href="../Halaman Utama/index.php"><i class="fa-solid fa-globe"></i>Halaman Utama</a>
           </li>
         </ul>
       </aside>
@@ -872,7 +394,6 @@ if (!empty($foto_session)) {
         const profileBtn = document.getElementById('profileBtn');
         const profileDropdown = document.getElementById('profileDropdown');
 
-        // Toggle Sidebar
         if (menuToggle) {
           menuToggle.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -881,14 +402,12 @@ if (!empty($foto_session)) {
           });
         }
 
-        // Toggle Profile Dropdown
         profileBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           profileDropdown.classList.toggle('active');
           sidebar.classList.remove('active');
         });
 
-        // Tutup semua jika klik di luar area
         document.addEventListener('click', (e) => {
           if (window.innerWidth <= 992) {
             if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
@@ -900,7 +419,6 @@ if (!empty($foto_session)) {
           }
         });
 
-        // Notifikasi Login
         const notification = document.getElementById('loginNotification');
         if (notification) {
           notification.style.display = 'flex';
@@ -913,7 +431,6 @@ if (!empty($foto_session)) {
         }
       });
 
-      // --- FUNGSI MODAL LOGOUT ---
       function openLogoutModal() {
         const modal = document.getElementById('logoutModal');
         modal.classList.add('active');
@@ -928,13 +445,11 @@ if (!empty($foto_session)) {
         window.location.href = "../logout.php";
       }
 
-      // Tutup modal jika klik overlay
       document.getElementById('logoutModal').addEventListener('click', function(e) {
         if (e.target === this) {
           closeLogoutModal();
         }
       });
     </script>
-  </body>
-
-  </html>
+</body>
+</html>

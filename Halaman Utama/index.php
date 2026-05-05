@@ -791,8 +791,8 @@ while ($row = mysqli_fetch_assoc($social_query)) {
   <!-- LOMBA -->
   <section class="section" style="background-color: #f0f2f5;" id="lomba">
     <div class="container">
-      <h2 class="section-title" data-aos="fade-down">Prestasi & Lomba</h2>
-      <p class="section-subtitle" data-aos="fade-up">Pencapaian membanggakan PMR Millenium</p>
+      <!-- <h2 class="section-title" data-aos="fade-down">Prestasi & Lomba</h2>
+      <p class="section-subtitle" data-aos="fade-up">Pencapaian membanggakan PMR Millenium</p> -->
       <div class="swiper kegiatanSwiper" data-aos="fade-up">
         <div class="swiper-wrapper">
           <?php $lom = mysqli_query($koneksi, "SELECT * FROM lomba ORDER BY id DESC");

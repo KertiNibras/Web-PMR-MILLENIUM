@@ -611,13 +611,17 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
         <li><a href="absensi.php"><i class="fa-solid fa-calendar-check"></i> Rekap Absensi</a></li>
         <li class="active"><a href="perpus.php"><i class="fa-solid fa-book"></i> Perpustakaan Digital</a></li>
         <li style="margin-top: 20px; border-top: 1px solid #eee;">
-          <!-- UBAH: onclick memanggil modal baru -->
-          <a href="javascript:void(0)" onclick="openLogoutModal()">
-            <i class="fa-solid fa-right-from-bracket"></i> Log Out
-          </a>
-        </li>
-      </ul>
-    </aside>
+            <a href="javascript:void(0)" onclick="openLogoutModal()">
+              <i class="fa-solid fa-right-from-bracket"></i> Log Out
+            </a>
+          </li>
+          <li>
+            <a href="../Halaman Utama/index.php">
+              <i class="fa-solid fa-globe"></i>Halaman Utama
+            </a>
+          </li>
+        </ul>
+      </aside>
 
     <!-- MAIN CONTENT -->
     <main class="main-content">

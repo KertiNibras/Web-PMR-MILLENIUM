@@ -1,61 +1,66 @@
 <?php
 session_start();
-include '../koneksi.php'; // Pastikan variabel di file ini adalah $koneksi
+include '../koneksi.php';
 
-// Cek Login & Role (Keamanan tambahan)
+// 1. Cek Login
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 'pengurus') {
-    echo "error_auth";
-    exit;
+    die("error_auth"); // Hentikan dengan pesan singkat
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // UBAH $conn MENJADI $koneksi
+    // 2. Validasi Input
+    if (empty($_POST['judul']) || empty($_POST['kategori'])) {
+        die("error_input_kosong");
+    }
+
     $judul = mysqli_real_escape_string($koneksi, $_POST['judul']);
     $deskripsi = mysqli_real_escape_string($koneksi, $_POST['deskripsi']);
     $kategori = mysqli_real_escape_string($koneksi, $_POST['kategori']);
 
-    if (!isset($_FILES['file'])) {
-        echo "error_file";
-        exit;
+    // 3. Validasi File
+    if (!isset($_FILES['file']) || $_FILES['file']['error'] !== 0) {
+         // Jika upload baru wajib ada file
+         die("error_file_tidak_ada");
     }
 
     $file = $_FILES['file'];
-    $fileName = time() . '_' . basename($file['name']);
+    $fileExt = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+    if ($fileExt != 'pdf') {
+        die("error_hanya_pdf");
+    }
+
+    $fileName = time() . '_' . preg_replace("/[^a-zA-Z0-9.]/", "_", basename($file['name']));
     
-    // UBAH PATH: Karena file ini di Dashboard Anggota, 
-    // naik 1 level (../) lalu masuk uploads/materi
-    $targetDir = "../uploads/materi/"; 
+    // Path: naik 1 level dari folder saat ini, lalu masuk uploads/materi
+    $targetDir = __DIR__ . "/../uploads/materi/"; 
     $targetFile = $targetDir . $fileName;
 
-    // Cek ekstensi
-    $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-    if ($fileExt != 'pdf') {
-        echo "error_ext";
-        exit;
-    }
-
-    // Buat folder jika belum ada
+    // 4. Buat Folder jika belum ada (penting!)
     if (!is_dir($targetDir)) {
-        mkdir($targetDir, 0777, true);
+        if (!mkdir($targetDir, 0777, true)) {
+            die("error_gagal_buat_folder");
+        }
     }
 
+    // 5. Pindahkan File
     if (move_uploaded_file($file['tmp_name'], $targetFile)) {
 
-        // UBAH $conn MENJADI $koneksi
-        $insert = mysqli_query($koneksi, 
-            "INSERT INTO perpustakaan (judul, deskripsi, kategori, file_pdf)
-             VALUES ('$judul','$deskripsi','$kategori','$fileName')"
-        );
-
-        if ($insert) {
+        // 6. Simpan ke Database
+        $query = "INSERT INTO perpustakaan (judul, deskripsi, kategori, file_pdf) VALUES ('$judul','$deskripsi','$kategori','$fileName')";
+        
+        if (mysqli_query($koneksi, $query)) {
             echo "success";
         } else {
-            echo "error_db";
+            // Jika DB gagal, hapus file yang sudah terlanjur upload biar tidak sampah
+            unlink($targetFile); 
+            die("error_db: " . mysqli_error($koneksi)); // Tampilkan error DB
         }
 
     } else {
-        echo "error_upload";
+        // ini sering terjadi karena permission folder
+        die("error_move_uploaded_file - Cek Permission Folder 'uploads/materi'");
     }
 }
 ?>
