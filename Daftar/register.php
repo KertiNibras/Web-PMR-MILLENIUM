@@ -1,5 +1,5 @@
 <?php
-include '../koneksi.php';
+require_once __DIR__ . '/../koneksi.php';
 
 // Ambil pertanyaan dinamis dari database
 $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY ordering ASC");

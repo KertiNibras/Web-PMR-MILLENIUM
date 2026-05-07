@@ -1,7 +1,7 @@
 <?php
 session_start();
 // Sesuaikan path koneksi sesuai struktur folder Anda
-include '../koneksi.php';
+require_once __DIR__ . '/../koneksi.php';
 
 // --- VARIABEL STATUS & PESAN ---
  $status = null;

@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '../koneksi.php'; // Panggil koneksi DB
+require_once __DIR__ . '/../koneksi.php';
 
 // Cek Login
 if (!isset($_SESSION['nama'])) {

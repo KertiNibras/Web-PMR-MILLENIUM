@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '../koneksi.php';
+require_once __DIR__ . '/../koneksi.php';
 
 // Cek Login & Role
 if (!isset($_SESSION['nama'])) {
@@ -172,7 +172,7 @@ if (isset($_POST['tambah_galeri'])) {
     $deskripsi = mysqli_real_escape_string($koneksi, $_POST['deskripsi']);
     $rename = uniqid() . '_' . basename($_FILES['gambar_galeri']['name']);
     if (move_uploaded_file($_FILES['gambar_galeri']['tmp_name'], "../Gambar/" . $rename)) {
-        $table = ($kategori == 'kegiatan') ? 'kegiatan' : 'lomba';
+        $table = ($kategori == 'konten1') ? 'konten1' : 'konten2';
         mysqli_query($koneksi, "INSERT INTO $table (judul, deskripsi, gambar) VALUES ('$judul', '$deskripsi', '$rename')");
         echo "<script>alert('Galeri ditambahkan!'); window.location.href='kelola_beranda.php?tab=galeri&sub=$kategori';</script>";
     }
@@ -181,7 +181,7 @@ if (isset($_POST['tambah_galeri'])) {
 if (isset($_GET['hapus_galeri'])) {
     $id = intval($_GET['hapus_galeri']);
     $jenis = $_GET['jenis'];
-    $table = ($jenis == 'kegiatan') ? 'kegiatan' : 'lomba';
+    $table = ($jenis == 'konten1') ? 'konten1' : 'konten2';
     $g = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT gambar FROM $table WHERE id=$id"));
     if ($g && file_exists("../Gambar/" . $g['gambar'])) unlink("../Gambar/" . $g['gambar']);
     mysqli_query($koneksi, "DELETE FROM $table WHERE id=$id");
@@ -192,7 +192,7 @@ if (isset($_GET['hapus_galeri'])) {
 if (isset($_POST['hapus_multiple_galeri'])) {
     if (!empty($_POST['selected_ids'])) {
         $jenis = mysqli_real_escape_string($koneksi, $_POST['jenis_galeri']);
-        $table = ($jenis == 'kegiatan') ? 'kegiatan' : 'lomba';
+        $table = ($jenis == 'konten1') ? 'konten1' : 'konten2';
 
         foreach ($_POST['selected_ids'] as $id) {
             $id = intval($id);
@@ -234,7 +234,7 @@ if (isset($_POST['edit_sosmed'])) {
 $hero_now = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT file_name FROM hero_background ORDER BY id DESC LIMIT 1"));
 $tentang_now = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT * FROM tentang_pmr LIMIT 1"));
 $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'hero';
-$sub_galeri = isset($_GET['sub']) ? $_GET['sub'] : 'kegiatan';
+$sub_galeri = isset($_GET['sub']) ? $_GET['sub'] : 'konten1';
 $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTok' => 'tiktok.png', 'Facebook' => 'facebook.png', 'Twitter' => 'twitter.png', 'Website' => 'web.png'];
 ?>
 <!DOCTYPE html>
@@ -1129,8 +1129,8 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
                     <!-- ================== TAB GALERI (MODIFIED) ================== -->
                 <?php elseif ($active_tab == 'galeri'): ?>
                     <div class="sub-tabs" style="margin-bottom: 20px; display: flex; gap: 10px;">
-                        <a href="?tab=galeri&sub=kegiatan" class="btn btn-sm <?= ($sub_galeri == 'kegiatan') ? 'btn-primary' : 'btn-outline-secondary' ?>">Kegiatan</a>
-                        <a href="?tab=galeri&sub=lomba" class="btn btn-sm <?= ($sub_galeri == 'lomba') ? 'btn-primary' : 'btn-outline-secondary' ?>">Lomba</a>
+                        <a href="?tab=galeri&sub=konten1" class="btn btn-sm <?= ($sub_galeri == 'konten1') ? 'btn-primary' : 'btn-outline-secondary' ?>">konten1</a>
+                        <a href="?tab=galeri&sub=konten2" class="btn btn-sm <?= ($sub_galeri == 'konten2') ? 'btn-primary' : 'btn-outline-secondary' ?>">konten2</a>
                     </div>
 
                     <div class="split-row">
@@ -1153,7 +1153,7 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
                                 <!-- Grid Galeri -->
                                 <div class="galeri-grid">
                                     <?php
-                                    $table = ($sub_galeri == 'kegiatan') ? 'kegiatan' : 'lomba';
+                                    $table = ($sub_galeri == 'konten1') ? 'konten1' : 'konten2';
                                     $q_g = mysqli_query($koneksi, "SELECT * FROM $table ORDER BY id DESC");
                                     if (mysqli_num_rows($q_g) == 0) echo "<p style='text-align:center; width:100%; color:#999;'>Kosong</p>";
                                     while ($g = mysqli_fetch_assoc($q_g)):

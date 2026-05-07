@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '../koneksi.php';
+require_once __DIR__ . '/../koneksi.php';
 
 // 1. Cek Login
 if (!isset($_SESSION['role']) || $_SESSION['role'] != 'pengurus') {

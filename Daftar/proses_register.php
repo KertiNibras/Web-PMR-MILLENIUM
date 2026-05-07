@@ -4,7 +4,7 @@ ini_set('display_errors', 0);
 // 2. Set header bahwa output adalah JSON
 header('Content-Type: application/json');
 
-include '../koneksi.php';
+require_once __DIR__ . '/../koneksi.php';
 
 // Cek koneksi
 if (!$koneksi) {

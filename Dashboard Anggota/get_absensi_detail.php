@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '../koneksi.php';
+require_once __DIR__ . '/../koneksi.php';
 
 header('Content-Type: application/json; charset=utf-8');
 ini_set('display_errors', 1);

@@ -7,7 +7,7 @@ error_reporting(E_ALL);
 session_start();
 
 // SESUAIKAN PATH INI
-require_once '../koneksi.php'; 
+require_once __DIR__ . '/../koneksi.php';
 
 // Cek login
 if (!isset($_SESSION['id'])) {

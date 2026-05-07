@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '../koneksi.php';
+require_once __DIR__ . '/../koneksi.php';
 
 // Matikan error display untuk menjaga JSON tetap bersih
 error_reporting(0);
