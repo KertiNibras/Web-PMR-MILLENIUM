@@ -6,11 +6,11 @@ require_once __DIR__ . '/../koneksi.php';
 // ========================================================
 // PENGATURAN LOKASI & RADIUS (HARDCODED)
 // ========================================================
-$config = [
+ $config = [
   'nama_lokasi' => 'SMKN 1 Cibinong',
-  'latitude'    => -6.521931983598002, // Sesuaikan jika perlu
-  'longitude'   => 106.8075377172776, // Sesuaikan jika perlu
-  'radius'      => 50 // Radius dalam Meter
+  'latitude'    => -6.498029776189621,
+  'longitude'   => 106.89348252364566,
+  'radius'      => 150
 ];
 // ========================================================
 
@@ -35,21 +35,21 @@ if (!isset($_SESSION['id'])) {
   }
 }
 
-$id_user = $_SESSION['id'];
-$role = isset($_SESSION['role']) ? $_SESSION['role'] : 'anggota';
-$nama_user = htmlspecialchars($_SESSION['nama']);
+ $id_user = $_SESSION['id'];
+ $role = isset($_SESSION['role']) ? $_SESSION['role'] : 'anggota';
+ $nama_user = htmlspecialchars($_SESSION['nama']);
 
-$foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
-$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
+ $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
+ $foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
 if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_session)) {
   $foto_profil = "../uploads/foto_profil/" . $foto_session;
 }
 
-$month = isset($_GET['m']) ? intval($_GET['m']) : date('m');
-$year = isset($_GET['y']) ? intval($_GET['y']) : date('Y');
+ $month = isset($_GET['m']) ? intval($_GET['m']) : date('m');
+ $year = isset($_GET['y']) ? intval($_GET['y']) : date('Y');
 
-$query_absen = mysqli_query($koneksi, "SELECT tanggal, status FROM absensi WHERE user_id = '$id_user' AND MONTH(tanggal) = '$month' AND YEAR(tanggal) = '$year'");
-$riwayat_absen = [];
+ $query_absen = mysqli_query($koneksi, "SELECT tanggal, status FROM absensi WHERE user_id = '$id_user' AND MONTH(tanggal) = '$month' AND YEAR(tanggal) = '$year'");
+ $riwayat_absen = [];
 while ($row = mysqli_fetch_assoc($query_absen)) {
   if (strtolower($row['status']) == 'hadir') {
     $riwayat_absen[$row['tanggal']] = $row['status'];
@@ -65,11 +65,8 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
   <title>Rekap Absensi | PMR Millenium</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
-
-  <!-- LEAFLET JS & CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <style>
-    /* CSS VARIABLES & RESET */
     :root {
       --primary-color: #d90429;
       --primary-hover: #c92a2a;
@@ -86,11 +83,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       --sidebar-width: 250px;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Inter', 'Segoe UI', sans-serif;
@@ -99,16 +92,9 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       line-height: 1.6;
     }
 
-    a {
-      text-decoration: none;
-      color: inherit;
-    }
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
 
-    ul {
-      list-style: none;
-    }
-
-    /* HEADER & NAVBAR */
     header {
       background: #fff;
       box-shadow: var(--shadow-sm);
@@ -128,13 +114,8 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       max-width: 100%;
     }
 
-    .nav-left {
-      flex: 1;
-      display: flex;
-      justify-content: flex-start;
-      align-items: center;
-    }
-
+    .nav-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; }
+    
     .logo {
       display: flex;
       align-items: center;
@@ -144,9 +125,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       color: #000;
     }
 
-    .logo img {
-      height: 40px;
-    }
+    .logo img { height: 40px; }
 
     .nav-right {
       flex: 1;
@@ -165,9 +144,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       border-radius: 50px;
     }
 
-    .profile-btn:hover {
-      background-color: #f1f5f9;
-    }
+    .profile-btn:hover { background-color: #f1f5f9; }
 
     .profile-img {
       width: 40px;
@@ -207,15 +184,8 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       border-bottom: 1px solid var(--border-color);
     }
 
-    .dropdown-header p {
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-
-    .dropdown-header small {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-    }
+    .dropdown-header p { font-weight: 600; font-size: 0.9rem; }
+    .dropdown-header small { color: var(--text-muted); font-size: 0.75rem; }
 
     .profile-dropdown ul li a {
       display: flex;
@@ -241,7 +211,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       z-index: 1001;
     }
 
-    /* LAYOUT */
     .dashboard-container {
       display: flex;
       min-height: 100vh;
@@ -278,33 +247,13 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       border-left-color: var(--primary-color);
     }
 
-    .sidebar a {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-    }
+    .sidebar a { display: flex; align-items: center; gap: 10px; width: 100%; }
 
-    .main-content {
-      flex: 1;
-      padding: 30px;
-      width: 100%;
-    }
+    .main-content { flex: 1; padding: 30px; width: 100%; }
 
-    /* CONTENT STYLES */
-    .page-title h1 {
-      font-size: 1.75rem;
-      color: var(--primary-color);
-      margin-bottom: 5px;
-    }
+    .page-title h1 { font-size: 1.75rem; color: var(--primary-color); margin-bottom: 5px; }
+    .page-title p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px; }
 
-    .page-title p {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      margin-bottom: 25px;
-    }
-
-    /* WIDGET INFO LOKASI */
     .info-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -335,27 +284,11 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       flex-shrink: 0;
     }
 
-    .info-content h3 {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-bottom: 4px;
-    }
+    .info-content h3 { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; }
+    .info-content p { font-size: 1.1rem; font-weight: 700; color: var(--text-color); }
+    .bg-cyan { background-color: var(--cyan-color); }
+    .bg-green { background-color: var(--success-color); }
 
-    .info-content p {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--text-color);
-    }
-
-    .bg-cyan {
-      background-color: var(--cyan-color);
-    }
-
-    .bg-green {
-      background-color: var(--success-color);
-    }
-
-    /* MAP CONTAINER */
     .map-container {
       height: 300px;
       width: 100%;
@@ -367,12 +300,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       z-index: 1;
     }
 
-    .user-marker-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
+    .user-marker-icon { display: flex; align-items: center; justify-content: center; }
     .user-marker-icon .dot {
       width: 16px;
       height: 16px;
@@ -382,7 +310,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
     }
 
-    /* STATUS BOX */
     .status-box {
       background: white;
       padding: 25px;
@@ -397,48 +324,17 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       gap: 15px;
     }
 
-    .status-box.inactive {
-      background: #fee2e2;
-      border-color: #fecaca;
-    }
+    .status-box.inactive { background: #fee2e2; border-color: #fecaca; }
+    .status-box.active { background: #dcfce7; border-color: #bbf7d0; }
+    .status-box.warning { background: #fffbeb; border-color: #fcd34d; }
 
-    .status-box.active {
-      background: #dcfce7;
-      border-color: #bbf7d0;
-    }
+    .status-icon { font-size: 3rem; margin-bottom: 10px; }
+    .status-box.inactive .status-icon { color: var(--primary-color); }
+    .status-box.active .status-icon { color: var(--success-color); }
+    .status-box.warning .status-icon { color: var(--warning-color); }
 
-    .status-box.warning {
-      background: #fffbeb;
-      border-color: #fcd34d;
-    }
-
-    .status-icon {
-      font-size: 3rem;
-      margin-bottom: 10px;
-    }
-
-    .status-box.inactive .status-icon {
-      color: var(--primary-color);
-    }
-
-    .status-box.active .status-icon {
-      color: var(--success-color);
-    }
-
-    .status-box.warning .status-icon {
-      color: var(--warning-color);
-    }
-
-    .status-title {
-      font-size: 1.2rem;
-      font-weight: 700;
-      margin-bottom: 5px;
-    }
-
-    .status-time {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
+    .status-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 5px; }
+    .status-time { font-size: 0.9rem; color: var(--text-muted); }
 
     .btn {
       padding: 12px 25px;
@@ -454,26 +350,11 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       color: white;
     }
 
-    .btn-primary {
-      background-color: var(--primary-color);
-    }
+    .btn-primary { background-color: var(--primary-color); }
+    .btn-primary:hover { background-color: var(--primary-hover); }
+    .btn-success { background-color: var(--success-color); }
+    .btn:disabled { background-color: #cbd5e1; cursor: not-allowed; transform: none; box-shadow: none; }
 
-    .btn-primary:hover {
-      background-color: var(--primary-hover);
-    }
-
-    .btn-success {
-      background-color: var(--success-color);
-    }
-
-    .btn:disabled {
-      background-color: #cbd5e1;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    /* CALENDAR */
     .calendar-container {
       background: white;
       border-radius: var(--radius);
@@ -491,35 +372,12 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       border-bottom: 1px solid var(--border-color);
     }
 
-    .calendar-header h2 {
-      font-size: 1.2rem;
-    }
+    .calendar-header h2 { font-size: 1.2rem; }
+    .calendar-nav { display: flex; gap: 10px; }
+    .calendar-nav a { padding: 8px 15px; background: var(--bg-color); border-radius: 6px; font-weight: 600; }
 
-    .calendar-nav {
-      display: flex;
-      gap: 10px;
-    }
-
-    .calendar-nav a {
-      padding: 8px 15px;
-      background: var(--bg-color);
-      border-radius: 6px;
-      font-weight: 600;
-    }
-
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-    }
-
-    .calendar-day-name {
-      text-align: center;
-      font-weight: 600;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      padding: 10px;
-    }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .calendar-day-name { text-align: center; font-weight: 600; color: var(--text-muted); font-size: 0.85rem; padding: 10px; }
 
     .calendar-day {
       border: 1px solid var(--border-color);
@@ -531,30 +389,11 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       transition: 0.2s;
     }
 
-    .calendar-day:hover {
-      background: #f8fafc;
-    }
-
-    .calendar-day.empty {
-      background: #f8f9fa;
-      border-color: transparent;
-    }
-
-    .calendar-day.today {
-      border-color: var(--primary-color);
-      border-width: 2px;
-    }
-
-    .day-number {
-      font-weight: 600;
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      margin-bottom: 5px;
-    }
-
-    .calendar-day.today .day-number {
-      color: var(--primary-color);
-    }
+    .calendar-day:hover { background: #f8fafc; }
+    .calendar-day.empty { background: #f8f9fa; border-color: transparent; }
+    .calendar-day.today { border-color: var(--primary-color); border-width: 2px; }
+    .day-number { font-weight: 600; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 5px; }
+    .calendar-day.today .day-number { color: var(--primary-color); }
 
     .attendance-mark {
       display: flex;
@@ -564,25 +403,10 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       font-size: 2rem;
     }
 
-    .attendance-mark.hadir {
-      color: var(--success-color);
-    }
-
-    .attendance-mark.hadir i {
-      background: #dcfce7;
-      padding: 10px;
-      border-radius: 50%;
-    }
-
-    .attendance-mark.missed {
-      color: #dc2626;
-    }
-
-    .attendance-mark.missed i {
-      background: #fee2e2;
-      padding: 10px;
-      border-radius: 50%;
-    }
+    .attendance-mark.hadir { color: var(--success-color); }
+    .attendance-mark.hadir i { background: #dcfce7; padding: 10px; border-radius: 50%; }
+    .attendance-mark.missed { color: #dc2626; }
+    .attendance-mark.missed i { background: #fee2e2; padding: 10px; border-radius: 50%; }
 
     /* MODAL CAMERA */
     .modal {
@@ -617,22 +441,13 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       align-items: center;
     }
 
-    .close-modal {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 1.5rem;
-      cursor: pointer;
-    }
-
-    .modal-body {
-      padding: 20px;
-    }
+    .close-modal { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+    .modal-body { padding: 20px; }
 
     .camera-wrapper {
       width: 100%;
-      background: #1e293b;
-      border-radius: 8px;
+      background: #1a1a2e;
+      border-radius: 12px;
       overflow: hidden;
       margin: 15px 0;
       position: relative;
@@ -642,9 +457,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       justify-content: center;
     }
 
-    #video,
-    #capturedImage,
-    #overlay {
+    #video, #capturedImage, #overlay {
       position: absolute;
       top: 0;
       left: 0;
@@ -653,19 +466,112 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       object-fit: cover;
     }
 
-    #video {
-      transform: scaleX(-1);
-      z-index: 1;
+    #video { transform: scaleX(-1); z-index: 1; }
+    #overlay { z-index: 2; pointer-events: none; }
+    #capturedImage { z-index: 3; display: none; }
+
+    /* ==================== FACE DETECTION GRID OVERLAY ==================== */
+    .face-detection-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 5;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    #overlay {
-      z-index: 2;
+    /* Oval Face Guide - Main Element */
+    .face-oval-guide {
+      position: absolute;
+      width: 55%;
+      height: 72%;
+      border: 3px solid rgba(16, 185, 129, 0.7);
+      border-radius: 50% / 60%;
+      transition: all 0.3s ease;
+      box-shadow: 
+        0 0 0 1000px rgba(16, 185, 129, 0.03),
+        inset 0 0 30px rgba(16, 185, 129, 0.1);
+    }
+
+    .face-oval-guide.detected {
+      border-color: rgba(16, 185, 129, 1);
+      box-shadow: 
+        0 0 0 1000px rgba(16, 185, 129, 0.05),
+        0 0 30px rgba(16, 185, 129, 0.4),
+        inset 0 0 30px rgba(16, 185, 129, 0.2);
+      animation: pulse-glow 2s infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 0 1000px rgba(16, 185, 129, 0.05), 0 0 30px rgba(16, 185, 129, 0.4), inset 0 0 30px rgba(16, 185, 129, 0.2); }
+      50% { box-shadow: 0 0 0 1000px rgba(16, 185, 129, 0.08), 0 0 50px rgba(16, 185, 129, 0.6), inset 0 0 40px rgba(16, 185, 129, 0.3); }
+    }
+
+    /* Corner Brackets - Outer Frame */
+    .corner-bracket {
+      position: absolute;
+      width: 45px;
+      height: 45px;
+      z-index: 6;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+
+    .corner-bracket::before,
+    .corner-bracket::after {
+      content: '';
+      position: absolute;
+      background: rgba(16, 185, 129, 0.7);
+      transition: all 0.3s ease;
+    }
+
+    .corner-bracket.tl { top: 12%; left: 18%; }
+    .corner-bracket.tl::before { top: 0; left: 0; width: 100%; height: 3px; }
+    .corner-bracket.tl::after { top: 0; left: 0; width: 3px; height: 100%; }
+
+    .corner-bracket.tr { top: 12%; right: 18%; }
+    .corner-bracket.tr::before { top: 0; right: 0; width: 100%; height: 3px; }
+    .corner-bracket.tr::after { top: 0; right: 0; width: 3px; height: 100%; }
+
+    .corner-bracket.bl { bottom: 18%; left: 18%; }
+    .corner-bracket.bl::before { bottom: 0; left: 0; width: 100%; height: 3px; }
+    .corner-bracket.bl::after { bottom: 0; left: 0; width: 3px; height: 100%; }
+
+    .corner-bracket.br { bottom: 18%; right: 18%; }
+    .corner-bracket.br::before { bottom: 0; right: 0; width: 100%; height: 3px; }
+    .corner-bracket.br::after { bottom: 0; right: 0; width: 3px; height: 100%; }
+
+    .corner-bracket.active::before,
+    .corner-bracket.active::after {
+      background: #10b981;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+    }
+
+    /* Crosshair Lines - Subtle Grid */
+    .crosshair-line {
+      position: absolute;
+      background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.2), transparent);
+      z-index: 4;
       pointer-events: none;
     }
 
-    #capturedImage {
-      z-index: 3;
-      display: none;
+    .crosshair-line.horizontal {
+      width: 80%;
+      height: 1px;
+      left: 10%;
+      top: 50%;
+    }
+
+    .crosshair-line.vertical {
+      width: 1px;
+      height: 70%;
+      left: 50%;
+      top: 15%;
+      background: linear-gradient(180deg, transparent, rgba(16, 185, 129, 0.2), transparent);
     }
 
     .switch-cam-btn {
@@ -689,12 +595,48 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       text-align: center;
       margin-top: 10px;
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       min-height: 24px;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .face-status.found { color: var(--success-color); }
+    .face-status.not-found { color: var(--warning-color); }
+
+    /* Status Badge Style */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
       transition: all 0.3s;
     }
 
-    /* MODAL LOGOUT (Style dari kelolaperpus.php) */
+    .status-badge.detecting {
+      background: rgba(107, 114, 128, 0.15);
+      color: #6b7280;
+    }
+
+    .status-badge.found {
+      background: rgba(16, 185, 129, 0.15);
+      color: #059669;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .status-badge.not-found {
+      background: rgba(245, 158, 11, 0.15);
+      color: #d97706;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    /* MODAL LOGOUT */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -712,10 +654,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       transition: all 0.3s ease;
     }
 
-    .modal-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
 
     .modal-box {
       background: white;
@@ -730,9 +669,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       border: 1px solid var(--border-color);
     }
 
-    .modal-overlay.active .modal-box {
-      transform: scale(1);
-    }
+    .modal-overlay.active .modal-box { transform: scale(1); }
 
     .modal-icon {
       width: 60px;
@@ -747,23 +684,9 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       font-size: 24px;
     }
 
-    .modal-box h3 {
-      margin-bottom: 10px;
-      font-size: 1.25rem;
-      color: var(--text-color);
-    }
-
-    .modal-box p {
-      color: var(--text-muted);
-      margin-bottom: 25px;
-      font-size: 0.95rem;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
+    .modal-box h3 { margin-bottom: 10px; font-size: 1.25rem; color: var(--text-color); }
+    .modal-box p { color: var(--text-muted); margin-bottom: 25px; font-size: 0.95rem; }
+    .modal-actions { display: flex; gap: 10px; justify-content: center; }
 
     .btn-modal {
       padding: 12px 20px;
@@ -776,36 +699,14 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       flex: 1;
     }
 
-    .btn-cancel {
-      background-color: #f1f5f9;
-      color: var(--text-muted);
-    }
-
-    .btn-cancel:hover {
-      background-color: #e2e8f0;
-      color: var(--text-color);
-    }
-
-    .btn-logout {
-      background-color: var(--primary-color);
-      color: white;
-    }
-
-    .btn-logout:hover {
-      background-color: var(--primary-hover);
-      transform: translateY(-2px);
-    }
+    .btn-cancel { background-color: #f1f5f9; color: var(--text-muted); }
+    .btn-cancel:hover { background-color: #e2e8f0; color: var(--text-color); }
+    .btn-logout { background-color: var(--primary-color); color: white; }
+    .btn-logout:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
 
     @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     @media (max-width: 992px) {
@@ -817,22 +718,18 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
         transition: right 0.3s ease;
         z-index: 999;
       }
-
-      .sidebar.active {
-        right: 0;
-      }
-
-      .menu-toggle {
-        display: block;
-      }
-
-      .logo span {
-        display: none;
-      }
-
-      .map-container {
-        height: 250px;
-      }
+      .sidebar.active { right: 0; }
+      .menu-toggle { display: block; }
+      .logo span { display: none; }
+      .map-container { height: 250px; }
+      
+      /* Adjust for mobile */
+      .face-oval-guide { width: 65%; height: 75%; }
+      .corner-bracket { width: 35px; height: 35px; }
+      .corner-bracket.tl, .corner-bracket.tr { top: 10%; }
+      .corner-bracket.tl, .corner-bracket.bl { left: 14%; }
+      .corner-bracket.tr, .corner-bracket.br { right: 14%; }
+      .corner-bracket.bl, .corner-bracket.br { bottom: 22%; }
     }
   </style>
 </head>
@@ -861,7 +758,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     </nav>
   </header>
 
-  <!-- MODAL LOGOUT (New Design) -->
+  <!-- MODAL LOGOUT -->
   <div class="modal-overlay" id="logoutModal">
     <div class="modal-box">
       <div class="modal-icon"><i class="fa-solid fa-right-from-bracket"></i></div>
@@ -883,9 +780,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
         <li style="margin-top: 20px; border-top: 1px solid #eee;">
           <a href="javascript:void(0)" onclick="openLogoutModal()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
         </li>
-        <li>
-          <a href="../Halaman Utama/index.php"><i class="fa-solid fa-globe"></i>Halaman Utama</a>
-        </li>
+        <li><a href="../Halaman Utama/index.php"><i class="fa-solid fa-globe"></i>Halaman Utama</a></li>
       </ul>
     </aside>
 
@@ -895,7 +790,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
         <p>Lakukan absensi harianmu dan pantau riwayat kehadiran.</p>
       </div>
 
-      <!-- WIDGET INFO LOKASI -->
       <div class="info-grid">
         <div class="info-card">
           <div class="info-icon bg-cyan"><i class="fa-solid fa-location-crosshairs"></i></div>
@@ -913,7 +807,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
         </div>
       </div>
 
-      <!-- MAP CONTAINER -->
       <div id="map" class="map-container"></div>
 
       <section class="status-box" id="attendanceStatus">
@@ -928,16 +821,10 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
             <?php
             $prev_month = $month - 1;
             $prev_year = $year;
-            if ($prev_month == 0) {
-              $prev_month = 12;
-              $prev_year--;
-            }
+            if ($prev_month == 0) { $prev_month = 12; $prev_year--; }
             $next_month = $month + 1;
             $next_year = $year;
-            if ($next_month == 13) {
-              $next_month = 1;
-              $next_year++;
-            }
+            if ($next_month == 13) { $next_month = 1; $next_year++; }
             ?>
             <a href="?m=<?= $prev_month ?>&y=<?= $prev_year ?>"><i class="fas fa-chevron-left"></i></a>
             <a href="?m=<?= date('m') ?>&y=<?= date('Y') ?>">Hari Ini</a>
@@ -956,21 +843,17 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
           $first_day = date('w', strtotime("$year-$month-01"));
           $days_in_month = cal_days_in_month(CAL_GREGORIAN, $month, $year);
           $today = date('Y-m-d');
-          for ($i = 0; $i < $first_day; $i++) {
-            echo "<div class='calendar-day empty'></div>";
-          }
+          for ($i = 0; $i < $first_day; $i++) echo "<div class='calendar-day empty'></div>";
           for ($day = 1; $day <= $days_in_month; $day++) {
             $date_val = sprintf("%04d-%02d-%02d", $year, $month, $day);
             $dayOfWeek = date('w', strtotime($date_val));
             $is_today = ($date_val == $today) ? 'today' : '';
             echo "<div class='calendar-day $is_today'><div class='day-number'>$day</div>";
-            if (in_array($dayOfWeek, [3, 5])) { // Rabu(3) & Jumat(5)
+            if (in_array($dayOfWeek, [3, 5])) {
               if (isset($riwayat_absen[$date_val])) {
                 echo "<div class='attendance-mark hadir' title='Hadir'><i class='fas fa-check-circle'></i></div>";
-              } else {
-                if ($date_val < $today) {
-                  echo "<div class='attendance-mark missed' title='Tidak Hadir'><i class='fas fa-times-circle'></i></div>";
-                }
+              } else if ($date_val < $today) {
+                echo "<div class='attendance-mark missed' title='Tidak Hadir'><i class='fas fa-times-circle'></i></div>";
               }
             }
             echo "</div>";
@@ -985,17 +868,41 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
   <div class="modal" id="cameraModal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Ambil Foto Absensi</h3><button class="close-modal" id="btnCloseModal">&times;</button>
+        <h3><i class="fa-solid fa-camera" style="margin-right:8px;"></i>Ambil Foto Absensi</h3>
+        <button class="close-modal" id="btnCloseModal">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="camera-wrapper">
+        <div class="camera-wrapper" id="cameraWrapper">
+          <!-- Face Detection Overlay dengan Oval dan Corner Brackets -->
+          <div class="face-detection-overlay" id="faceOverlay">
+            <!-- Crosshair lines -->
+            <div class="crosshair-line horizontal"></div>
+            <div class="crosshair-line vertical"></div>
+            
+            <!-- Oval Face Guide -->
+            <div class="face-oval-guide" id="faceOvalGuide"></div>
+            
+            <!-- Corner Brackets -->
+            <div class="corner-bracket tl" id="cornerTL"></div>
+            <div class="corner-bracket tr" id="cornerTR"></div>
+            <div class="corner-bracket bl" id="cornerBL"></div>
+            <div class="corner-bracket br" id="cornerBR"></div>
+          </div>
+          
           <button class="switch-cam-btn" id="btnSwitchCamera" title="Ganti Kamera"><i class="fa-solid fa-camera-rotate"></i></button>
           <video id="video" autoplay playsinline muted></video>
           <canvas id="overlay"></canvas>
           <canvas id="canvas" style="display:none;"></canvas>
           <img id="capturedImage" alt="Capture">
         </div>
-        <div id="faceStatus" class="face-status detecting"><i class="fas fa-spinner fa-spin"></i> Memuat deteksi wajah...</div>
+        
+        <!-- Status Badge -->
+        <div id="faceStatus" class="face-status">
+          <span class="status-badge detecting" id="statusBadge">
+            <i class="fas fa-spinner fa-spin"></i> Memuat deteksi wajah...
+          </span>
+        </div>
+        
         <div id="cameraControls" style="margin-top: 15px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
           <button class="btn btn-primary" id="btnCapture" disabled><i class="fa-solid fa-camera"></i> Ambil Foto</button>
           <button class="btn btn-success" id="btnSubmit" style="display:none; width: 100%;"><i class="fa-solid fa-paper-plane"></i> Kirim Absensi</button>
@@ -1009,7 +916,6 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     </div>
   </div>
 
-  <!-- LEAFLET JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
@@ -1025,11 +931,13 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       sidebar.classList.toggle('active');
       profileDropdown.classList.remove('active');
     });
+    
     profileBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       profileDropdown.classList.toggle('active');
       sidebar.classList.remove('active');
     });
+    
     document.addEventListener('click', (e) => {
       if (window.innerWidth <= 992) {
         if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active');
@@ -1041,61 +949,40 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     const accuracyDisplay = document.getElementById('accuracy-display');
     const distanceDisplay = document.getElementById('distance-display');
 
-    // --- CONFIG FROM PHP ---
+    // --- CONFIG ---
     const SCHOOL_LAT = <?= $config['latitude'] ?>;
     const SCHOOL_LNG = <?= $config['longitude'] ?>;
     const MAX_RADIUS = <?= $config['radius'] ?>;
 
-    // --- MAP SETUP (LEAFLET) ---
+    // --- MAP SETUP ---
     const map = L.map('map').setView([SCHOOL_LAT, SCHOOL_LNG], 17);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    // 1. Marker Sekolah
     const schoolIcon = L.divIcon({
       className: 'custom-icon',
       html: '<div style="background-color:#d90429; width:30px; height:30px; border-radius:50%; border:3px solid white; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,0.3);"><i class="fas fa-school" style="color:white; font-size:14px;"></i></div>',
-      iconSize: [30, 30],
-      iconAnchor: [15, 15]
+      iconSize: [30, 30], iconAnchor: [15, 15]
     });
-    L.marker([SCHOOL_LAT, SCHOOL_LNG], {
-      icon: schoolIcon
-    }).addTo(map).bindPopup("<b>Lokasi Absensi</b><br>SMKN 1 Cibinong");
+    L.marker([SCHOOL_LAT, SCHOOL_LNG], { icon: schoolIcon }).addTo(map).bindPopup("<b>Lokasi Absensi</b><br>SMKN 1 Cibinong");
 
-    // 2. Lingkaran Radius
     const radiusCircle = L.circle([SCHOOL_LAT, SCHOOL_LNG], {
-      color: '#10b981',
-      fillColor: '#10b981',
-      fillOpacity: 0.15,
-      radius: MAX_RADIUS
+      color: '#10b981', fillColor: '#10b981', fillOpacity: 0.15, radius: MAX_RADIUS
     }).addTo(map);
 
-    // 3. Marker User
     const userIcon = L.divIcon({
       className: 'user-marker-icon',
-      html: '<div class="dot"></div>',
-      iconSize: [16, 16],
-      iconAnchor: [8, 8]
+      html: '<div class="dot"></div>', iconSize: [16, 16], iconAnchor: [8, 8]
     });
-    const userMarker = L.marker([0, 0], {
-      icon: userIcon
-    }).addTo(map);
+    const userMarker = L.marker([0, 0], { icon: userIcon }).addTo(map);
 
-    // Fungsi Hitung Jarak
     function calculateDistance(lat1, lon1, lat2, lon2) {
       const R = 6371e3;
-      const φ1 = lat1 * Math.PI / 180;
-      const φ2 = lat2 * Math.PI / 180;
-      const Δφ = (lat2 - lat1) * Math.PI / 180;
-      const Δλ = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
+      const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180, Δλ = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(Δφ/2)*Math.sin(Δφ/2) + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)*Math.sin(Δλ/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    // --- MAIN LOGIC ---
     let currentPosition = null;
 
     async function checkAttendanceStatus() {
@@ -1120,43 +1007,30 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
         navigator.geolocation.watchPosition(
           (position) => {
             currentPosition = position;
-            const userLat = position.coords.latitude;
-            const userLng = position.coords.longitude;
-            const accuracy = position.coords.accuracy;
+            const { latitude: userLat, longitude: userLng, accuracy } = position.coords;
             const distance = calculateDistance(userLat, userLng, SCHOOL_LAT, SCHOOL_LNG);
 
-            // Update UI
             accuracyDisplay.innerHTML = `± ${accuracy.toFixed(0)} meter`;
             distanceDisplay.innerHTML = `${distance.toFixed(0)} meter`;
 
-            // Update Map
             userMarker.setLatLng([userLat, userLng]);
             map.setView([userLat, userLng]);
 
-            if (distance <= MAX_RADIUS) {
-              renderStatusOpen(data);
-            } else {
-              renderStatusTooFar(distance);
-            }
+            distance <= MAX_RADIUS ? renderStatusOpen(data) : renderStatusTooFar(distance);
           },
           (error) => {
             let msg = "Gagal mendapatkan lokasi.";
             if (error.code === 1) msg = "Izin lokasi ditolak.";
             renderStatusError(msg);
-          }, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          }
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
-
       } catch (error) {
         console.error(error);
         renderStatusError("Gagal memuat data.");
       }
     }
 
-    // --- RENDER FUNCTIONS ---
     function renderStatusClosed(msg) {
       statusBox.className = 'status-box inactive';
       statusBox.innerHTML = `<div class="status-icon"><i class="fas fa-door-closed"></i></div><div class="status-title">${msg || "Absensi Belum Dibuka"}</div><div class="status-time">Silakan tunggu pengurus membuka absensi.</div>`;
@@ -1191,7 +1065,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
 
     checkAttendanceStatus();
 
-    // --- Variables & Camera Logic ---
+    // --- Camera Logic ---
     let currentImageData = null;
     let stream = null;
     let useFrontCamera = true;
@@ -1203,56 +1077,65 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     const btnCapture = document.getElementById('btnCapture');
     const btnSwitch = document.getElementById('btnSwitchCamera');
     const btnSubmit = document.getElementById('btnSubmit');
-    const faceStatus = document.getElementById('faceStatus');
+    const faceStatusEl = document.getElementById('faceStatus');
+    const statusBadge = document.getElementById('statusBadge');
+    
+    // Grid elements
+    const faceOvalGuide = document.getElementById('faceOvalGuide');
+    const cornerBrackets = [
+      document.getElementById('cornerTL'),
+      document.getElementById('cornerTR'),
+      document.getElementById('cornerBL'),
+      document.getElementById('cornerBR')
+    ];
+    const faceOverlay = document.getElementById('faceOverlay');
+    
     let modelsLoaded = false;
     let faceDetectionInterval = null;
 
+    function updateStatusBadge(type, text, icon) {
+      statusBadge.className = `status-badge ${type}`;
+      statusBadge.innerHTML = `<i class="${icon}"></i> ${text}`;
+    }
+
     async function loadFaceModels() {
       if (modelsLoaded) return;
-      faceStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memuat model AI...';
-      faceStatus.className = 'face-status detecting';
+      updateStatusBadge('detecting', 'Memuat model AI...', 'fas fa-spinner fa-spin');
       try {
         await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/');
         await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/');
         modelsLoaded = true;
-        faceStatus.innerHTML = 'Arahkan wajah Anda ke kamera';
-        faceStatus.className = 'face-status detecting';
+        updateStatusBadge('detecting', 'Arahkan wajah Anda ke kamera', 'fas fa-crosshairs');
         startFaceDetection();
       } catch (err) {
         console.error("Gagal memuat model:", err);
-        faceStatus.innerHTML = '<span style="color:red">Gagal memuat AI.</span>';
+        updateStatusBadge('not-found', 'Gagal memuat AI', 'fas fa-exclamation-triangle');
       }
     }
 
     function startFaceDetection() {
       if (!modelsLoaded) return;
       if (faceDetectionInterval) clearInterval(faceDetectionInterval);
-      overlay.width = video.videoWidth || 640;
-      overlay.height = video.videoHeight || 480;
+      
       faceDetectionInterval = setInterval(async () => {
         if (video.style.display === 'none') return;
+        
         const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
-        const ctx = overlay.getContext('2d');
-        ctx.clearRect(0, 0, overlay.width, overlay.height);
+        
         if (detections.length > 0) {
-          const detection = detections[0];
-          const box = detection.detection.box;
-          ctx.strokeStyle = '#10b981';
-          ctx.lineWidth = 3;
-          ctx.strokeRect(box.x, box.y, box.width, box.height);
-          ctx.fillStyle = '#10b981';
-          detection.landmarks.positions.forEach(point => {
-            ctx.beginPath();
-            ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI);
-            ctx.fill();
-          });
+          // Activate visual feedback
+          faceOvalGuide.classList.add('detected');
+          cornerBrackets.forEach(b => b.classList.add('active'));
+          
           btnCapture.disabled = false;
-          faceStatus.innerHTML = '<i class="fas fa-check-circle"></i> Wajah Terdeteksi!';
-          faceStatus.className = 'face-status found';
+          updateStatusBadge('found', 'Wajah terdeteksi! Silakan ambil foto.', 'fas fa-check-circle');
         } else {
+          // Deactivate
+          faceOvalGuide.classList.remove('detected');
+          cornerBrackets.forEach(b => b.classList.remove('active'));
+          
           btnCapture.disabled = true;
-          faceStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Wajah tidak terdeteksi';
-          faceStatus.className = 'face-status not-found';
+          updateStatusBadge('not-found', 'Wajah tidak terdeteksi', 'fas fa-exclamation-triangle');
         }
       }, 300);
     }
@@ -1261,15 +1144,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       try {
         if (stream) stream.getTracks().forEach(track => track.stop());
         stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: facingMode,
-            width: {
-              ideal: 1280
-            },
-            height: {
-              ideal: 720
-            }
-          }
+          video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } }
         });
         video.srcObject = stream;
         video.style.display = 'block';
@@ -1279,6 +1154,10 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
         btnCapture.style.display = 'inline-flex';
         btnSubmit.style.display = 'none';
         video.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+        
+        // Show overlay
+        faceOverlay.style.display = 'flex';
+        
         if (modelsLoaded) startFaceDetection();
       } catch (err) {
         alert("Tidak dapat mengakses kamera.");
@@ -1289,6 +1168,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       modal.style.display = 'none';
       stopCamera();
     };
+
     window.onclick = (e) => {
       if (e.target == modal) {
         modal.style.display = 'none';
@@ -1304,6 +1184,11 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       if (faceDetectionInterval) clearInterval(faceDetectionInterval);
       const ctx = overlay.getContext('2d');
       ctx.clearRect(0, 0, overlay.width, overlay.height);
+      
+      // Hide and reset overlay
+      faceOverlay.style.display = 'none';
+      faceOvalGuide.classList.remove('detected');
+      cornerBrackets.forEach(b => b.classList.remove('active'));
     }
 
     btnSwitch.onclick = async () => {
@@ -1320,10 +1205,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       let ctx = canvas.getContext('2d');
-      if (useFrontCamera) {
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-      }
+      if (useFrontCamera) { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       if (useFrontCamera) ctx.setTransform(1, 0, 0, 1, 0, 0);
       currentImageData = canvas.toDataURL('image/png');
@@ -1331,52 +1213,48 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       video.style.display = 'none';
       overlay.style.display = 'none';
       capturedImage.style.display = 'block';
+      
+      // Hide overlay when captured
+      faceOverlay.style.display = 'none';
+      
       stopCamera();
       btnSwitch.style.display = 'none';
       btnCapture.style.display = 'none';
       btnSubmit.style.display = 'inline-flex';
-      faceStatus.innerHTML = "Foto siap dikirim";
-      faceStatus.className = "face-status found";
+      updateStatusBadge('found', 'Foto siap dikirim', 'fas fa-image');
     };
 
     btnSubmit.onclick = () => {
-      if (!currentImageData) {
-        alert("Ambil foto dulu!");
-        return;
-      }
+      if (!currentImageData) { alert("Ambil foto dulu!"); return; }
       btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
       btnSubmit.disabled = true;
 
-      const payload = {
-        foto: currentImageData,
-        lat: currentPosition ? currentPosition.coords.latitude : null,
-        lng: currentPosition ? currentPosition.coords.longitude : null
-      };
-
       fetch('proses_absensi.php', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          foto: currentImageData,
+          lat: currentPosition?.coords.latitude,
+          lng: currentPosition?.coords.longitude
         })
-        .then(res => res.json())
-        .then(data => {
-          if (data.status === 'success') {
-            document.getElementById('cameraControls').style.display = 'none';
-            document.getElementById('successMessage').style.display = 'block';
-          } else {
-            alert('Error: ' + data.message);
-            btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Absensi';
-            btnSubmit.disabled = false;
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          alert('Gagal mengirim data.');
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          document.getElementById('cameraControls').style.display = 'none';
+          document.getElementById('successMessage').style.display = 'block';
+        } else {
+          alert('Error: ' + data.message);
           btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Absensi';
           btnSubmit.disabled = false;
-        });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Gagal mengirim data.');
+        btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Absensi';
+        btnSubmit.disabled = false;
+      });
     };
 
     function resetModal() {
@@ -1390,26 +1268,21 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Absensi';
       btnSubmit.disabled = false;
       btnCapture.disabled = true;
-      faceStatus.innerHTML = 'Memproses...';
-      faceStatus.className = 'face-status detecting';
+      updateStatusBadge('detecting', 'Memproses...', 'fas fa-spinner fa-spin');
       currentImageData = null;
+      
+      // Reset overlay
+      faceOverlay.style.display = 'flex';
+      faceOvalGuide.classList.remove('detected');
+      cornerBrackets.forEach(b => b.classList.remove('active'));
     }
 
-    function openLogoutModal() {
-      document.getElementById('logoutModal').classList.add('active');
-    }
-
-    function closeLogoutModal() {
-      document.getElementById('logoutModal').classList.remove('active');
-    }
-
-    function proceedLogout() {
-      window.location.href = "../logout.php";
-    }
+    function openLogoutModal() { document.getElementById('logoutModal').classList.add('active'); }
+    function closeLogoutModal() { document.getElementById('logoutModal').classList.remove('active'); }
+    function proceedLogout() { window.location.href = "../logout.php"; }
     document.getElementById('logoutModal').addEventListener('click', function(e) {
       if (e.target === this) closeLogoutModal();
     });
   </script>
 </body>
-
 </html>

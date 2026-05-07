@@ -1,6 +1,6 @@
 <?php
   session_start();
-  require_once __DIR__ . '/../koneksi.php';
+  include '../koneksi.php'; // Panggil koneksi DB
 
   // 1. Cek apakah user sudah login
   if (!isset($_SESSION['nama'])) {

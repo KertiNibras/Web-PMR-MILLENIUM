@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . '/../koneksi.php';
+include '../koneksi.php';
 
 // Cek Login & Role
 if (!isset($_SESSION['nama'])) {
@@ -13,65 +13,116 @@ if ($_SESSION['role'] != 'pengurus') {
 }
 
 // Ambil Data User untuk Header
- $nama_user = htmlspecialchars($_SESSION['nama']);
- $role = $_SESSION['role'];
- $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : ''; 
-$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff'; // Default UI Avatar
+$nama_user = htmlspecialchars($_SESSION['nama']);
+$role = $_SESSION['role'];
+$foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : ''; 
+$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
 
-// Pastikan path ke ../uploads/foto_profil/
 if (!empty($foto_session)) {
     $path_foto = "../uploads/foto_profil/" . $foto_session;
     if (file_exists($path_foto)) {
-        $foto_profil = $path_foto . "?t=" . time(); // Tambah timestamp supaya anti-cache
+        $foto_profil = $path_foto . "?t=" . time();
     }
 }
 
-// ================== BLOK PROSES AJAX (SUDAH DIPERBAIKI) ==================
+// ================== BLOK PROSES AJAX ==================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-  // 1. Set Header JSON di awal
   header('Content-Type: application/json');
-  
-  // 2. Ambil Action-nya dulu
   $action = $_POST['action'];
 
-    if ($action == 'delete_pendaftar') {
+  // 1. Hapus Pendaftar
+  if ($action == 'delete_pendaftar') {
     $id = intval($_POST['id']);
-
-    // 1. Ambil data answers terlebih dahulu untuk mendapatkan nama file
+    // Hapus file terkait
     $get_data = mysqli_query($koneksi, "SELECT answers FROM pendaftaran WHERE id='$id'");
     $data_row = mysqli_fetch_assoc($get_data);
-    
     if ($data_row) {
-        $answers_json = $data_row['answers'];
-        // Decode JSON menjadi array
-        $answers_arr = json_decode($answers_json, true);
-
-        // Cek apakah ada data file di dalam answers
+        $answers_arr = json_decode($data_row['answers'], true);
         if (is_array($answers_arr)) {
-            foreach ($answers_arr as $key => $value) {
-                // Jika value mengandung path "question_file/", maka itu adalah file
+            foreach ($answers_arr as $value) {
                 if (strpos($value, 'question_file/') !== false) {
-                    $file_path = "../uploads/" . $value; // Bentuk path lengkap: ../uploads/question_file/namafile.jpg
-                    
-                    // Hapus file jika ada
-                    if (file_exists($file_path)) {
-                        unlink($file_path); // Fungsi hapus file di PHP
-                    }
+                    $file_path = "../uploads/" . $value;
+                    if (file_exists($file_path)) unlink($file_path);
                 }
             }
         }
     }
-
-    // 2. Hapus data dari database
     $del = mysqli_query($koneksi, "DELETE FROM pendaftaran WHERE id='$id'");
-    if ($del) {
-      echo json_encode(['status' => 'success']);
+    echo json_encode(['status' => $del ? 'success' : 'error']);
+    exit;
+  }
+
+  // 2. PROSES TERIMA PENDAFTAR (Buat Akun Otomatis)
+  if ($action == 'approve_pendaftar') {
+    $id = intval($_POST['id']);
+    
+    // Ambil data pendaftar
+    $q = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE id='$id'");
+    $data = mysqli_fetch_assoc($q);
+    
+    if ($data) {
+        $nama_lengkap = mysqli_real_escape_string($koneksi, $data['nama_lengkap']);
+        $kelas = mysqli_real_escape_string($koneksi, $data['kelas']);
+        $jurusan = mysqli_real_escape_string($koneksi, $data['jurusans']); 
+        
+        // Generate Username (hapus spasi)
+        $username = strtolower(preg_replace('/\s+/', '', $nama_lengkap));
+        
+        // Cek duplikat username di tabel users
+        $checkUser = mysqli_query($koneksi, "SELECT id FROM users WHERE username='$username'");
+        if(mysqli_num_rows($checkUser) > 0) {
+            $username .= rand(100,999);
+        }
+        
+        // Generate Password
+        $password_plain = substr(md5(time()), 0, 8); 
+        $password_hash = password_hash($password_plain, PASSWORD_DEFAULT);
+        
+        // Cari foto di JSON answers
+        $answers_arr = json_decode($data['answers'], true);
+        $foto_db = '';
+        if(is_array($answers_arr)) {
+            foreach($answers_arr as $key => $val) {
+                if(stripos($key, 'foto') !== false && strpos($val, 'question_file/') !== false) {
+                    $foto_db = $val;
+                    break;
+                }
+            }
+        }
+
+        // Insert ke tabel users
+        $ins = mysqli_query($koneksi, "INSERT INTO users (username, password, nama, kelas, role, foto_profil) VALUES ('$username', '$password_hash', '$nama_lengkap', '$kelas', 'anggota', '$foto_db')");
+        
+        if($ins) {
+            // Update status pendaftaran & simpan credential + set card_sent ke 0
+            $upd = mysqli_query($koneksi, "UPDATE pendaftaran SET status='diterima', generated_username='$username', generated_password='$password_plain', card_sent=0 WHERE id='$id'");
+            echo json_encode(['status' => 'success', 'msg' => "Akun Dibuat!\nUsername: $username\nPassword: $password_plain"]);
+        } else {
+            echo json_encode(['status' => 'error', 'msg' => 'Gagal membuat akun: ' . mysqli_error($koneksi)]);
+        }
     } else {
-      echo json_encode(['status' => 'error', 'msg' => mysqli_error($koneksi)]);
+        echo json_encode(['status' => 'error', 'msg' => 'Data tidak ditemukan']);
     }
     exit;
   }
-  // 4. Logika Lainnya
+
+  // 3. PROSES TANDAI WA TERKIRIM (FITUR BARU)
+  if ($action == 'mark_as_sent') {
+    $id = intval($_POST['id']);
+    $upd = mysqli_query($koneksi, "UPDATE pendaftaran SET card_sent=1 WHERE id='$id'");
+    echo json_encode(['status' => $upd ? 'success' : 'error']);
+    exit;
+  }
+
+  // 4. PROSES TOLAK PENDAFTAR
+  if ($action == 'reject_pendaftar') {
+    $id = intval($_POST['id']);
+    $upd = mysqli_query($koneksi, "UPDATE pendaftaran SET status='ditolak' WHERE id='$id'");
+    echo json_encode(['status' => $upd ? 'success' : 'error']);
+    exit;
+  }
+
+  // Logika Simpan Pertanyaan
   if ($action == 'save_question') {
     $id = intval($_POST['id'] ?? 0);
     $text = mysqli_real_escape_string($koneksi, $_POST['text']);
@@ -113,721 +164,152 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       $order_val = $index + 1;
       $id = intval($id);
       $u = "UPDATE form_questions SET ordering='$order_val' WHERE id='$id'";
-      if (!mysqli_query($koneksi, $u)) {
-        $success = false;
-      }
+      if (!mysqli_query($koneksi, $u)) $success = false;
     }
     echo json_encode(['status' => $success ? 'success' : 'error']);
     exit;
   }
 }
-// =========================================================================
 
-// Ambil Data Pertanyaan
- $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY ordering ASC");
-
-// Ambil Data Pendaftar
- $pendaftar = mysqli_query($koneksi, "SELECT * FROM pendaftaran ORDER BY submission_date DESC");
+// Ambil Data
+$questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY ordering ASC");
+$pendaftar = mysqli_query($koneksi, "SELECT * FROM pendaftaran ORDER BY submission_date DESC");
+// Data khusus anggota yang sudah diterima (Untuk Tab 3)
+$anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='diterima' ORDER BY id DESC");
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kelola Pendaftaran | PMR Millenium</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
-  <!-- Library SortableJS untuk Drag & Drop -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <style>
-    /* CSS Variabel */
     :root {
-      --primary-color: #d90429;
-      --primary-hover: #c92a2a;
-      --bg-color: #f8f9fa;
-      --card-bg: #ffffff;
-      --text-color: #1e293b;
-      --text-muted: #64748b;
-      --border-color: #e2e8f0;
-      --success-color: #10b981;
-      --warning-color: #f59e0b;
-      --danger-color: #ef4444;
-      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
-      --radius: 12px;
-      --header-height: 70px;
-      --sidebar-width: 250px;
+      --primary-color: #d90429; --primary-hover: #c92a2a; --bg-color: #f8f9fa; --card-bg: #ffffff;
+      --text-color: #1e293b; --text-muted: #64748b; --border-color: #e2e8f0;
+      --success-color: #10b981; --warning-color: #f59e0b; --danger-color: #ef4444;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05); --radius: 12px; --header-height: 70px; --sidebar-width: 250px;
     }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', 'Segoe UI', sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      line-height: 1.6;
-    }
-
-    a {
-      text-decoration: none;
-      color: inherit;
-    }
-
-    ul {
-      list-style: none;
-    }
-
-    /* --- HEADER (Layout 3 Kolom) --- */
-    header {
-      background: #fff;
-      box-shadow: var(--shadow-sm);
-      position: fixed;
-      width: 100%;
-      top: 0;
-      z-index: 1000;
-      height: var(--header-height);
-    }
-
-    .navbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      height: 100%;
-      padding: 0 20px;
-      max-width: 100%;
-    }
-
-    /* Kiri: Logo */
-    .nav-left {
-      flex: 1;
-      display: flex;
-      justify-content: flex-start;
-      align-items: center;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 18px;
-      color: #000;
-    }
-
-    .logo img {
-      height: 40px;
-    }
-
-    /* Tengah */
-    .nav-center {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    /* Kanan: Profil & Menu */
-    .nav-right {
-      flex: 1;
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 15px;
-      position: relative;
-    }
-
-    .profile-btn {
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      padding: 5px;
-      border-radius: 50px;
-      transition: background 0.2s;
-    }
-
-    .profile-btn:hover {
-      background-color: #f1f5f9;
-    }
-
-    .profile-img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid var(--primary-color);
-    }
-
-    /* Dropdown Profil */
-    .profile-dropdown {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      margin-top: 10px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-      width: 220px;
-      z-index: 1001;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(-10px);
-      transition: all 0.2s ease;
-      border: 1px solid var(--border-color);
-      overflow: hidden;
-    }
-
-    .profile-dropdown.active {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-
-    .dropdown-header {
-      padding: 15px;
-      background: #f8f9fa;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .dropdown-header p {
-      font-weight: 600;
-      color: var(--text-color);
-      font-size: 0.9rem;
-    }
-
-    .dropdown-header small {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-    }
-
-    .profile-dropdown ul li a {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 15px;
-      color: var(--text-color);
-      font-size: 0.9rem;
-      transition: 0.2s;
-    }
-
-    .profile-dropdown ul li a:hover {
-      background-color: #fff1f1;
-      color: var(--primary-color);
-    }
-
-    .profile-dropdown ul li a i {
-      width: 20px;
-      text-align: center;
-    }
-
-    /* Tombol Hamburger */
-    .menu-toggle {
-      display: none;
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: var(--primary-color);
-      z-index: 1001;
-    }
-
-    /* --- LAYOUT CONTAINER --- */
-    .dashboard-container {
-      display: flex;
-      min-height: 100vh;
-      padding-top: var(--header-height);
-    }
-
-    /* ======================================== */
-    /* CSS TAMBAHAN UNTUK MODAL LOGOUT (FIXED) */
-    /* ======================================== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; }
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
     
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(4px);
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-    }
+    /* Header CSS */
+    header { background: #fff; box-shadow: var(--shadow-sm); position: fixed; width: 100%; top: 0; z-index: 1000; height: var(--header-height); }
+    .navbar { display: flex; justify-content: space-between; align-items: center; height: 100%; padding: 0 20px; max-width: 100%; }
+    .nav-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #000; }
+    .logo img { height: 40px; }
+    .nav-center { flex: 1; display: flex; justify-content: center; align-items: center; }
+    .nav-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 15px; position: relative; }
+    .profile-btn { display: flex; align-items: center; cursor: pointer; padding: 5px; border-radius: 50px; transition: background 0.2s; }
+    .profile-btn:hover { background-color: #f1f5f9; }
+    .profile-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); }
+    .profile-dropdown { position: absolute; top: 100%; right: 0; margin-top: 10px; background: #fff; border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); width: 220px; z-index: 1001; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.2s ease; border: 1px solid var(--border-color); overflow: hidden; }
+    .profile-dropdown.active { opacity: 1; visibility: visible; transform: translateY(0); }
+    .dropdown-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid var(--border-color); }
+    .dropdown-header p { font-weight: 600; color: var(--text-color); font-size: 0.9rem; }
+    .dropdown-header small { color: var(--text-muted); font-size: 0.75rem; }
+    .profile-dropdown ul li a { display: flex; align-items: center; gap: 10px; padding: 12px 15px; color: var(--text-color); font-size: 0.9rem; transition: 0.2s; }
+    .profile-dropdown ul li a:hover { background-color: #fff1f1; color: var(--primary-color); }
+    .profile-dropdown ul li a i { width: 20px; text-align: center; }
+    .menu-toggle { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--primary-color); z-index: 1001; }
 
-    .modal-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
+    /* Layout CSS */
+    .dashboard-container { display: flex; min-height: 100vh; padding-top: var(--header-height); }
+    .sidebar { width: var(--sidebar-width); background: #fff; border-right: 1px solid var(--border-color); position: sticky; top: var(--header-height); height: calc(100vh - var(--header-height)); overflow-y: auto; z-index: 900; flex-shrink: 0; }
+    .sidebar li { padding: 14px 25px; cursor: pointer; color: var(--text-color); font-weight: 500; display: flex; align-items: center; gap: 12px; border-left: 4px solid transparent; transition: all 0.2s; }
+    .sidebar li:hover, .sidebar li.active { background-color: #fff1f1; color: var(--primary-color); border-left-color: var(--primary-color); }
+    .sidebar a { display: flex; align-items: center; gap: 10px; width: 100%; }
+    .main-content { flex: 1; padding: 30px; width: 100%; }
+    .page-title h1 { font-size: 1.75rem; color: var(--primary-color); margin-bottom: 5px; }
+    .page-title p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px; }
 
-    .modal-box {
-      background: white;
-      padding: 30px;
-      border-radius: 16px;
-      text-align: center;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      transform: scale(0.9);
-      transition: transform 0.3s ease;
-    }
+    /* Components */
+    .tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); }
+    .tab-btn { padding: 10px 20px; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-muted); border-bottom: 3px solid transparent; margin-bottom: -2px; }
+    .tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+    .content-card { background: white; padding: 25px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); }
+    .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease; font-size: 0.9rem; color: white; }
+    .btn-primary { background-color: var(--primary-color); box-shadow: 0 4px 6px rgba(217, 4, 41, 0.2); }
+    .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+    .btn-success { background-color: var(--success-color); }
+    .btn-danger { background-color: var(--danger-color); }
+    .btn-secondary { background-color: #94a3b8; }
+    
+    /* Tmbahan CSS untuk tombol WA */
+    .btn-wa { background-color: #25d366; }
+    .btn-wa:hover { background-color: #128c7e; transform: translateY(-1px); }
+    .btn-disabled { background-color: #cbd5e1; color: #64748b; cursor: not-allowed; }
 
-    .modal-overlay.active .modal-box {
-      transform: scale(1);
-    }
-
-    .modal-icon {
-      width: 60px;
-      height: 60px;
-      background: #fee2e2;
-      color: var(--primary-color);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 20px;
-      font-size: 24px;
-    }
-
-    .modal-box h3 {
-      margin-bottom: 10px;
-      font-size: 1.25rem;
-      color: var(--text-color);
-    }
-
-    .modal-box p {
-      color: var(--text-muted);
-      margin-bottom: 25px;
-      font-size: 0.95rem;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    /* Style untuk tombol modal */
-    .btn-modal {
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s ease;
-      font-size: 0.95rem;
-      flex: 1;
-    }
-
-    /* Tombol Batal */
-    .btn-cancel {
-      background-color: #f1f5f9;
-      color: var(--text-muted);
-    }
-
-    .btn-cancel:hover {
-      background-color: #e2e8f0;
-      color: var(--text-color);
-    }
-
-    /* Tombol Logout (Merah) */
-    .btn-logout {
-      background-color: var(--primary-color);
-      color: white;
-    }
-
-    .btn-logout:hover {
-      background-color: var(--primary-hover);
-      transform: translateY(-2px);
-    }
-
-    /* --- SIDEBAR --- */
-    .sidebar {
-      width: var(--sidebar-width);
-      background: #fff;
-      border-right: 1px solid var(--border-color);
-      position: sticky;
-      top: var(--header-height);
-      height: calc(100vh - var(--header-height));
-      overflow-y: auto;
-      z-index: 900;
-      flex-shrink: 0;
-    }
-
-    .sidebar li {
-      padding: 14px 25px;
-      cursor: pointer;
-      color: var(--text-color);
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      border-left: 4px solid transparent;
-      transition: all 0.2s;
-    }
-
-    .sidebar li:hover,
-    .sidebar li.active {
-      background-color: #fff1f1;
-      color: var(--primary-color);
-      border-left-color: var(--primary-color);
-    }
-
-    .sidebar a {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-    }
-
-    /* --- MAIN CONTENT --- */
-    .main-content {
-      flex: 1;
-      padding: 30px;
-      width: 100%;
-    }
-
-    .page-title h1 {
-      font-size: 1.75rem;
-      color: var(--primary-color);
-      margin-bottom: 5px;
-    }
-
-    .page-title p {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      margin-bottom: 25px;
-    }
-
-    /* Tabs */
-    .tabs {
-      display: flex;
-      gap: 5px;
-      margin-bottom: 20px;
-      border-bottom: 2px solid var(--border-color);
-    }
-
-    .tab-btn {
-      padding: 10px 20px;
-      border: none;
-      background: none;
-      cursor: pointer;
-      font-weight: 600;
-      color: var(--text-muted);
-      border-bottom: 3px solid transparent;
-      margin-bottom: -2px;
-    }
-
-    .tab-btn.active {
-      color: var(--primary-color);
-      border-bottom-color: var(--primary-color);
-    }
-
-    /* Cards/Container */
-    .content-card {
-      background: white;
-      padding: 25px;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--border-color);
-    }
-
-    /* Buttons */
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s ease;
-      font-size: 0.9rem;
-      color: white;
-    }
-
-    .btn-primary {
-      background-color: var(--primary-color);
-      box-shadow: 0 4px 6px rgba(217, 4, 41, 0.2);
-    }
-
-    .btn-primary:hover {
-      background-color: var(--primary-hover);
-      transform: translateY(-1px);
-    }
-
-    .btn-success {
-      background-color: var(--success-color);
-    }
-
-    .btn-danger {
-      background-color: var(--danger-color);
-    }
-
-    .btn-secondary {
-      background-color: var(--text-muted);
-    }
-
-    /* Table */
-    .table-container {
-      overflow-x: auto;
-    }
-
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 700px;
-    }
-
-    .data-table th {
-      background-color: var(--primary-color);
-      color: white;
-      text-align: left;
-      padding: 15px;
-      font-weight: 600;
-    }
-
-    .data-table th:first-child {
-      border-top-left-radius: var(--radius);
-    }
-
-    .data-table th:last-child {
-      border-top-right-radius: var(--radius);
-    }
-
-    .data-table td {
-      padding: 15px;
-      border-bottom: 1px solid var(--border-color);
-      vertical-align: middle;
-    }
-
-    .data-table tr:last-child td {
-      border-bottom: none;
-    }
-
-    .data-table tr:hover {
-      background-color: #f8fafc;
-    }
+    /* Table Styles */
+    .table-container { overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: collapse; min-width: 800px; }
+    .data-table th { background-color: var(--primary-color); color: white; text-align: left; padding: 15px; font-weight: 600; }
+    .data-table th:first-child { border-top-left-radius: var(--radius); }
+    .data-table th:last-child { border-top-right-radius: var(--radius); }
+    .data-table td { padding: 15px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover { background-color: #f8fafc; }
+    
+    /* Status Badge */
+    .badge { padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-diterima { background: #d1fae5; color: #065f46; }
+    .badge-ditolak { background: #fee2e2; color: #991b1b; }
+    .action-group { display: flex; gap: 5px; }
 
     /* Form Builder Item */
-    .question-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px;
-      background: #fff;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      margin-bottom: 10px;
-      transition: all 0.2s ease;
-      cursor: move;
-    }
+    .question-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fff; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 10px; cursor: move; }
+    .question-item:hover { border-color: var(--primary-color); }
+    .q-info { display: flex; align-items: center; gap: 15px; flex: 1; }
+    .q-info .drag-handle { color: var(--text-muted); font-size: 1.2rem; cursor: grab; }
 
-    .question-item:hover {
-      border-color: var(--primary-color);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
+    /* Modal */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+    .modal-content { background: white; padding: 25px; border-radius: var(--radius); width: 100%; max-width: 500px; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; }
+    .form-control { width: 100%; padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; outline: none; }
+    .form-control:focus { border-color: var(--primary-color); }
 
-    .question-item.sortable-ghost {
-      opacity: 0.4;
-      background: #f0f0f0;
-    }
-
-    .question-item.sortable-chosen {
-      border: 2px dashed var(--primary-color);
-      background: #fff;
-    }
-
-    .q-info {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      flex: 1;
-    }
-
-    .q-info .drag-handle {
-      color: var(--text-muted);
-      font-size: 1.2rem;
-      cursor: grab;
-    }
-
-    .q-info .drag-handle:active {
-      cursor: grabbing;
-    }
-
-    .q-text-con h4 {
-      margin-bottom: 5px;
-      font-size: 1rem;
-    }
-
-    .q-text-con small {
-      color: var(--text-muted);
-      font-size: 0.8rem;
-    }
-
-    /* Modal Form Biasa */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 2000;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .modal-content {
-      background: white;
-      padding: 25px;
-      border-radius: var(--radius);
-      width: 100%;
-      max-width: 500px;
-      animation: fadeIn 0.3s ease;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .form-group {
-      margin-bottom: 15px;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 10px 15px;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      font-size: 0.95rem;
-      outline: none;
-    }
-
-    .form-control:focus {
-      border-color: var(--primary-color);
-    }
-
-    /* --- RESPONSIVE --- */
+    /* Responsive */
     @media (max-width: 992px) {
-      .main-content {
-        width: 100%;
-        padding: 20px;
-      }
-
-      /* Sidebar Muncul dari Kanan */
-      .sidebar {
-        position: fixed;
-        top: var(--header-height);
-        left: auto;
-        right: -260px;
-        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-        border-right: none;
-        border-left: 1px solid var(--border-color);
-        transition: right 0.3s ease;
-      }
-
-      .sidebar.active {
-        right: 0;
-      }
-
-      .menu-toggle {
-        display: block;
-      }
-
-      .logo span {
-        display: none;
-      }
+      .main-content { width: 100%; padding: 20px; }
+      .sidebar { position: fixed; top: var(--header-height); left: auto; right: -260px; box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1); border-right: none; border-left: 1px solid var(--border-color); transition: right 0.3s ease; }
+      .sidebar.active { right: 0; }
+      .menu-toggle { display: block; }
+      .logo span { display: none; }
     }
   </style>
 </head>
-
 <body>
 
   <!-- HEADER -->
   <header>
     <nav class="navbar">
-      <!-- KOLOM KIRI: LOGO -->
-      <div class="nav-left">
-        <div class="logo">
-          <img src="../Gambar/logpmi.png" alt="Logo PMR">
-          <span>PMR MILLENIUM</span>
-        </div>
-      </div>
-
-      <!-- KOLOM TENGAH -->
+      <div class="nav-left"><div class="logo"><img src="../Gambar/logpmi.png" alt="Logo PMR"><span>PMR MILLENIUM</span></div></div>
       <div class="nav-center"></div>
-
-      <!-- KOLOM KANAN: PROFILE & MENU -->
       <div class="nav-right">
-        <div class="profile-btn" id="profileBtn">
-          <img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img">
-        </div>
-
+        <div class="profile-btn" id="profileBtn"><img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img"></div>
         <div class="profile-dropdown" id="profileDropdown">
-          <div class="dropdown-header">
-            <p><?= $nama_user ?></p>
-            <small><?= ucfirst($role) ?></small>
-          </div>
+          <div class="dropdown-header"><p><?= $nama_user ?></p><small><?= ucfirst($role) ?></small></div>
           <ul>
-            <li>
-              <a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a>
-            </li>
-            <li>
-              <a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a>
-            </li>
-            <li>
-              <a href="ganti_password.php"><i class="fa-solid fa-key"></i> Ganti Password</a>
-            </li>
+            <li><a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a></li>
+            <li><a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a></li>
+            <li><a href="ganti_password.php"><i class="fa-solid fa-key"></i> Ganti Password</a></li>
           </ul>
         </div>
-
         <button class="menu-toggle" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
       </div>
     </nav>
   </header>
-
-<!-- MODAL LOGOUT (HTML sudah benar) -->
-  <div class="modal-overlay" id="logoutModal">
-    <div class="modal-box">
-      <div class="modal-icon">
-        <i class="fa-solid fa-right-from-bracket"></i>
-      </div>
-      <h3>Konfirmasi Keluar</h3>
-      <p>Apakah Anda yakin ingin keluar dari akun?</p>
-      <div class="modal-actions">
-        <button class="btn-modal btn-cancel" onclick="closeLogoutModal()">Batal</button>
-        <button class="btn-modal btn-logout" onclick="proceedLogout()">Ya, Keluar</button>
-      </div>
-    </div>
-  </div>
 
   <div class="dashboard-container">
     <!-- SIDEBAR -->
@@ -839,16 +321,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         <li class="active"><a href="kelola_pendaftaran.php"><i class="fa-solid fa-users"></i> Kelola Pendaftaran</a></li>
         <li><a href="kelola_beranda.php"><i class="fa-solid fa-pen-to-square"></i> Edit Halaman Utama</a></li>
         <li style="margin-top: 20px; border-top: 1px solid #eee;">
-          <!-- Diubah memanggil fungsi custom -->
-          <a href="javascript:void(0)" onclick="confirmLogout()">
-            <i class="fa-solid fa-right-from-bracket"></i> Log Out
-          </a>
+          <a href="javascript:void(0)" onclick="confirmLogout()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
         </li>
-        <li>
-          <a href="../Halaman Utama/index.php">
-            <i class="fa-solid fa-globe"></i>Halaman Utama
-          </a>
-        </li>
+        <li><a href="../Halaman Utama/index.php"><i class="fa-solid fa-globe"></i> Halaman Utama</a></li>
       </ul>
     </aside>
 
@@ -856,13 +331,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <main class="main-content">
       <div class="page-title">
         <h1>Kelola Pendaftaran Anggota</h1>
-        <p>Atur formulir pendaftaran dan lihat data pendaftar baru.</p>
+        <p>Atur formulir, verifikasi pendaftar, dan cetak kartu anggota.</p>
       </div>
 
-      <!-- Tabs -->
+      <!-- TABS (Ada penambahan Tab ke-3) -->
       <div class="tabs">
         <button class="tab-btn active" id="btn-builder" onclick="switchTab('builder')">Struktur Formulir</button>
         <button class="tab-btn" id="btn-list" onclick="switchTab('list')">Data Pendaftar</button>
+        <button class="tab-btn" id="btn-anggota" onclick="switchTab('anggota')">Data Anggota & Kartu</button>
       </div>
 
       <!-- Tab 1: Form Builder -->
@@ -870,9 +346,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         <div class="content-card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h3 style="color: var(--text-color);">Daftar Pertanyaan</h3>
-            <button class="btn btn-primary" onclick="openModal()">
-              <i class="fas fa-plus"></i> Tambah Pertanyaan
-            </button>
+            <button class="btn btn-primary" onclick="openModal()"><i class="fas fa-plus"></i> Tambah Pertanyaan</button>
           </div>
           <div id="questionsList">
             <?php
@@ -895,7 +369,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                       </div>";
               }
             } else {
-              echo "<p style='color:var(--text-muted); text-align:center; padding: 20px 0; background:white; border-radius:8px;'>Belum ada pertanyaan. Silakan tambah pertanyaan baru.</p>";
+              echo "<p style='color:var(--text-muted); text-align:center; padding: 20px 0; background:white; border-radius:8px;'>Belum ada pertanyaan.</p>";
             }
             ?>
           </div>
@@ -911,36 +385,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
               <thead>
                 <tr>
                   <th>No</th>
-                  <th>Tanggal</th>
                   <th>Nama</th>
                   <th>Kelas</th>
+                  <th>Status</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 <?php
                 $no = 1;
-                // Reset pointer query agar bisa digunakan lagi
                 if ($pendaftar) mysqli_data_seek($pendaftar, 0);
 
                 if (mysqli_num_rows($pendaftar) > 0) {
                   while ($p = mysqli_fetch_assoc($pendaftar)) {
+                    $status_class = 'badge-pending';
+                    if($p['status'] == 'diterima') $status_class = 'badge-diterima';
+                    if($p['status'] == 'ditolak') $status_class = 'badge-ditolak';
+                    
                     echo "<tr>
-                                <td>{$no}</td>
-                                <td>" . date('d M Y', strtotime($p['submission_date'])) . "</td>
-                                <td>{$p['nama_lengkap']}</td>
-                                <td>{$p['kelas']}</td>
-                                <td>
-                                    <!-- Tombol Lihat Detail -->
-                                    <button class='btn btn-primary' style='padding:5px 10px' onclick='viewDetail({$p['id']})'><i class='fas fa-eye'></i></button>
-                                    <!-- Tombol Hapus Baru -->
-                                    <button class='btn btn-danger' style='padding:5px 10px' onclick='deletePendaftar({$p['id']})'><i class='fas fa-trash'></i></button>
-                                </td>
-                              </tr>";
+                            <td>{$no}</td>
+                            <td>{$p['nama_lengkap']}</td>
+                            <td>{$p['kelas']}</td>
+                            <td><span class='badge {$status_class}'>{$p['status']}</span></td>
+                            <td>
+                              <div class='action-group'>";
+                              
+                    if($p['status'] == 'pending') {
+                       echo "<button class='btn btn-success' style='padding:5px 10px; font-size:12px' onclick='approvePendaftar({$p['id']})'><i class='fa-solid fa-check'></i> Terima</button>";
+                       echo "<button class='btn btn-danger' style='padding:5px 10px; font-size:12px' onclick='rejectPendaftar({$p['id']})'><i class='fa-solid fa-times'></i> Tolak</button>";
+                    } else {
+                       echo "<button class='btn btn-secondary' style='padding:5px 10px; font-size:12px' disabled>Selesai</button>";
+                    }
+
+                    echo "  <button class='btn btn-primary' style='padding:5px 10px' onclick='viewDetail({$p['id']})'><i class='fas fa-eye'></i></button>";
+                    echo "  <button class='btn btn-danger' style='padding:5px 10px' onclick='deletePendaftar({$p['id']})'><i class='fas fa-trash'></i></button>";
+                    echo "  </div>
+                            </td>
+                          </tr>";
                     $no++;
                   }
                 } else {
-                  echo "<tr><td colspan='5' style='text-align:center; color:var(--text-muted); padding: 20px;'>Belum ada pendaftar.</td></tr>";
+                  echo "<tr><td colspan='5' style='text-align:center'>Belum ada pendaftar.</td></tr>";
                 }
                 ?>
               </tbody>
@@ -948,6 +433,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
           </div>
         </div>
       </section>
+
+      <!-- Tab 3: Data Anggota & Kartu (TAB BARU) -->
+      <section id="tab-anggota" style="display: none;">
+        <div class="content-card">
+          <h3 style="margin-bottom: 15px; color: var(--text-color);">Daftar Anggota Diterima (Kelola Kartu)</h3>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Nama</th>
+                  <th>Akses Login</th>
+                  <th>Cetak</th>
+                  <th>Kirim WhatsApp</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (mysqli_num_rows($anggota_baru) > 0): ?>
+                  <?php while ($a = mysqli_fetch_assoc($anggota_baru)): ?>
+                  <tr>
+                    <td><strong><?= $a['nama_lengkap'] ?></strong><br><small><?= $a['kelas'] ?></small></td>
+                    <td>
+                      <code style="background:#f1f5f9; padding:3px 6px; border-radius:4px; display:inline-block; margin-bottom:4px;">Usn: <?= $a['generated_username'] ?></code><br>
+                      <code style="background:#f1f5f9; padding:3px 6px; border-radius:4px; display:inline-block;">Pass: <?= $a['generated_password'] ?></code>
+                    </td>
+                    <td>
+                      <!-- Mengarah ke file cetak_kartu.php yang akan kamu buat nanti -->
+                      <a href="cetak_kartu.php?id=<?= $a['id'] ?>" target="_blank" class="btn btn-primary" style="padding: 5px 10px; font-size: 13px;">
+                          <i class="fas fa-file-pdf"></i> PDF
+                      </a>
+                    </td>
+                    <td>
+                      <?php if(isset($a['card_sent']) && $a['card_sent'] == 1): ?>
+                          <button class="btn btn-disabled" style="padding: 5px 10px; font-size: 13px;" disabled><i class="fas fa-check-double"></i> Sudah Dikirim</button>
+                      <?php else: 
+                          // Pesan default, pastikan nomor WA ada di database (sesuaikan nama kolomnya jika bukan nomor_wa)
+                          $nomor_wa = isset($a['no_whatsapp']) ? $a['no_whatsapp'] : '';
+                          $pesan = "Halo " . $a['nama_lengkap'] . ", Selamat kamu resmi Diterima di PMR! Berikut adalah akses login kamu untuk masuk ke website.\n\nUsername: " . $a['generated_username'] . "\nPassword: " . $a['generated_password'] . "\n\nHarap simpan baik-baik akses ini.";
+                          $link_wa = "https://wa.me/" . $nomor_wa . "?text=" . urlencode($pesan);
+                      ?>
+                          <a href="<?= $link_wa ?>" target="_blank" class="btn btn-wa" style="padding: 5px 10px; font-size: 13px;" onclick="markAsSent(<?= $a['id'] ?>)">
+                              <i class="fab fa-whatsapp"></i> Kirim Akses
+                          </a>
+                      <?php endif; ?>
+                    </td>
+                  </tr>
+                  <?php endwhile; ?>
+                <?php else: ?>
+                  <tr><td colspan="4" style="text-align:center">Belum ada anggota yang diterima.</td></tr>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -973,7 +513,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         </div>
         <div class="form-group" id="opts-group" style="display:none;">
           <label>Pilihan (Pisahkan dengan enter)</label>
-          <textarea id="q_opts" class="form-control" rows="3" placeholder="Opsi 1&#10;Opsi 2&#10;Opsi 3"></textarea>
+          <textarea id="q_opts" class="form-control" rows="3" placeholder="Opsi 1&#10;Opsi 2"></textarea>
         </div>
         <div class="form-group">
           <label> <input type="checkbox" id="q_req" checked> Wajib Diisi</label>
@@ -992,256 +532,162 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       <h3 style="margin-bottom: 20px; color: var(--primary-color);">Detail Pendaftar</h3>
       <div id="detailContent">Loading...</div>
       <div style="text-align: right; margin-top: 20px;">
-        <button class="btn btn-danger" onclick="document.getElementById('detailModal').style.display='none'">Tutup</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('detailModal').style.display='none'">Tutup</button>
       </div>
     </div>
   </div>
 
   <script>
-    // --- LOGIKA DROPDOWN PROFIL & SIDEBAR ---
+    // --- LOGIKA DROPDOWN & SIDEBAR ---
     const menuToggle = document.querySelector('.menu-toggle');
     const sidebar = document.querySelector('.sidebar');
     const profileBtn = document.getElementById('profileBtn');
     const profileDropdown = document.getElementById('profileDropdown');
 
-    menuToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      sidebar.classList.toggle('active');
-      profileDropdown.classList.remove('active');
-    });
-
-    profileBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      profileDropdown.classList.toggle('active');
-      sidebar.classList.remove('active');
-    });
-
+    menuToggle.addEventListener('click', (e) => { e.stopPropagation(); sidebar.classList.toggle('active'); profileDropdown.classList.remove('active'); });
+    profileBtn.addEventListener('click', (e) => { e.stopPropagation(); profileDropdown.classList.toggle('active'); sidebar.classList.remove('active'); });
     document.addEventListener('click', (e) => {
-      if (window.innerWidth <= 992) {
-        if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active');
-      }
+      if (window.innerWidth <= 992) { if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active'); }
       if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
     });
 
-    // --- FUNGSI LOGOUT (FIXED) ---
-    function confirmLogout() {
-      openLogoutModal();
-    }
+    // --- LOGOUT ---
+    function confirmLogout() { if(confirm('Yakin ingin keluar?')) window.location.href = "../logout.php"; }
 
-    function openLogoutModal() {
-      const modal = document.getElementById('logoutModal');
-      modal.classList.add('active');
-    }
-
-    function closeLogoutModal() {
-      const modal = document.getElementById('logoutModal');
-      modal.classList.remove('active');
-    }
-
-    function proceedLogout() {
-      window.location.href = "../logout.php";
-    }
-
-    // Tutup modal jika klik overlay
-    document.getElementById('logoutModal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        closeLogoutModal();
-      }
-    });
-
-    // ============================
-    // 1. TAB HANDLING
-    // ============================
+    // --- TAB HANDLING (Diperbarui untuk 3 Tab) ---
     function switchTab(tabName) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('btn-' + tabName).classList.add('active');
-
+      
       document.getElementById('tab-builder').style.display = tabName === 'builder' ? 'block' : 'none';
       document.getElementById('tab-list').style.display = tabName === 'list' ? 'block' : 'none';
+      document.getElementById('tab-anggota').style.display = tabName === 'anggota' ? 'block' : 'none';
+      
       history.pushState(null, null, '#' + tabName);
     }
-
+    
     window.addEventListener('load', () => {
       let hash = window.location.hash.substring(1);
-      if (hash === 'list') switchTab('list');
+      if (hash === 'list') switchTab('list'); 
+      else if (hash === 'anggota') switchTab('anggota');
       else switchTab('builder');
       initSortable();
     });
 
-    window.addEventListener('hashchange', () => {
-      let hash = window.location.hash.substring(1);
-      if (hash === 'list') switchTab('list');
-      else switchTab('builder');
-    });
+    // --- FUNGSI UPDATE STATUS WA (FITUR BARU) ---
+    function markAsSent(id) {
+        const data = new FormData();
+        data.append('action', 'mark_as_sent');
+        data.append('id', id);
+        
+        fetch('', { method: 'POST', body: data })
+        .then(res => res.json())
+        .then(res => {
+            if(res.status == 'success') {
+                setTimeout(() => { location.reload(); }, 1500); // Refresh setelah 1.5 detik
+            }
+        });
+    }
 
-    // ============================
-    // 2. DRAG & DROP SORTING
-    // ============================
+    // --- SORTABLE ---
     function initSortable() {
       const el = document.getElementById('questionsList');
       if (el && typeof Sortable !== 'undefined') {
         new Sortable(el, {
-          animation: 150,
-          handle: '.drag-handle',
-          ghostClass: 'sortable-ghost',
-          chosenClass: 'sortable-chosen',
+          animation: 150, handle: '.drag-handle', ghostClass: 'sortable-ghost',
           onEnd: function(evt) {
             const items = el.querySelectorAll('.question-item');
-            const ids = [];
-            items.forEach(item => ids.push(item.dataset.id));
+            const ids = []; items.forEach(item => ids.push(item.dataset.id));
             saveOrder(ids);
           }
         });
       }
     }
-
     function saveOrder(ids) {
       const data = new FormData();
       data.append('action', 'update_order');
       data.append('ids', JSON.stringify(ids));
-      fetch('', {
-          method: 'POST',
-          body: data
-        })
-        .then(res => res.json())
-        .then(res => {
-          if (res.status !== 'success') alert('Gagal menyimpan urutan');
-        });
+      fetch('', { method: 'POST', body: data });
     }
 
-    // ============================
-    // 3. MODAL & CRUD HANDLING
-    // ============================
+    // --- MODAL & CRUD QUESTIONS ---
     const modal = document.getElementById('questionModal');
-
-    function openModal() {
-      document.getElementById('formQuestion').reset();
-      document.getElementById('q_id').value = 0;
-      toggleOptions();
-      modal.style.display = 'flex';
-    }
-
-    function closeModal() {
-      modal.style.display = 'none';
-    }
-
-    function toggleOptions() {
-      const type = document.getElementById('q_type').value;
-      const optsGroup = document.getElementById('opts-group');
-
-      if (type === 'select' || type === 'radio') {
-        optsGroup.style.display = 'block';
-      } else {
-        optsGroup.style.display = 'none';
-      }
-    }
-
+    function openModal() { document.getElementById('formQuestion').reset(); document.getElementById('q_id').value = 0; toggleOptions(); modal.style.display = 'flex'; }
+    function closeModal() { modal.style.display = 'none'; }
+    function toggleOptions() { document.getElementById('opts-group').style.display = (document.getElementById('q_type').value === 'select' || document.getElementById('q_type').value === 'radio') ? 'block' : 'none'; }
+    
     function editQ(id, text, type, opts, req) {
       document.getElementById('q_id').value = id;
       document.getElementById('q_text').value = text;
       document.getElementById('q_type').value = type;
       document.getElementById('q_req').checked = req == 1;
-
-      try {
-        if (typeof opts === 'string') {
-          try {
-            const arr = JSON.parse(opts);
-            document.getElementById('q_opts').value = arr.join('\n');
-          } catch (e) {
-            document.getElementById('q_opts').value = '';
-          }
-        } else if (Array.isArray(opts)) {
-          document.getElementById('q_opts').value = opts.join('\n');
-        }
-      } catch (e) {
-        document.getElementById('q_opts').value = '';
-      }
-
-      toggleOptions();
-      modal.style.display = 'flex';
+      try { document.getElementById('q_opts').value = Array.isArray(opts) ? opts.join('\n') : (JSON.parse(opts) || []).join('\n'); } catch(e) {}
+      toggleOptions(); modal.style.display = 'flex';
     }
 
     document.getElementById('formQuestion').onsubmit = function(e) {
       e.preventDefault();
       let opts = [];
-      const type = document.getElementById('q_type').value;
-      if (type === 'select' || type === 'radio') {
-        const text = document.getElementById('q_opts').value;
-        opts = text.split('\n').filter(t => t.trim() !== '');
-      }
-
+      if (document.getElementById('q_type').value === 'select' || document.getElementById('q_type').value === 'radio') opts = document.getElementById('q_opts').value.split('\n').filter(t => t.trim() !== '');
       const data = new FormData();
       data.append('action', 'save_question');
       data.append('id', document.getElementById('q_id').value);
       data.append('text', document.getElementById('q_text').value);
-      data.append('type', type);
+      data.append('type', document.getElementById('q_type').value);
       data.append('options', JSON.stringify(opts));
       data.append('required', document.getElementById('q_req').checked ? 1 : 0);
-
-      fetch('', {
-          method: 'POST',
-          body: data
-        })
-        .then(res => res.json())
-        .then(res => {
-          if (res.status === 'success') location.reload();
-          else alert('Gagal menyimpan');
-        });
+      fetch('', { method: 'POST', body: data }).then(res => res.json()).then(res => { if (res.status === 'success') location.reload(); else alert('Gagal menyimpan'); });
     };
 
-    function deleteQ(id) {
-      if (!confirm('Hapus pertanyaan ini?')) return;
-      const data = new FormData();
-      data.append('action', 'delete_question');
-      data.append('id', id);
-      fetch('', {
-          method: 'POST',
-          body: data
-        })
-        .then(res => res.json())
-        .then(res => {
-          if (res.status === 'success') location.reload();
-        });
-    }
+    function deleteQ(id) { if (!confirm('Hapus pertanyaan ini?')) return; const data = new FormData(); data.append('action', 'delete_question'); data.append('id', id); fetch('', { method: 'POST', body: data }).then(res => res.json()).then(res => { if (res.status === 'success') location.reload(); }); }
 
+    // --- FUNGSI PENDAFTAR ---
     function viewDetail(id) {
       const modalD = document.getElementById('detailModal');
       const content = document.getElementById('detailContent');
       content.innerHTML = 'Loading...';
       modalD.style.display = 'flex';
-      fetch('get_pendaftar_detail.php?id=' + id)
-        .then(res => res.text())
-        .then(html => {
-          content.innerHTML = html;
-        });
+      fetch('get_pendaftar_detail.php?id=' + id).then(res => res.text()).then(html => content.innerHTML = html);
     }
     
     function deletePendaftar(id) {
       if (!confirm('Yakin ingin menghapus data pendaftar ini?')) return;
-
       const data = new FormData();
       data.append('action', 'delete_pendaftar');
       data.append('id', id);
+      fetch('', { method: 'POST', body: data }).then(res => res.json()).then(res => { if (res.status === 'success') location.reload(); else alert('Gagal menghapus'); });
+    }
 
-      fetch('', {
-          method: 'POST',
-          body: data
-        })
+    // --- FUNGSI APPROVE & REJECT ---
+    function approvePendaftar(id) {
+        if(!confirm('Terima pendaftar ini? Akun akan dibuat otomatis.')) return;
+        const data = new FormData();
+        data.append('action', 'approve_pendaftar');
+        data.append('id', id);
+        fetch('', { method: 'POST', body: data })
         .then(res => res.json())
         .then(res => {
-          if (res.status === 'success') {
-            alert('Data berhasil dihapus.');
-            location.reload(); // Reload halaman untuk update tabel
-          } else {
-            alert('Gagal menghapus: ' + (res.msg || 'Error unknown'));
-          }
-        })
-        .catch(err => {
-            console.error('Error:', err);
-            alert('Terjadi kesalahan sistem.');
+            if(res.status == 'success') {
+                alert("Sukses!\n\n" + res.msg + "\n\nData pindah ke Tab Data Anggota.");
+                location.reload();
+            } else {
+                alert('Error: ' + res.msg);
+            }
+        });
+    }
+
+    function rejectPendaftar(id) {
+        if(!confirm('Tolak pendaftar ini?')) return;
+        const data = new FormData();
+        data.append('action', 'reject_pendaftar');
+        data.append('id', id);
+        fetch('', { method: 'POST', body: data })
+        .then(res => res.json())
+        .then(res => {
+            if(res.status == 'success') location.reload();
+            else alert('Gagal menolak.');
         });
     }
   </script>
 </body>
-
 </html>
