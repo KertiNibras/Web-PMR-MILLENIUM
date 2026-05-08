@@ -609,7 +609,7 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
       <ul>
         <li><a href="anggota.php"><i class="fa-solid fa-house"></i> Dashboard</a></li>
         <li><a href="absensi.php"><i class="fa-solid fa-calendar-check"></i> Rekap Absensi</a></li>
-        <li class="active"><a href="perpus.php"><i class="fa-solid fa-book"></i> Perpustakaan Digital</a></li>
+        <li class="active"><a href="perpus.php"><i class="fa-solid fa-book"></i>Materi</a></li>
         <li style="margin-top: 20px; border-top: 1px solid #eee;">
             <a href="javascript:void(0)" onclick="openLogoutModal()">
               <i class="fa-solid fa-right-from-bracket"></i> Log Out

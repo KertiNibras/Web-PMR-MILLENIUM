@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '../koneksi.php';
+require_once __DIR__ . '/../koneksi.php';
 
 // Cek Login & Role
 if (!isset($_SESSION['nama'])) {
@@ -13,10 +13,10 @@ if ($_SESSION['role'] != 'pengurus') {
 }
 
 // Ambil Data User untuk Header
-$nama_user = htmlspecialchars($_SESSION['nama']);
-$role = $_SESSION['role'];
-$foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : ''; 
-$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
+ $nama_user = htmlspecialchars($_SESSION['nama']);
+ $role = $_SESSION['role'];
+ $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : ''; 
+ $foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
 
 if (!empty($foto_session)) {
     $path_foto = "../uploads/foto_profil/" . $foto_session;
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($data) {
         $nama_lengkap = mysqli_real_escape_string($koneksi, $data['nama_lengkap']);
         $kelas = mysqli_real_escape_string($koneksi, $data['kelas']);
-        $jurusan = mysqli_real_escape_string($koneksi, $data['jurusans']); 
+      
         
         // Generate Username (hapus spasi)
         $username = strtolower(preg_replace('/\s+/', '', $nama_lengkap));
@@ -96,7 +96,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if($ins) {
             // Update status pendaftaran & simpan credential + set card_sent ke 0
             $upd = mysqli_query($koneksi, "UPDATE pendaftaran SET status='diterima', generated_username='$username', generated_password='$password_plain', card_sent=0 WHERE id='$id'");
-            echo json_encode(['status' => 'success', 'msg' => "Akun Dibuat!\nUsername: $username\nPassword: $password_plain"]);
+            
+            // DIUBAH: Mengirim data terpisah agar mudah di-format di SweetAlert2
+            echo json_encode([
+              'status' => 'success', 
+              'nama' => $nama_lengkap,
+              'username' => $username, 
+              'password' => $password_plain
+            ]);
         } else {
             echo json_encode(['status' => 'error', 'msg' => 'Gagal membuat akun: ' . mysqli_error($koneksi)]);
         }
@@ -106,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     exit;
   }
 
-  // 3. PROSES TANDAI WA TERKIRIM (FITUR BARU)
+  // 3. PROSES TANDAI WA TERKIRIM
   if ($action == 'mark_as_sent') {
     $id = intval($_POST['id']);
     $upd = mysqli_query($koneksi, "UPDATE pendaftaran SET card_sent=1 WHERE id='$id'");
@@ -172,10 +179,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 }
 
 // Ambil Data
-$questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY ordering ASC");
-$pendaftar = mysqli_query($koneksi, "SELECT * FROM pendaftaran ORDER BY submission_date DESC");
+ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY ordering ASC");
+ $pendaftar = mysqli_query($koneksi, "SELECT * FROM pendaftaran ORDER BY submission_date DESC");
 // Data khusus anggota yang sudah diterima (Untuk Tab 3)
-$anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='diterima' ORDER BY id DESC");
+ $anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='diterima' ORDER BY id DESC");
 ?>
 
 <!DOCTYPE html>
@@ -187,6 +194,8 @@ $anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <!-- TAMBAHAN: SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     :root {
       --primary-color: #d90429; --primary-hover: #c92a2a; --bg-color: #f8f9fa; --card-bg: #ffffff;
@@ -242,7 +251,7 @@ $anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='
     .btn-danger { background-color: var(--danger-color); }
     .btn-secondary { background-color: #94a3b8; }
     
-    /* Tmbahan CSS untuk tombol WA */
+    /* Tambahan CSS untuk tombol WA */
     .btn-wa { background-color: #25d366; }
     .btn-wa:hover { background-color: #128c7e; transform: translateY(-1px); }
     .btn-disabled { background-color: #cbd5e1; color: #64748b; cursor: not-allowed; }
@@ -278,6 +287,27 @@ $anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='
     .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; }
     .form-control { width: 100%; padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; outline: none; }
     .form-control:focus { border-color: var(--primary-color); }
+
+    /* Tambahan untuk Desain Swal Custom */
+    .swal-credential-box {
+      background-color: #f8f9fa; 
+      border: 1px solid #e2e8f0; 
+      border-radius: 8px; 
+      padding: 15px; 
+      margin-top: 15px; 
+      text-align: left;
+    }
+    .swal-credential-box p { margin: 5px 0; font-size: 14px; color: #1e293b; }
+    .swal-credential-box code {
+      background-color: #fff; 
+      padding: 3px 8px; 
+      border-radius: 4px; 
+      border: 1px solid #cbd5e1;
+      font-family: monospace;
+      font-size: 14px;
+      color: #d90429;
+      font-weight: bold;
+    }
 
     /* Responsive */
     @media (max-width: 992px) {
@@ -317,7 +347,7 @@ $anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='
       <ul>
         <li><a href="../Dashboard Anggota/anggota.php"><i class="fa-solid fa-house"></i> Dashboard</a></li>
         <li><a href="kelolaabsen.php"><i class="fa-solid fa-calendar-check"></i> Kelola Absensi</a></li>
-        <li><a href="kelolaperpus.php"><i class="fa-solid fa-book"></i> Kelola Perpustakaan</a></li>
+        <li><a href="kelolaperpus.php"><i class="fa-solid fa-book"></i> Kelola Materi</a></li>
         <li class="active"><a href="kelola_pendaftaran.php"><i class="fa-solid fa-users"></i> Kelola Pendaftaran</a></li>
         <li><a href="kelola_beranda.php"><i class="fa-solid fa-pen-to-square"></i> Edit Halaman Utama</a></li>
         <li style="margin-top: 20px; border-top: 1px solid #eee;">
@@ -334,7 +364,7 @@ $anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='
         <p>Atur formulir, verifikasi pendaftar, dan cetak kartu anggota.</p>
       </div>
 
-      <!-- TABS (Ada penambahan Tab ke-3) -->
+      <!-- TABS -->
       <div class="tabs">
         <button class="tab-btn active" id="btn-builder" onclick="switchTab('builder')">Struktur Formulir</button>
         <button class="tab-btn" id="btn-list" onclick="switchTab('list')">Data Pendaftar</button>
@@ -434,7 +464,7 @@ $anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='
         </div>
       </section>
 
-      <!-- Tab 3: Data Anggota & Kartu (TAB BARU) -->
+      <!-- Tab 3: Data Anggota & Kartu -->
       <section id="tab-anggota" style="display: none;">
         <div class="content-card">
           <h3 style="margin-bottom: 15px; color: var(--text-color);">Daftar Anggota Diterima (Kelola Kartu)</h3>
@@ -458,7 +488,6 @@ $anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='
                       <code style="background:#f1f5f9; padding:3px 6px; border-radius:4px; display:inline-block;">Pass: <?= $a['generated_password'] ?></code>
                     </td>
                     <td>
-                      <!-- Mengarah ke file cetak_kartu.php yang akan kamu buat nanti -->
                       <a href="cetak_kartu.php?id=<?= $a['id'] ?>" target="_blank" class="btn btn-primary" style="padding: 5px 10px; font-size: 13px;">
                           <i class="fas fa-file-pdf"></i> PDF
                       </a>
@@ -467,8 +496,7 @@ $anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='
                       <?php if(isset($a['card_sent']) && $a['card_sent'] == 1): ?>
                           <button class="btn btn-disabled" style="padding: 5px 10px; font-size: 13px;" disabled><i class="fas fa-check-double"></i> Sudah Dikirim</button>
                       <?php else: 
-                          // Pesan default, pastikan nomor WA ada di database (sesuaikan nama kolomnya jika bukan nomor_wa)
-                          $nomor_wa = isset($a['no_whatsapp']) ? $a['no_whatsapp'] : '';
+                          $nomor_wa = isset($a['nomor_wa']) ? $a['nomor_wa'] : '';
                           $pesan = "Halo " . $a['nama_lengkap'] . ", Selamat kamu resmi Diterima di PMR! Berikut adalah akses login kamu untuk masuk ke website.\n\nUsername: " . $a['generated_username'] . "\nPassword: " . $a['generated_password'] . "\n\nHarap simpan baik-baik akses ini.";
                           $link_wa = "https://wa.me/" . $nomor_wa . "?text=" . urlencode($pesan);
                       ?>
@@ -551,10 +579,23 @@ $anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='
       if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
     });
 
-    // --- LOGOUT ---
-    function confirmLogout() { if(confirm('Yakin ingin keluar?')) window.location.href = "../logout.php"; }
+    // --- LOGOUT (Diupdate Pakai Swal) ---
+    function confirmLogout() { 
+      Swal.fire({
+        title: 'Keluar dari akun?',
+        text: 'Anda akan dikembalikan ke halaman login.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#d90429',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Log Out!',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) window.location.href = "../logout.php";
+      });
+    }
 
-    // --- TAB HANDLING (Diperbarui untuk 3 Tab) ---
+    // --- TAB HANDLING ---
     function switchTab(tabName) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('btn-' + tabName).classList.add('active');
@@ -574,7 +615,7 @@ $anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='
       initSortable();
     });
 
-    // --- FUNGSI UPDATE STATUS WA (FITUR BARU) ---
+    // --- FUNGSI UPDATE STATUS WA ---
     function markAsSent(id) {
         const data = new FormData();
         data.append('action', 'mark_as_sent');
@@ -584,7 +625,13 @@ $anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='
         .then(res => res.json())
         .then(res => {
             if(res.status == 'success') {
-                setTimeout(() => { location.reload(); }, 1500); // Refresh setelah 1.5 detik
+              Swal.fire({
+                icon: 'success',
+                title: 'Berhasil Ditandai',
+                text: 'Status pengiriman WA telah diperbarui.',
+                timer: 1500,
+                showConfirmButton: false
+              }).then(() => location.reload());
             }
         });
     }
@@ -639,7 +686,25 @@ $anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='
       fetch('', { method: 'POST', body: data }).then(res => res.json()).then(res => { if (res.status === 'success') location.reload(); else alert('Gagal menyimpan'); });
     };
 
-    function deleteQ(id) { if (!confirm('Hapus pertanyaan ini?')) return; const data = new FormData(); data.append('action', 'delete_question'); data.append('id', id); fetch('', { method: 'POST', body: data }).then(res => res.json()).then(res => { if (res.status === 'success') location.reload(); }); }
+    function deleteQ(id) { 
+      Swal.fire({
+        title: 'Hapus Pertanyaan?',
+        text: 'Pertanyaan yang sudah dihapus tidak bisa dikembalikan.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const data = new FormData(); 
+          data.append('action', 'delete_question'); 
+          data.append('id', id); 
+          fetch('', { method: 'POST', body: data }).then(res => res.json()).then(res => { if (res.status === 'success') location.reload(); });
+        }
+      });
+    }
 
     // --- FUNGSI PENDAFTAR ---
     function viewDetail(id) {
@@ -650,43 +715,128 @@ $anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='
       fetch('get_pendaftar_detail.php?id=' + id).then(res => res.text()).then(html => content.innerHTML = html);
     }
     
+    // DIUPDATE: Hapus Pendaftar Pakai Swal
     function deletePendaftar(id) {
-      if (!confirm('Yakin ingin menghapus data pendaftar ini?')) return;
-      const data = new FormData();
-      data.append('action', 'delete_pendaftar');
-      data.append('id', id);
-      fetch('', { method: 'POST', body: data }).then(res => res.json()).then(res => { if (res.status === 'success') location.reload(); else alert('Gagal menghapus'); });
-    }
-
-    // --- FUNGSI APPROVE & REJECT ---
-    function approvePendaftar(id) {
-        if(!confirm('Terima pendaftar ini? Akun akan dibuat otomatis.')) return;
-        const data = new FormData();
-        data.append('action', 'approve_pendaftar');
-        data.append('id', id);
-        fetch('', { method: 'POST', body: data })
-        .then(res => res.json())
-        .then(res => {
-            if(res.status == 'success') {
-                alert("Sukses!\n\n" + res.msg + "\n\nData pindah ke Tab Data Anggota.");
-                location.reload();
+      Swal.fire({
+        title: 'Hapus Data Pendaftar?',
+        text: 'Semua data dan file pendaftar ini akan dihapus secara permanen.',
+        icon: 'error',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const data = new FormData();
+          data.append('action', 'delete_pendaftar');
+          data.append('id', id);
+          fetch('', { method: 'POST', body: data })
+          .then(res => res.json())
+          .then(res => { 
+            if(res.status === 'success') {
+              Swal.fire('Dihapus!', 'Data pendaftar berhasil dihapus.', 'success').then(() => location.reload());
             } else {
-                alert('Error: ' + res.msg);
+              Swal.fire('Gagal!', 'Tidak dapat menghapus data.', 'error');
             }
-        });
+          });
+        }
+      });
     }
 
+    // DIUPDATE: Approve Pendaftar Pakai Swal (Dengan Tampilan Credential Kustom)
+    function approvePendaftar(id) {
+      Swal.fire({
+        title: 'Terima Pendaftar Ini?',
+        text: 'Akun login untuk anggota akan dibuatkan secara otomatis.',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Terima!',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const data = new FormData();
+          data.append('action', 'approve_pendaftar');
+          data.append('id', id);
+          
+          // Tampilkan loading
+          Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+
+                    fetch('', { method: 'POST', body: data })
+          .then(res => {
+            // Pastikan respon dari server benar-benar OK (200)
+            if (!res.ok) {
+              throw new Error('Server responded with status ' + res.status);
+            }
+            return res.text(); // Ambil sebagai teks dulu untuk debugging
+          })
+          .then(text => {
+            try {
+              const res = JSON.parse(text); // Parsing manual
+              if(res.status == 'success') {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Berhasil Diterima!',
+                  html: `
+                    <div style="text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid #e2e8f0;">
+                      <p style="margin-bottom: 5px; font-weight: bold;">Akses Login Anggota:</p>
+                      <p style="margin: 5px 0;">👤 Username: <code style="background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">${res.username}</code></p>
+                      <p style="margin: 5px 0;">🔑 Password: <code style="background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">${res.password}</code></p>
+                      <small style="color: #64748b; display: block; margin-top: 10px;">*Segera sampaikan akses ini kepada anggota via WhatsApp pada tab "Data Anggota & Kartu".</small>
+                    </div>
+                  `,
+                  confirmButtonColor: '#d90429',
+                  confirmButtonText: 'Oke, Mengerti'
+                }).then(() => location.reload());
+              } else {
+                Swal.fire('Gagal!', res.msg || 'Terjadi kesalahan', 'error');
+              }
+            } catch (e) {
+              // Jika gagal parsing JSON, tampilkan teks aslinya untuk debugging
+              console.error("Respon bukan JSON:", text);
+              Swal.fire('Error Kritisan!', 'Server mengembalikan data yang tidak valid. Cek Console (F12) untuk detail.', 'error');
+            }
+          })
+          .catch(error => {
+            console.error('Fetch Error:', error);
+            Swal.fire('Koneksi Gagal!', 'Tidak dapat menghubungi server.', 'error');
+          });
+        }
+      });
+    }
+
+    // DIUPDATE: Reject Pendaftar Pakai Swal
     function rejectPendaftar(id) {
-        if(!confirm('Tolak pendaftar ini?')) return;
-        const data = new FormData();
-        data.append('action', 'reject_pendaftar');
-        data.append('id', id);
-        fetch('', { method: 'POST', body: data })
-        .then(res => res.json())
-        .then(res => {
-            if(res.status == 'success') location.reload();
-            else alert('Gagal menolak.');
-        });
+      Swal.fire({
+        title: 'Tolak Pendaftar Ini?',
+        text: 'Pendaftar akan diberi status ditolak dan tidak bisa login.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#f59e0b',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Tolak!',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const data = new FormData();
+          data.append('action', 'reject_pendaftar');
+          data.append('id', id);
+          
+          Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+
+          fetch('', { method: 'POST', body: data })
+          .then(res => res.json())
+          .then(res => {
+            if(res.status == 'success') {
+              Swal.fire('Ditolak!', 'Pendaftar telah ditolak.', 'success').then(() => location.reload());
+            } else {
+              Swal.fire('Gagal!', 'Gagal menolak pendaftar.', 'error');
+            }
+          });
+        }
+      });
     }
   </script>
 </body>

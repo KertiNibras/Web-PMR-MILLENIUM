@@ -1,7 +1,6 @@
 <?php
 session_start();
 require_once __DIR__ . '/../koneksi.php';
-
 // Cek Login & Role
 if (!isset($_SESSION['nama'])) {
   header("Location: ../Login/login.php");

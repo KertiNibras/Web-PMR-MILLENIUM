@@ -765,14 +765,14 @@ while ($row = mysqli_fetch_assoc($social_query)) {
     </div>
   </section>
 
-  <!-- KEGIATAN -->
-  <section class="section" id="kegiatan" style="background: #fff;">
+  <!-- KONTEN1 -->
+  <section class="section" id="konten1" style="background: #fff;">
     <div class="container">
       <h2 class="section-title" data-aos="fade-down">Dokumentasi Kegiatan</h2>
-      <p class="section-subtitle" data-aos="fade-up">Momen penting dan aktivitas rutin PMR Millenium</p>
+      <p class="section-subtitle" data-aos="fade-up">Aktivitas rutin dan momen penting PMR Millenium</p>
       <div class="swiper kegiatanSwiper" data-aos="fade-up">
         <div class="swiper-wrapper">
-          <?php $keg = mysqli_query($koneksi, "SELECT * FROM kegiatan ORDER BY id DESC");
+          <?php $keg = mysqli_query($koneksi, "SELECT * FROM konten1 ORDER BY id DESC");
           while ($k = mysqli_fetch_assoc($keg)): ?>
             <div class="swiper-slide">
               <img src="../Gambar/<?= htmlspecialchars($k['gambar']) ?>" onclick="openModalDetail(this.src, '<?= htmlspecialchars(addslashes($k['judul'])) ?>', '<?= htmlspecialchars(addslashes($k['deskripsi'])) ?>')">
@@ -788,14 +788,12 @@ while ($row = mysqli_fetch_assoc($social_query)) {
     </div>
   </section>
 
-  <!-- LOMBA -->
-  <section class="section" style="background-color: #f0f2f5;" id="lomba">
+  <!-- KONTEN2 -->
+  <section class="section" style="background-color: #f0f2f5;" id="konten2">
     <div class="container">
-      <!-- <h2 class="section-title" data-aos="fade-down">Prestasi & Lomba</h2>
-      <p class="section-subtitle" data-aos="fade-up">Pencapaian membanggakan PMR Millenium</p> -->
       <div class="swiper kegiatanSwiper" data-aos="fade-up">
         <div class="swiper-wrapper">
-          <?php $lom = mysqli_query($koneksi, "SELECT * FROM lomba ORDER BY id DESC");
+          <?php $lom = mysqli_query($koneksi, "SELECT * FROM konten2 ORDER BY id DESC");
           while ($l = mysqli_fetch_assoc($lom)): ?>
             <div class="swiper-slide">
               <img src="../Gambar/<?= htmlspecialchars($l['gambar']) ?>" onclick="openModalDetail(this.src, '<?= htmlspecialchars(addslashes($l['judul'])) ?>', '<?= htmlspecialchars(addslashes($l['deskripsi'])) ?>')">

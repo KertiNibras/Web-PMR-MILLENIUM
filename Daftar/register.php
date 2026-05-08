@@ -430,14 +430,28 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
         </a>
     </div>
 
-    <!-- MODAL SUKSES -->
+        <!-- MODAL SUKSES -->
     <div class="modal-overlay" id="successModal">
         <div class="modal-content">
             <div class="success-icon">
                 <i class="fa-solid fa-check"></i>
             </div>
             <h3 style="margin-bottom: 10px; color: var(--text-main);">Pendaftaran Berhasil!</h3>
-            <p style="font-size: 0.9rem; color: var(--text-muted);">Terima kasih. Data Anda telah kami terima.</p>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">Terima kasih. Data Anda telah kami terima.</p>
+            
+            <!-- Tambahan Pesan Info WhatsApp -->
+            <div style="background-color: #fff1f2; border: 1px solid #fecdd3; border-radius: 10px; padding: 15px; text-align: left; margin-bottom: 10px;">
+                <p style="font-size: 0.9rem; font-weight: 600; color: #d90429; margin-bottom: 5px;">
+                    <i class="fa-brands fa-whatsapp" style="margin-right: 5px;"></i> Langkah Selanjutnya:
+                </p>
+                <p style="font-size: 0.85rem; color: #1e293b; line-height: 1.5;">
+                    Pastikan nomor WhatsApp yang Anda daftarkan aktif. Pengurus akan mengirimkan konfirmasi dan akses login melalui WhatsApp jika Anda diterima.
+                </p>
+                <p style="font-size: 0.85rem; color: #64748b; margin-top: 10px;">
+                    <i class="fa-solid fa-clock" style="margin-right: 5px;"></i> Harap bersabar menunggu proses verifikasi.
+                </p>
+            </div>
+
             <button class="modal-btn" onclick="closeModal()">Tutup</button>
         </div>
     </div>
@@ -499,7 +513,22 @@ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY order
                         .then(data => {
                             if (data.status === 'success') {
                                 modal.classList.add('active');
-                                form.reset();
+                                form.reset(); // Ini mereset value HTML-nya
+                                
+                                // --- TAMBAHAN: Reset manual tampilan Custom File Upload ---
+                                const fileUploads = form.querySelectorAll('.custom-file-upload');
+                                fileUploads.forEach(container => {
+                                    // 1. Hapus class 'file-selected' agar warna kembali normal (bukan hijau)
+                                    container.classList.remove('file-selected');
+                                    
+                                    // 2. Kembalikan teks label ke semula
+                                    const label = container.querySelector('.file-name');
+                                    if (label) {
+                                        label.innerText = 'Belum ada file dipilih';
+                                    }
+                                });
+                                // --------------------------------------------------------
+                                
                             } else {
                                 alert('Terjadi kesalahan: ' + (data.msg || 'Gagal mengirim data.'));
                             }

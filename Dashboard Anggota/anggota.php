@@ -1,6 +1,6 @@
 <?php
   session_start();
-  include '../koneksi.php'; // Panggil koneksi DB
+ require_once __DIR__ . '/../koneksi.php';
 
   // 1. Cek apakah user sudah login
   if (!isset($_SESSION['nama'])) {
@@ -268,7 +268,7 @@
           <li class="active"><a href="anggota.php"><i class="fa-solid fa-house"></i> Dashboard</a></li>
           <?php if ($role == 'pengurus'): ?>
             <li><a href="kelolaabsen.php"><i class="fa-solid fa-calendar-check"></i> Kelola Absensi</a></li>
-            <li><a href="kelolaperpus.php"><i class="fa-solid fa-book"></i> Kelola Perpustakaan</a></li>
+            <li><a href="kelolaperpus.php"><i class="fa-solid fa-book"></i> Kelola Materi</a></li>
             <li><a href="kelola_pendaftaran.php"><i class="fa-solid fa-users"></i> Kelola Pendaftaran</a></li>
             <li><a href="kelola_beranda.php"><i class="fa-solid fa-pen-to-square"></i> Edit Halaman Utama</a></li>
           <?php else: ?>
