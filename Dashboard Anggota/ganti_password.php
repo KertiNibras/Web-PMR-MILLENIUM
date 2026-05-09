@@ -47,8 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $update = mysqli_query($koneksi, "UPDATE users SET password = '$new_hash' WHERE id = '$id_user'");
     
     if ($update) {
-      $success_msg = "Password berhasil diubah! Silakan login ulang untuk keamanan.";
-      // Opsional: Bisa langsung logout paksa atau biarkan user login ulang nanti
+      // Ubah pesan sukses
+      $success_msg = "Password berhasil diubah! Mengalihkan ke dashboard...";
     } else {
       $error_msg = "Terjadi kesalahan sistem. Gagal mengubah password.";
     }
@@ -199,6 +199,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="alert alert-success">
       <i class="fas fa-check-circle"></i> <?= $success_msg ?>
     </div>
+    <!-- SCRIPT TAMBAHAN: Otomatis pindah ke dashboard setelah 1.5 detik -->
+    <script>
+      setTimeout(function() {
+        // Ganti 'anggota.php' jika file dashboard utama Anda bernama lain
+        window.location.href = "anggota.php"; 
+      }, 1500); // 1500 milidetik = 1.5 detik
+    </script>
   <?php endif; ?>
 
   <form method="POST" action="">

@@ -636,7 +636,7 @@ while ($row = mysqli_fetch_assoc($social_query)) {
         <li><a href="#beranda"><i class="fas fa-home"></i> Beranda</a></li>
         <li><a href="#visi-misi"><i class="fas fa-bullseye"></i> Tentang</a></li>
         <li><a href="#pengurus"><i class="fas fa-users"></i> Pengurus</a></li>
-        <li><a href="#kegiatan"><i class="fas fa-images"></i> Kegiatan</a></li>
+        <li><a href="#dokumentasi1"><i class="fas fa-images"></i> Kegiatan</a></li>
         <li><a href="https://uks-smartcare.smkn1cibinong.sch.id/" target="_blank"><i class="fas fa-heartbeat"></i> UKS</a></li>
 
         <?php if ($is_logged_in): ?>
@@ -652,9 +652,17 @@ while ($row = mysqli_fetch_assoc($social_query)) {
   <div class="menu-overlay" id="menu-overlay"></div>
   <div class="mobile-menu" id="mobile-menu">
     <button style="position:absolute; top:15px; right:15px; font-size:24px; background:none; border:none; cursor:pointer;" id="close-btn"><i class="fas fa-times"></i></button>
-    <a href="#beranda"><i class="fas fa-home"></i> Beranda</a><a href="#visi-misi"><i class="fas fa-bullseye"></i> Tentang</a><a href="#pengurus"><i class="fas fa-users"></i> Pengurus</a><a href="#kegiatan"><i class="fas fa-images"></i> Kegiatan</a>
-    <?php if ($is_logged_in): ?><a href="<?= $dashboard_link ?>" class="btn-header" style="text-align:center;"><i class="fas fa-tachometer-alt"></i> Dashboard</a><?php else: ?><a href="../Login/login.php" class="btn-header" style="text-align:center;"><i class="fas fa-sign-in-alt"></i> Login</a><?php endif; ?>
-  </div>
+    <a href="#beranda"><i class="fas fa-home"></i> Beranda</a><a href="#visi-misi"><i class="fas fa-bullseye"></i> Tentang</a><a href="#pengurus"><i class="fas fa-users"></i> Pengurus</a><a href="#dokumentasi1"><i class="fas fa-images"></i> Kegiatan</a><a href="https://uks-smartcare.smkn1cibinong.sch.id/" target="_blank"><i class="fas fa-heartbeat"></i> UKS</a></li>
+    <?php if ($is_logged_in): ?>
+        <a href="<?= $dashboard_link ?>" class="btn-header" style="text-align:center; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px;">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </a>
+    <?php else: ?>
+        <a href="../Login/login.php" class="btn-header" style="text-align:center; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px;">
+            <i class="fas fa-sign-in-alt"></i> Login
+        </a>
+    <?php endif; ?>
+</div>
 
   <!-- HERO -->
   <section class="hero" id="beranda">
@@ -766,7 +774,7 @@ while ($row = mysqli_fetch_assoc($social_query)) {
   </section>
 
   <!-- KONTEN1 -->
-  <section class="section" id="konten1" style="background: #fff;">
+<section class="section" id="dokumentasi1" style="background: #fff;">
     <div class="container">
       <h2 class="section-title" data-aos="fade-down">Dokumentasi Kegiatan</h2>
       <p class="section-subtitle" data-aos="fade-up">Aktivitas rutin dan momen penting PMR Millenium</p>

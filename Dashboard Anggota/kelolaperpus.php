@@ -1030,7 +1030,20 @@ if (!empty($foto_session)) {
       </div>
     </div>
   </div>
-
+  <!-- Modal Konfirmasi Hapus -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal-box">
+      <div class="modal-icon" style="background-color: #fee2e2; color: #ef4444;">
+        <i class="fa-solid fa-trash-can"></i>
+      </div>
+      <h3>Hapus Materi?</h3>
+      <p>Materi yang sudah dihapus tidak bisa dikembalikan. Apakah Anda yakin ingin menghapusnya?</p>
+      <div class="modal-actions">
+        <button class="btn-modal btn-cancel" onclick="closeDeleteModal()">Batal</button>
+        <button class="btn-modal btn-logout" id="confirmDeleteBtn" style="background-color: #ef4444;">Ya, Hapus</button>
+      </div>
+    </div>
+  </div>
   <!-- Toast -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -1150,7 +1163,7 @@ if (!empty($foto_session)) {
         // Event Listener untuk tombol Edit
         card.querySelector('.btn-edit').addEventListener('click', () => openEditModal(m.id));
         // Event Listener untuk tombol Hapus
-        card.querySelector('.btn-delete').addEventListener('click', () => deleteMaterial(m.id));
+        card.querySelector('.btn-delete').addEventListener('click', () => openDeleteModal(m.id));
 
         materialsGrid.appendChild(card);
       });
@@ -1289,6 +1302,61 @@ if (!empty($foto_session)) {
         setTimeout(() => t.remove(), 300);
       }, 3000);
     }
+        // ================= LOGIKA HAPUS MATERI =================
+    let materialToDelete = null;
+
+    function openDeleteModal(id) {
+      materialToDelete = id;
+      document.getElementById('deleteModal').classList.add('active');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.remove('active');
+      materialToDelete = null;
+    }
+
+    // Tutup modal jika klik area luar
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+      if (e.target === this) closeDeleteModal();
+    });
+
+    // Aksi ketika tombol "Ya, Hapus" diklik
+        // Aksi ketika tombol "Ya, Hapus" diklik
+    document.getElementById('confirmDeleteBtn').onclick = function() {
+      if (!materialToDelete) return;
+
+      const btn = this;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menghapus...';
+
+      // Gunakan FormData agar $_POST di PHP bisa menangkap datanya
+      const fd = new FormData();
+      fd.append('id', materialToDelete);
+
+      fetch('delete_materi.php', {
+        method: 'POST',
+        body: fd // Kirim menggunakan FormData, bukan JSON
+      })
+      .then(res => res.json())
+      .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = 'Ya, Hapus';
+        
+        if (data.status === 'success') {
+          closeDeleteModal();
+          showToast(data.message, 'success');
+          loadMaterials(); // Refresh daftar materi
+        } else {
+          showToast(data.message || 'Gagal menghapus materi.', 'error');
+        }
+      })
+      .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = 'Ya, Hapus';
+        console.error('Error:', err);
+        showToast('Terjadi kesalahan jaringan.', 'error');
+      });
+    };
 </script>
 </body>
 

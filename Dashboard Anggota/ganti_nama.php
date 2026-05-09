@@ -103,7 +103,7 @@ if (!empty($foto_session) && file_exists("../foto_profil/" . $foto_session)) {
 
     <form action="" method="POST">
         <div class="form-group">
-            <label>Username / NIS</label>
+            <label>Username</label>
             <!-- Username tidak bisa diedit (disabled) -->
             <input type="text" class="form-control" value="<?= htmlspecialchars($user['username']) ?>" disabled>
             <small style="color:#999; font-size:0.75rem; display:block; margin-top:5px;">*Username tidak dapat diubah.</small>

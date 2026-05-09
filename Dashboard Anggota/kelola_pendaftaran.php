@@ -30,23 +30,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
   header('Content-Type: application/json');
   $action = $_POST['action'];
 
-  // 1. Hapus Pendaftar
+  // 1. Hapus Pendaftar & Akun Loginnya (VERSI 100% AMAN & PRESISI)
   if ($action == 'delete_pendaftar') {
     $id = intval($_POST['id']);
-    // Hapus file terkait
-    $get_data = mysqli_query($koneksi, "SELECT answers FROM pendaftaran WHERE id='$id'");
+    
+    // Ambil data untuk hapus file dan hapus akun
+    $get_data = mysqli_query($koneksi, "SELECT answers, generated_username FROM pendaftaran WHERE id='$id'");
     $data_row = mysqli_fetch_assoc($get_data);
+    
     if ($data_row) {
+        // Hapus file foto/berkas terkait
         $answers_arr = json_decode($data_row['answers'], true);
         if (is_array($answers_arr)) {
             foreach ($answers_arr as $value) {
-                if (strpos($value, 'question_file/') !== false) {
+                if (is_string($value) && strpos($value, 'question_file/') !== false) {
                     $file_path = "../uploads/" . $value;
                     if (file_exists($file_path)) unlink($file_path);
                 }
             }
         }
+        
+        // HAPUS AKUN LOGIN: Hanya menggunakan Username karena PASTI UNIK
+        $username_del = $data_row['generated_username'];
+        if (!empty($username_del)) {
+            $username_aman = mysqli_real_escape_string($koneksi, $username_del);
+            mysqli_query($koneksi, "DELETE FROM users WHERE username='$username_aman'");
+        }
     }
+    
+    // Terakhir, hapus data pendaftarannya
     $del = mysqli_query($koneksi, "DELETE FROM pendaftaran WHERE id='$id'");
     echo json_encode(['status' => $del ? 'success' : 'error']);
     exit;
@@ -124,8 +136,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
   // 4. PROSES TOLAK PENDAFTAR
   if ($action == 'reject_pendaftar') {
     $id = intval($_POST['id']);
+    
+    // Ambil dulu nama dan nomor WA sebelum di-update (buat dikirim ke JS)
+    $q = mysqli_query($koneksi, "SELECT nama_lengkap, no_whatsapp FROM pendaftaran WHERE id='$id'");
+    $d = mysqli_fetch_assoc($q);
+    
     $upd = mysqli_query($koneksi, "UPDATE pendaftaran SET status='ditolak' WHERE id='$id'");
-    echo json_encode(['status' => $upd ? 'success' : 'error']);
+    
+    if ($upd && $d) {
+        echo json_encode([
+            'status' => 'success',
+            'nama' => $d['nama_lengkap'],
+            'no_wa' => $d['no_whatsapp']
+        ]);
+    } else {
+        echo json_encode(['status' => 'error']);
+    }
     exit;
   }
 
@@ -496,9 +522,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                       <?php if(isset($a['card_sent']) && $a['card_sent'] == 1): ?>
                           <button class="btn btn-disabled" style="padding: 5px 10px; font-size: 13px;" disabled><i class="fas fa-check-double"></i> Sudah Dikirim</button>
                       <?php else: 
-                          $nomor_wa = isset($a['nomor_wa']) ? $a['nomor_wa'] : '';
-                          $pesan = "Halo " . $a['nama_lengkap'] . ", Selamat kamu resmi Diterima di PMR! Berikut adalah akses login kamu untuk masuk ke website.\n\nUsername: " . $a['generated_username'] . "\nPassword: " . $a['generated_password'] . "\n\nHarap simpan baik-baik akses ini.";
-                          $link_wa = "https://wa.me/" . $nomor_wa . "?text=" . urlencode($pesan);
+                          // 1. Ambil nomor dari database (Pastikan kolomnya no_whatsapp)
+                          $nomor_wa = isset($a['no_whatsapp']) ? $a['no_whatsapp'] : '';
+                          
+                          // 2. Bersihkan spasi/strip/tanda plus
+                          $nomor_wa = preg_replace('/[^0-9]/', '', $nomor_wa); 
+                          
+                          // 3. Sulap angka 0 di depan jadi 62
+                          if (substr($nomor_wa, 0, 1) === '0') {
+                              $nomor_wa = '62' . substr($nomor_wa, 1); 
+                          }
+                          
+                          
+                          // 4. Siapkan Pesan (Diterima - Dengan Emoji & Format)
+                          // 1. Ambil domain dan sesuaikan dengan nama folder utama kamu
+                          $domain = "http://" . $_SERVER['HTTP_HOST'] . "/web-pmr-millenium"; 
+                          
+                          // 2. Arahkan ke folder "Dashboard Anggota" tempat file cetak kartu berada
+                          // Catatan: %20 adalah kode URL untuk spasi pada nama folder "Dashboard Anggota"
+                          $link_kartu = $domain . "/Dashboard%20Anggota/cetak_kartu.php?id=" . $a['id'];
+                          
+                          // 3. Masukkan ke pesan WA
+                          $pesan = "Halo *" . $a['nama_lengkap'] . "*! 🎉✨\n\nSelamat, kamu resmi *DITERIMA* menjadi bagian dari keluarga PMR Millenium SMKN 1 Cibinong! ⛑️🏥\n\nBerikut adalah akses login kamu untuk masuk ke sistem website kami:\n\n👤 *Username:* " . $a['generated_username'] . "\n🔑 *Password:* " . $a['generated_password'] . "\n\n🪪 *Unduh Kartu Anggota kamu di sini:*\n" . $link_kartu . "\n\nHarap simpan baik-baik akses ini ya! Sampai jumpa di kegiatan perdana kita. Semangat Kemanusiaan! ✊🔥";
+                          
+                          // 5. Pakai API Send WhatsApp biar langsung nembak ke chat!
+                          $link_wa = "https://api.whatsapp.com/send?phone=" . $nomor_wa . "&text=" . urlencode($pesan);
                       ?>
                           <a href="<?= $link_wa ?>" target="_blank" class="btn btn-wa" style="padding: 5px 10px; font-size: 13px;" onclick="markAsSent(<?= $a['id'] ?>)">
                               <i class="fab fa-whatsapp"></i> Kirim Akses
@@ -535,7 +583,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             <option value="text">Teks Singkat</option>
             <option value="textarea">Paragraf</option>
             <option value="select">Pilihan (Dropdown)</option>
-            <option value="radio">Pilihan (Radio)</option>
+            <option value="radio">Pilihan (Radio - Pilih 1)</option>
+            <option value="checkbox">Kotak Centang (Bisa pilih banyak)</option>
             <option value="file">Upload File</option>
           </select>
         </div>
@@ -715,27 +764,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       fetch('get_pendaftar_detail.php?id=' + id).then(res => res.text()).then(html => content.innerHTML = html);
     }
     
-    // DIUPDATE: Hapus Pendaftar Pakai Swal
+    // DIUPDATE: Hapus Pendaftar & Akun Pakai Swal (Warning lebih galak)
     function deletePendaftar(id) {
       Swal.fire({
-        title: 'Hapus Data Pendaftar?',
-        text: 'Semua data dan file pendaftar ini akan dihapus secara permanen.',
-        icon: 'error',
+        title: 'YAKIN INGIN MENGHAPUS?',
+        html: 'Semua data pendaftaran, file foto, <b>serta Akun Login</b> (jika ada) akan dihapus secara permanen dari database!',
+        icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#94a3b8',
-        confirmButtonText: 'Ya, Hapus!',
+        confirmButtonColor: '#ef4444', // Merah bahaya
+        cancelButtonColor: '#94a3b8',  // Abu-abu batal
+        confirmButtonText: '<i class="fas fa-trash"></i> Ya, Hapus Semua!',
         cancelButtonText: 'Batal'
       }).then((result) => {
         if (result.isConfirmed) {
+          // Kasih loading biar keliatan lagi mikir/ngehapus
+          Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+          
           const data = new FormData();
           data.append('action', 'delete_pendaftar');
           data.append('id', id);
+          
           fetch('', { method: 'POST', body: data })
           .then(res => res.json())
           .then(res => { 
             if(res.status === 'success') {
-              Swal.fire('Dihapus!', 'Data pendaftar berhasil dihapus.', 'success').then(() => location.reload());
+              Swal.fire('Terhapus!', 'Data dan Akun anggota berhasil dibumihanguskan.', 'success').then(() => location.reload());
             } else {
               Swal.fire('Gagal!', 'Tidak dapat menghapus data.', 'error');
             }
@@ -807,7 +860,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       });
     }
 
-    // DIUPDATE: Reject Pendaftar Pakai Swal
+    // DIUPDATE: Reject Pendaftar Pakai Swal + Fitur Kirim WA Otomatis (Anti Error 404)
     function rejectPendaftar(id) {
       Swal.fire({
         title: 'Tolak Pendaftar Ini?',
@@ -830,7 +883,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
           .then(res => res.json())
           .then(res => {
             if(res.status == 'success') {
-              Swal.fire('Ditolak!', 'Pendaftar telah ditolak.', 'success').then(() => location.reload());
+              
+              // ==========================================
+              // FITUR AUTO-CONVERT NOMOR WA (08 -> 628)
+              // ==========================================
+              let no_tujuan = res.no_wa;
+              
+              // 1. Bersihkan semua huruf/spasi/strip/tanda plus (hanya sisakan angka)
+              no_tujuan = no_tujuan.replace(/\D/g, ''); 
+              
+              // 2. Kalau depannya masih '0', potong '0'-nya dan ganti jadi '62'
+              if (no_tujuan.startsWith('0')) {
+                  no_tujuan = '62' + no_tujuan.substring(1);
+              }
+              // ==========================================
+              
+                  // Siapkan Pesan Penolakan Otomatis (Dengan Emoji & Format)
+              let pesanWA = `Halo *${res.nama}*! 👋😊\n\nSebelumnya, kakak-kakak pengurus PMR Millenium SMKN 1 Cibinong mengucapkan terima kasih banyak atas antusiasme luar biasa kamu mendaftar di PMR. 🙌\n\nSetelah melalui proses evaluasi dan mempertimbangkan batas kuota, dengan berat hati kami sampaikan bahwa *kamu belum bisa bergabung* bersama keluarga PMR untuk periode ini. 🥺🙏\n\nJangan patah semangat ya! Terus asah potensimu dan tebarkan kebaikan di mana pun kamu berada. Sukses selalu untukmu! 💪✨\n\nSalam Kemanusiaan! ⛑️`;
+              
+              
+              // Masukkan nomor yang sudah bersih (62...) ke link WA
+              let linkWA = `https://wa.me/${no_tujuan}?text=${encodeURIComponent(pesanWA)}`;
+
+              Swal.fire({
+                icon: 'success',
+                title: 'Pendaftar Ditolak!',
+                html: `
+                  <p style="margin-bottom: 15px; font-size: 14px; color: #64748b;">Status pendaftar berhasil diubah. Silakan kirimkan pesan pemberitahuan agar pendaftar tidak menunggu.</p>
+                  <a href="${linkWA}" target="_blank" style="display: inline-block; background-color: #25d366; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none;">
+                    <i class="fab fa-whatsapp"></i> Kirim Pesan Penolakan
+                  </a>
+                `,
+                confirmButtonColor: '#94a3b8',
+                confirmButtonText: 'Tutup & Refresh'
+              }).then(() => location.reload());
+
             } else {
               Swal.fire('Gagal!', 'Gagal menolak pendaftar.', 'error');
             }
