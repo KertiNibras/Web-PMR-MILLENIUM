@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: May 09, 2026 at 10:31 AM
+-- Generation Time: May 10, 2026 at 11:36 AM
 -- Server version: 8.0.30
 -- PHP Version: 8.1.10
 
@@ -36,14 +36,15 @@ CREATE TABLE `absensi` (
   `status` enum('hadir','izin','sakit','alpha') DEFAULT 'hadir',
   `keterangan` text,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `absensi`
 --
 
 INSERT INTO `absensi` (`id`, `user_id`, `tanggal`, `jam`, `foto`, `status`, `keterangan`, `created_at`) VALUES
-(2, 35, '2026-05-09', '16:54:17', 'absen_35_1778320457.png', 'hadir', '-', '2026-05-09 09:54:17');
+(2, 35, '2026-05-09', '16:54:17', 'absen_35_1778320457.png', 'hadir', '-', '2026-05-09 09:54:17'),
+(3, 38, '2026-05-10', '15:21:42', 'absen_38_1778401302.png', 'hadir', '-', '2026-05-10 08:21:42');
 
 -- --------------------------------------------------------
 
@@ -152,14 +153,14 @@ CREATE TABLE `pendaftaran` (
   `generated_password` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `card_sent` tinyint(1) NOT NULL DEFAULT '0',
   `submission_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `pendaftaran`
 --
 
 INSERT INTO `pendaftaran` (`id`, `nama_lengkap`, `kelas`, `jurusan`, `no_whatsapp`, `answers`, `status`, `generated_username`, `generated_password`, `card_sent`, `submission_date`) VALUES
-(38, 'Bama Kerti', 'XI RPL 1', '-', '081280274480', '{\"Nama Lengkap\":\"Bama Kerti\",\"Kelas & Jurusan\":\"XI RPL 1\",\"No HP\":\"081280274480\",\"Alasan\":\"Penasaran\",\"Foto Diri *21mm x 28mm*\":\"question_file\\/file_1778320256_627.jpg\"}', 'diterima', 'bamakerti', '7dd94aba', 0, '2026-05-09 09:50:56');
+(42, 'Bama Kerti', 'XI RPL 1', '-', '081280274480', '{\"Nama Lengkap\":\"Bama Kerti\",\"Kelas & Jurusan\":\"XI RPL 1\",\"No HP\":\"081280274480\",\"Alasan\":\"pengen\",\"Foto Diri *21mm x 28mm*\":\"question_file\\/file_1778401061_878.png\"}', 'diterima', 'bamakerti', '5912c391', 0, '2026-05-10 08:17:41');
 
 -- --------------------------------------------------------
 
@@ -172,16 +173,14 @@ CREATE TABLE `pengaturan_absensi` (
   `tanggal` date NOT NULL,
   `waktu_mulai` time NOT NULL,
   `waktu_selesai` time NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `pengaturan_absensi`
 --
 
 INSERT INTO `pengaturan_absensi` (`id`, `tanggal`, `waktu_mulai`, `waktu_selesai`) VALUES
-(4, '2026-05-10', '22:00:00', '03:00:00'),
-(5, '2026-05-11', '00:22:00', '03:21:00'),
-(6, '2026-05-09', '16:50:00', '18:00:00');
+(8, '2026-05-10', '15:20:00', '18:00:00');
 
 -- --------------------------------------------------------
 
@@ -311,7 +310,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `username`, `nama`, `kelas`, `password`, `foto_profil`, `role`, `first_login`) VALUES
 (2, 'pengurus', 'Naufal Hanif', NULL, '$2y$10$Cn8jB90ByPm3DsMBdyZfUuvdSSEHteMSg/IaWKUhCvv4jNc39Rgaq', NULL, 'pengurus', 0),
-(35, 'bamakerti', 'S. Bama Kerti', 'XI RPL 1', '$2y$10$jN4zSagMJdwL21lt.EDmFuN/NID/hiJVgRJH54Amo/gKG6eIAG1gO', 'user_35.jpg', 'anggota', 0);
+(38, 'bamakerti', 'Bama Kerti', 'XI RPL 1', '$2y$10$laPoNnSAPKiGR0pQzfZSvONuHPpw7IVEJTYKlhrrlDoiZOIr/6DH2', 'question_file/file_1778401061_878.png', 'anggota', 0);
 
 --
 -- Indexes for dumped tables
@@ -397,7 +396,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `absensi`
 --
 ALTER TABLE `absensi`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `form_questions`
@@ -427,13 +426,13 @@ ALTER TABLE `konten2`
 -- AUTO_INCREMENT for table `pendaftaran`
 --
 ALTER TABLE `pendaftaran`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
 
 --
 -- AUTO_INCREMENT for table `pengaturan_absensi`
 --
 ALTER TABLE `pengaturan_absensi`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `pengurus`
@@ -457,7 +456,7 @@ ALTER TABLE `tentang_pmr`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
