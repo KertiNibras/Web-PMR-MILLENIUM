@@ -16,44 +16,111 @@ if ($_SESSION['role'] != 'pengurus') {
 $nama_user = htmlspecialchars($_SESSION['nama']);
 $role = $_SESSION['role'];
 $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
-$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff'; // Default UI Avatar
+$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
 
-// Pastikan path ke ../uploads/foto_profil/
 if (!empty($foto_session)) {
     $path_foto = "../uploads/foto_profil/" . $foto_session;
     if (file_exists($path_foto)) {
-        $foto_profil = $path_foto . "?t=" . time(); // Tambah timestamp supaya anti-cache
+        $foto_profil = $path_foto . "?t=" . time();
     }
+}
+
+// ================== FUNGSI HELPER ==================
+// Fungsi untuk menyiapkan pesan SweetAlert2 via Session
+function set_swal($title, $text, $icon)
+{
+    $_SESSION['swal_message'] = [
+        'title' => $title,
+        'text' => $text,
+        'icon' => $icon
+    ];
+}
+
+// ================== FUNGSI COMPRESS IMAGE ==================
+function compressImage($source, $destination, $quality = 80)
+{
+    $info = getimagesize($source);
+    if ($info === false) return false;
+
+    $max_width = 1200;
+    $max_height = 1200;
+
+    list($width, $height) = $info;
+
+    if ($width > $max_width || $height > $max_height) {
+        $ratio = min($max_width / $width, $max_height / $height);
+        $new_width = (int)($width * $ratio);
+        $new_height = (int)($height * $ratio);
+    } else {
+        $new_width = $width;
+        $new_height = $height;
+    }
+
+    $image_resized = imagecreatetruecolor($new_width, $new_height);
+    imagealphablending($image_resized, false);
+    imagesavealpha($image_resized, true);
+    $transparent = imagecolorallocatealpha($image_resized, 255, 255, 255, 127);
+    imagefilledrectangle($image_resized, 0, 0, $new_width, $new_height, $transparent);
+
+    if ($info['mime'] == 'image/jpeg') {
+        $image = imagecreatefromjpeg($source);
+        imagecopyresampled($image_resized, $image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
+        imagejpeg($image_resized, $destination, $quality);
+    } elseif ($info['mime'] == 'image/png') {
+        $image = imagecreatefrompng($source);
+        imagecopyresampled($image_resized, $image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
+        $png_quality = 9 - round(($quality / 100) * 9);
+        imagepng($image_resized, $destination, $png_quality);
+    } elseif ($info['mime'] == 'image/gif') {
+        $image = imagecreatefromgif($source);
+        imagecopyresampled($image_resized, $image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
+        imagegif($image_resized, $destination);
+    } elseif ($info['mime'] == 'image/webp') {
+        $image = imagecreatefromwebp($source);
+        imagecopyresampled($image_resized, $image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
+        imagewebp($image_resized, $destination, $quality);
+    } else {
+        return false;
+    }
+
+    imagedestroy($image);
+    imagedestroy($image_resized);
+    return true;
 }
 
 // ================== BLOK PROSES LOGIC ==================
 
-// 1. HERO BACKGROUND (Revisi: Multi Upload & Settings)
+// 1. HERO BACKGROUND
 if (isset($_POST['tambah_banner'])) {
     $target_dir = "../Gambar/";
     $count = count($_FILES['gambar_hero']['name']);
     for ($i = 0; $i < $count; $i++) {
         if (!empty($_FILES['gambar_hero']['name'][$i])) {
-            $file_name = uniqid() . '_' . basename($_FILES['gambar_hero']['name'][$i]);
+            $ext = pathinfo($_FILES['gambar_hero']['name'][$i], PATHINFO_EXTENSION);
+            $file_name = uniqid() . '.' . $ext;
             $tmp_name = $_FILES['gambar_hero']['tmp_name'][$i];
-            if (move_uploaded_file($tmp_name, $target_dir . $file_name)) {
+            $dest_path = $target_dir . $file_name;
+
+            if (compressImage($tmp_name, $dest_path, 80)) {
                 mysqli_query($koneksi, "INSERT INTO hero_background (file_name) VALUES ('$file_name')");
             }
         }
     }
-    echo "<script>alert('Banner baru berhasil ditambahkan!'); window.location.href='kelola_beranda.php?tab=hero';</script>";
+    set_swal('Berhasil!', 'Banner baru berhasil ditambahkan!', 'success');
+    header("Location: kelola_beranda.php?tab=hero");
+    exit;
 }
 
-// Hapus Banner
 if (isset($_GET['hapus_banner'])) {
     $id = intval($_GET['hapus_banner']);
     $g = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT file_name FROM hero_background WHERE id=$id"));
     if ($g && file_exists("../Gambar/" . $g['file_name'])) unlink("../Gambar/" . $g['file_name']);
     mysqli_query($koneksi, "DELETE FROM hero_background WHERE id=$id");
-    echo "<script>alert('Banner dihapus!'); window.location.href='kelola_beranda.php?tab=hero';</script>";
+    set_swal('Dihapus!', 'Banner berhasil dihapus.', 'error');
+    header("Location: kelola_beranda.php?tab=hero");
+    exit;
 }
 
-// Hapus Multiple Banner
 if (isset($_POST['hapus_multiple_banner'])) {
     if (!empty($_POST['selected_ids'])) {
         foreach ($_POST['selected_ids'] as $id) {
@@ -62,11 +129,12 @@ if (isset($_POST['hapus_multiple_banner'])) {
             if ($g && file_exists("../Gambar/" . $g['file_name'])) unlink("../Gambar/" . $g['file_name']);
             mysqli_query($koneksi, "DELETE FROM hero_background WHERE id=$id");
         }
-        echo "<script>alert('Banner terpilih berhasil dihapus!'); window.location.href='kelola_beranda.php?tab=hero';</script>";
+        set_swal('Dihapus!', 'Banner terpilih berhasil dihapus.', 'error');
+        header("Location: kelola_beranda.php?tab=hero");
+        exit;
     }
 }
 
-// Update Urutan Banner
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_order_banner'])) {
     header('Content-Type: application/json');
     $order = json_decode($_POST['update_order_banner']);
@@ -77,13 +145,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_order_banner']
     exit;
 }
 
-// Update Pengaturan Animasi
 if (isset($_POST['update_slider_settings'])) {
     $effect = mysqli_real_escape_string($koneksi, $_POST['hero_effect']);
     $delay = intval($_POST['hero_delay']);
     mysqli_query($koneksi, "UPDATE settings SET setting_value='$effect' WHERE setting_key='hero_effect'");
     mysqli_query($koneksi, "UPDATE settings SET setting_value='$delay' WHERE setting_key='hero_delay'");
-    echo "<script>alert('Pengaturan animasi disimpan!'); window.location.href='kelola_beranda.php?tab=hero';</script>";
+    set_swal('Tersimpan!', 'Pengaturan animasi disimpan.', 'success');
+    header("Location: kelola_beranda.php?tab=hero");
+    exit;
 }
 
 // 2. TENTANG PMR
@@ -98,7 +167,9 @@ if (isset($_POST['update_tentang'])) {
     } else {
         mysqli_query($koneksi, "INSERT INTO tentang_pmr (visi, misi, program_kerja) VALUES ('$visi', '$misi', '$proker')");
     }
-    echo "<script>alert('Data Tentang PMR diperbarui!'); window.location.href='kelola_beranda.php?tab=tentang';</script>";
+    set_swal('Tersimpan!', 'Data Tentang PMR diperbarui!', 'success');
+    header("Location: kelola_beranda.php?tab=tentang");
+    exit;
 }
 
 // 3. PENGURUS LOGIC
@@ -114,10 +185,12 @@ if (isset($_POST['tambah_pengurus'])) {
     if (!empty($_FILES['foto_pengurus']['name'])) {
         $ext = pathinfo($_FILES['foto_pengurus']['name'], PATHINFO_EXTENSION);
         $foto = uniqid() . '.' . $ext;
-        move_uploaded_file($_FILES['foto_pengurus']['tmp_name'], "../Gambar/" . $foto);
+        compressImage($_FILES['foto_pengurus']['tmp_name'], "../Gambar/" . $foto, 80);
     }
     mysqli_query($koneksi, "INSERT INTO pengurus (nama, jabatan, kelas, logo_kelas, foto, urutan) VALUES ('$nama', '$jabatan', '$kelas', '$logo', '$foto', '$newOrder')");
-    echo "<script>alert('Pengurus ditambahkan!'); window.location.href='kelola_beranda.php?tab=pengurus';</script>";
+    set_swal('Berhasil!', 'Pengurus ditambahkan!', 'success');
+    header("Location: kelola_beranda.php?tab=pengurus");
+    exit;
 }
 if (isset($_POST['edit_pengurus'])) {
     $id = intval($_POST['id_edit']);
@@ -131,18 +204,22 @@ if (isset($_POST['edit_pengurus'])) {
         if ($old && $old['foto'] != 'default.jpg') unlink("../Gambar/" . $old['foto']);
         $ext = pathinfo($_FILES['foto_edit']['name'], PATHINFO_EXTENSION);
         $foto_new = uniqid() . '.' . $ext;
-        move_uploaded_file($_FILES['foto_edit']['tmp_name'], "../Gambar/" . $foto_new);
+        compressImage($_FILES['foto_edit']['tmp_name'], "../Gambar/" . $foto_new, 80);
         $query = "UPDATE pengurus SET nama='$nama', jabatan='$jabatan', kelas='$kelas', logo_kelas='$logo', foto='$foto_new' WHERE id=$id";
     }
     mysqli_query($koneksi, $query);
-    echo "<script>alert('Data pengurus diperbarui!'); window.location.href='kelola_beranda.php?tab=pengurus';</script>";
+    set_swal('Tersimpan!', 'Data pengurus diperbarui!', 'success');
+    header("Location: kelola_beranda.php?tab=pengurus");
+    exit;
 }
 if (isset($_GET['hapus_pengurus'])) {
     $id = intval($_GET['hapus_pengurus']);
     $g = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT foto FROM pengurus WHERE id=$id"));
     if ($g && $g['foto'] != 'default.jpg') unlink("../Gambar/" . $g['foto']);
     mysqli_query($koneksi, "DELETE FROM pengurus WHERE id=$id");
-    echo "<script>alert('Dihapus!'); window.location.href='kelola_beranda.php?tab=pengurus';</script>";
+    set_swal('Dihapus!', 'Data pengurus berhasil dihapus.', 'error');
+    header("Location: kelola_beranda.php?tab=pengurus");
+    exit;
 }
 if (isset($_POST['hapus_multiple_pengurus'])) {
     if (!empty($_POST['selected_ids'])) {
@@ -152,7 +229,9 @@ if (isset($_POST['hapus_multiple_pengurus'])) {
             if ($g && $g['foto'] != 'default.jpg') unlink("../Gambar/" . $g['foto']);
             mysqli_query($koneksi, "DELETE FROM pengurus WHERE id=$id");
         }
-        echo "<script>alert('Data terpilih berhasil dihapus!'); window.location.href='kelola_beranda.php?tab=pengurus';</script>";
+        set_swal('Dihapus!', 'Data terpilih berhasil dihapus.', 'error');
+        header("Location: kelola_beranda.php?tab=pengurus");
+        exit;
     }
 }
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_order_pengurus'])) {
@@ -170,14 +249,19 @@ if (isset($_POST['tambah_galeri'])) {
     $kategori = mysqli_real_escape_string($koneksi, $_POST['kategori']);
     $judul = mysqli_real_escape_string($koneksi, $_POST['judul']);
     $deskripsi = mysqli_real_escape_string($koneksi, $_POST['deskripsi']);
-    $rename = uniqid() . '_' . basename($_FILES['gambar_galeri']['name']);
-    if (move_uploaded_file($_FILES['gambar_galeri']['tmp_name'], "../Gambar/" . $rename)) {
+    $ext = pathinfo($_FILES['gambar_galeri']['name'], PATHINFO_EXTENSION);
+    $rename = uniqid() . '.' . $ext;
+
+    if (compressImage($_FILES['gambar_galeri']['tmp_name'], "../Gambar/" . $rename, 80)) {
         $table = ($kategori == 'konten1') ? 'konten1' : 'konten2';
         mysqli_query($koneksi, "INSERT INTO $table (judul, deskripsi, gambar) VALUES ('$judul', '$deskripsi', '$rename')");
-        echo "<script>alert('Galeri ditambahkan!'); window.location.href='kelola_beranda.php?tab=galeri&sub=$kategori';</script>";
+        set_swal('Berhasil!', 'Galeri ditambahkan!', 'success');
+    } else {
+        set_swal('Gagal!', 'Format gambar tidak didukung!', 'error');
     }
+    header("Location: kelola_beranda.php?tab=galeri&sub=$kategori");
+    exit;
 }
-// Hapus Single Galeri
 if (isset($_GET['hapus_galeri'])) {
     $id = intval($_GET['hapus_galeri']);
     $jenis = $_GET['jenis'];
@@ -185,22 +269,24 @@ if (isset($_GET['hapus_galeri'])) {
     $g = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT gambar FROM $table WHERE id=$id"));
     if ($g && file_exists("../Gambar/" . $g['gambar'])) unlink("../Gambar/" . $g['gambar']);
     mysqli_query($koneksi, "DELETE FROM $table WHERE id=$id");
-    echo "<script>alert('Dihapus!'); window.location.href='kelola_beranda.php?tab=galeri&sub=$jenis';</script>";
+    set_swal('Dihapus!', 'Galeri berhasil dihapus.', 'error');
+    header("Location: kelola_beranda.php?tab=galeri&sub=$jenis");
+    exit;
 }
 
-// [BARU] Hapus Multiple Galeri
 if (isset($_POST['hapus_multiple_galeri'])) {
     if (!empty($_POST['selected_ids'])) {
         $jenis = mysqli_real_escape_string($koneksi, $_POST['jenis_galeri']);
         $table = ($jenis == 'konten1') ? 'konten1' : 'konten2';
-
         foreach ($_POST['selected_ids'] as $id) {
             $id = intval($id);
             $g = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT gambar FROM $table WHERE id=$id"));
             if ($g && file_exists("../Gambar/" . $g['gambar'])) unlink("../Gambar/" . $g['gambar']);
             mysqli_query($koneksi, "DELETE FROM $table WHERE id=$id");
         }
-        echo "<script>alert('Galeri terpilih berhasil dihapus!'); window.location.href='kelola_beranda.php?tab=galeri&sub=$jenis';</script>";
+        set_swal('Dihapus!', 'Galeri terpilih berhasil dihapus.', 'error');
+        header("Location: kelola_beranda.php?tab=galeri&sub=$jenis");
+        exit;
     }
 }
 
@@ -208,18 +294,24 @@ if (isset($_POST['hapus_multiple_galeri'])) {
 if (isset($_POST['update_copyright'])) {
     $text = mysqli_real_escape_string($koneksi, $_POST['copyright_text']);
     mysqli_query($koneksi, "UPDATE settings SET setting_value='$text' WHERE setting_key='footer_copyright'");
-    echo "<script>alert('Copyright diperbarui!'); window.location.href='kelola_beranda.php?tab=footer';</script>";
+    set_swal('Tersimpan!', 'Copyright diperbarui!', 'success');
+    header("Location: kelola_beranda.php?tab=footer");
+    exit;
 }
 if (isset($_POST['tambah_sosmed'])) {
     $platform = mysqli_real_escape_string($koneksi, $_POST['platform']);
     $url = mysqli_real_escape_string($koneksi, $_POST['url']);
     $icon_file = mysqli_real_escape_string($koneksi, $_POST['icon_file']);
     mysqli_query($koneksi, "INSERT INTO social_links (platform, url, icon_url) VALUES ('$platform', '$url', '$icon_file')");
-    echo "<script>alert('Sosmed ditambahkan!'); window.location.href='kelola_beranda.php?tab=footer';</script>";
+    set_swal('Berhasil!', 'Sosmed ditambahkan!', 'success');
+    header("Location: kelola_beranda.php?tab=footer");
+    exit;
 }
 if (isset($_GET['hapus_sosmed'])) {
     mysqli_query($koneksi, "DELETE FROM social_links WHERE id=" . intval($_GET['hapus_sosmed']));
-    echo "<script>alert('Sosmed dihapus!'); window.location.href='kelola_beranda.php?tab=footer';</script>";
+    set_swal('Dihapus!', 'Sosmed berhasil dihapus.', 'error');
+    header("Location: kelola_beranda.php?tab=footer");
+    exit;
 }
 if (isset($_POST['edit_sosmed'])) {
     $id = intval($_POST['id_sosmed']);
@@ -227,7 +319,9 @@ if (isset($_POST['edit_sosmed'])) {
     $url = mysqli_real_escape_string($koneksi, $_POST['url']);
     $icon_file = mysqli_real_escape_string($koneksi, $_POST['icon_file']);
     mysqli_query($koneksi, "UPDATE social_links SET platform='$platform', url='$url', icon_url='$icon_file' WHERE id=$id");
-    echo "<script>alert('Sosmed diperbarui!'); window.location.href='kelola_beranda.php?tab=footer';</script>";
+    set_swal('Tersimpan!', 'Sosmed diperbarui!', 'success');
+    header("Location: kelola_beranda.php?tab=footer");
+    exit;
 }
 
 // Ambil Data Default
@@ -245,10 +339,10 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Halaman Utama | PMR Millenium</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        /* CSS (Sama persis seperti sebelumnya) */
         :root {
             --primary-color: #d90429;
             --primary-hover: #c92a2a;
@@ -403,7 +497,7 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(4px);
-            z-index: 9999;
+            z-index: 9998;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -678,16 +772,6 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
             min-width: 300px;
         }
 
-        .img-preview {
-            width: 100%;
-            height: 250px;
-            object-fit: cover;
-            border-radius: 8px;
-            border: 1px solid #eee;
-            background: #f8f8f8;
-        }
-
-        /* Banner, Pengurus & Galeri Styles */
         .sortable-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -794,7 +878,6 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
             font-size: 0.9rem;
         }
 
-        /* Galeri Specific Styles */
         .galeri-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -834,7 +917,6 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
             opacity: 1;
         }
 
-        /* Table Styles */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -852,14 +934,6 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
         th {
             background-color: #f8f9fa;
             font-weight: 600;
-        }
-
-        .icon-preview {
-            width: 24px;
-            height: 24px;
-            vertical-align: middle;
-            margin-right: 8px;
-            object-fit: contain;
         }
 
         @media (max-width: 1400px) {
@@ -911,7 +985,6 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
 </head>
 
 <body>
-    <!-- HEADER & MODALS (Sama persis) -->
     <header>
         <nav class="navbar">
             <div class="nav-left">
@@ -938,7 +1011,7 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
             <div style="text-align: center;">
                 <div style="width:60px;height:60px;background:#fee2e2;color:var(--primary-color);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:24px;"><i class="fa-solid fa-right-from-bracket"></i></div>
                 <h3>Konfirmasi Keluar</h3>
-                <p>Apakah Anda yakin ingin keluar?</p>
+                <p style="color: var(--text-muted); margin-top: 5px;">Apakah Anda yakin ingin keluar?</p>
                 <div style="justify-content: center; margin-top: 20px; display:flex; gap:10px;"><button class="btn btn-outline-secondary" onclick="closeLogoutModal()">Batal</button><button class="btn btn-primary" onclick="proceedLogout()">Ya, Keluar</button></div>
             </div>
         </div>
@@ -998,7 +1071,6 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
                 <h1>Pengaturan Halaman Utama</h1>
                 <p>Kelola konten banner, pengurus, dan galeri.</p>
             </div>
-
             <div class="tabs">
                 <button class="tab-btn <?= ($active_tab == 'hero') ? 'active' : '' ?>" onclick="switchTab('hero')"><i class="fas fa-image"></i> Banner</button>
                 <button class="tab-btn <?= ($active_tab == 'tentang') ? 'active' : '' ?>" onclick="switchTab('tentang')"><i class="fas fa-info-circle"></i> Tentang</button>
@@ -1008,90 +1080,62 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
             </div>
 
             <div id="content-area">
-                <!-- ================== TAB HERO ================== -->
                 <?php if ($active_tab == 'hero'): ?>
                     <div class="content-card">
                         <h3 style="margin-bottom: 15px;"><i class="fas fa-sliders-h"></i> Pengaturan Animasi Banner</h3>
                         <div class="split-row">
                             <div class="split-col">
-                                <?php
-                                $set_effect = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT setting_value FROM settings WHERE setting_key='hero_effect'"));
-                                $set_delay = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT setting_value FROM settings WHERE setting_key='hero_delay'"));
-                                ?>
+                                <?php $set_effect = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT setting_value FROM settings WHERE setting_key='hero_effect'"));
+                                $set_delay = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT setting_value FROM settings WHERE setting_key='hero_delay'")); ?>
                                 <form method="POST">
-                                    <div class="form-group">
-                                        <label>Jenis Animasi</label>
-                                        <select name="hero_effect" class="form-control">
+                                    <div class="form-group"><label>Jenis Animasi</label><select name="hero_effect" class="form-control">
                                             <option value="slide" <?= ($set_effect['setting_value'] == 'slide') ? 'selected' : '' ?>>Slide (Geser Biasa)</option>
                                             <option value="zoom" <?= ($set_effect['setting_value'] == 'zoom') ? 'selected' : '' ?>>Zoom In / Zoom Out</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Durasi Per Gambar (Milidetik)</label>
-                                        <input type="number" name="hero_delay" class="form-control" value="<?= htmlspecialchars($set_delay['setting_value']) ?>">
-                                    </div>
+                                        </select></div>
+                                    <div class="form-group"><label>Durasi Per Gambar (Milidetik)</label><input type="number" name="hero_delay" class="form-control" value="<?= htmlspecialchars($set_delay['setting_value']) ?>"></div>
                                     <button type="submit" name="update_slider_settings" class="btn btn-primary"><i class="fas fa-save"></i> Simpan Pengaturan</button>
                                 </form>
                             </div>
                         </div>
                     </div>
-
                     <div class="content-card">
                         <h3 style="margin-bottom: 20px;"><i class="fas fa-images"></i> Daftar Banner</h3>
-
-                        <!-- Form Upload Multiple -->
                         <form method="POST" enctype="multipart/form-data" style="margin-bottom: 30px;">
-                            <div class="custom-file-upload">
-                                <input type="file" name="gambar_hero[]" id="hero_input" multiple accept="image/*" required>
+                            <div class="custom-file-upload"><input type="file" name="gambar_hero[]" id="hero_input" multiple accept="image/*" required>
                                 <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
                                 <div class="upload-text" id="hero_label">Klik untuk pilih banyak gambar</div>
                                 <div class="file-selected" id="hero_selected" style="display: none;"></div>
                             </div>
                             <button type="submit" name="tambah_banner" class="btn btn-success" style="margin-top: 15px;"><i class="fas fa-plus"></i> Upload Banner</button>
                         </form>
-
-                        <!-- Toolbar Multi Delete -->
-                        <form method="POST" onsubmit="return confirm('Yakin hapus banner terpilih?')" id="form-multi-banner">
+                        <form method="POST" id="form-multi-banner">
                             <div class="toolbar-pengurus">
-                                <div class="select-all-wrapper">
-                                    <input type="checkbox" id="select_all_banner" onclick="toggleSelectAllBanner(this)">
-                                    <label for="select_all_banner">Pilih Semua</label>
-                                </div>
-                                <button type="submit" name="hapus_multiple_banner" class="btn btn-sm btn-danger" id="btn-multi-delete-banner" style="display:none;">
-                                    <i class="fas fa-trash"></i> Hapus Terpilih (<span id="count-selected-banner">0</span>)
-                                </button>
+                                <div class="select-all-wrapper"><input type="checkbox" id="select_all_banner" onclick="toggleSelectAllBanner(this)"><label for="select_all_banner">Pilih Semua</label></div>
+                                <button type="button" name="hapus_multiple_banner" class="btn btn-sm btn-danger" id="btn-multi-delete-banner" style="display:none;"><i class="fas fa-trash"></i> Hapus Terpilih (<span id="count-selected-banner">0</span>)</button>
                             </div>
-
-                            <!-- Grid Banner -->
                             <div id="sortable-banner" class="sortable-grid">
-                                <?php
-                                $q_banner = mysqli_query($koneksi, "SELECT * FROM hero_background ORDER BY urutan ASC");
+                                <?php $q_banner = mysqli_query($koneksi, "SELECT * FROM hero_background ORDER BY urutan ASC");
                                 if (mysqli_num_rows($q_banner) == 0) echo "<p style='color: #999; text-align: center; width: 100%; grid-column: 1/-1;'>Belum ada banner.</p>";
-                                while ($b = mysqli_fetch_assoc($q_banner)):
-                                ?>
-                                    <div class="banner-card" data-id="<?= $b['id'] ?>">
-                                        <input type="checkbox" name="selected_ids[]" value="<?= $b['id'] ?>" class="card-checkbox" onchange="updateMultiDeleteBanner()">
-                                        <i class="fas fa-grip-vertical drag-handle-icon"></i>
-                                        <img src="../Gambar/<?= htmlspecialchars($b['file_name']) ?>">
-                                        <div class="card-actions">
-                                            <a href="?tab=hero&hapus_banner=<?= $b['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus?')"><i class="fas fa-trash"></i></a>
-                                        </div>
+                                while ($b = mysqli_fetch_assoc($q_banner)): ?>
+                                    <div class="banner-card" data-id="<?= $b['id'] ?>"><input type="checkbox" name="selected_ids[]" value="<?= $b['id'] ?>" class="card-checkbox" onchange="updateMultiDeleteBanner()"><i class="fas fa-grip-vertical drag-handle-icon"></i><img src="../Gambar/<?= htmlspecialchars($b['file_name']) ?>">
+                                        <div class="card-actions"><a href="?tab=hero&hapus_banner=<?= $b['id'] ?>" class="btn btn-sm btn-outline-danger btn-hapus-banner"><i class="fas fa-trash"></i></a></div>
                                     </div>
                                 <?php endwhile; ?>
                             </div>
                         </form>
                     </div>
 
-                    <!-- ================== TAB LAINNYA ================== -->
                 <?php elseif ($active_tab == 'tentang'): ?>
                     <div class="content-card">
                         <h3 style="margin-bottom: 20px;"><i class="fas fa-bullseye"></i> Visi, Misi & Program Kerja</h3>
                         <form method="POST">
                             <div class="form-group"><label>Visi</label><textarea name="visi" class="form-control" rows="3" required><?= htmlspecialchars($tentang_now['visi'] ?? '') ?></textarea></div>
                             <div class="form-group"><label>Misi</label><textarea name="misi" class="form-control" rows="5" required><?= htmlspecialchars($tentang_now['misi'] ?? '') ?></textarea></div>
-                            <div class="form-group"><label>Program Kerja</label><textarea name="program_kerja" class="form-control" rows="5" required><?= htmlspecialchars($tentang_now['program_kerja'] ?? '') ?></textarea></div><button type="submit" name="update_tentang" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button>
+                            <div class="form-group"><label>Program Kerja</label><textarea name="program_kerja" class="form-control" rows="5" required><?= htmlspecialchars($tentang_now['program_kerja'] ?? '') ?></textarea></div>
+                            <button type="submit" name="update_tentang" class="btn btn-primary"><i class="fas fa-save"></i> Simpan</button>
                         </form>
                     </div>
+
                 <?php elseif ($active_tab == 'pengurus'): ?>
                     <div class="content-card" style="border-left: 4px solid var(--success-color);">
                         <h3 style="color: var(--success-color); margin-bottom: 15px;"><i class="fas fa-user-plus"></i> Tambah Pengurus</h3>
@@ -1113,82 +1157,58 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
                         </form>
                     </div>
                     <div class="content-card">
-                        <form method="POST" onsubmit="return confirm('Yakin hapus data terpilih?')" id="form-multi-delete">
+                        <form method="POST" id="form-multi-delete">
                             <div class="toolbar-pengurus">
-                                <div class="select-all-wrapper"><input type="checkbox" id="select_all" onclick="toggleSelectAll(this)"><label for="select_all">Pilih Semua</label></div><button type="submit" name="hapus_multiple_pengurus" class="btn btn-sm btn-danger" id="btn-multi-delete" style="display:none;"><i class="fas fa-trash"></i> Hapus Terpilih (<span id="count-selected">0</span>)</button>
+                                <div class="select-all-wrapper"><input type="checkbox" id="select_all" onclick="toggleSelectAll(this)"><label for="select_all">Pilih Semua</label></div>
+                                <button type="button" name="hapus_multiple_pengurus" class="btn btn-sm btn-danger" id="btn-multi-delete" style="display:none;"><i class="fas fa-trash"></i> Hapus Terpilih (<span id="count-selected">0</span>)</button>
                             </div>
-                            <div id="sortable-pengurus" class="sortable-grid"><?php $q_p = mysqli_query($koneksi, "SELECT * FROM pengurus ORDER BY urutan ASC");
-                                                                                if (mysqli_num_rows($q_p) == 0) echo "<p style='color: #999; text-align: center; width: 100%;'>Belum ada data.</p>";
-                                                                                while ($p = mysqli_fetch_assoc($q_p)): ?><div class="pengurus-card" data-id="<?= $p['id'] ?>"><input type="checkbox" name="selected_ids[]" value="<?= $p['id'] ?>" class="card-checkbox" onchange="updateMultiDeleteButton()"><i class="fas fa-grip-vertical drag-handle-icon"></i><img src="../Gambar/<?= $p['foto'] ?>">
+                            <div id="sortable-pengurus" class="sortable-grid">
+                                <?php $q_p = mysqli_query($koneksi, "SELECT * FROM pengurus ORDER BY urutan ASC");
+                                if (mysqli_num_rows($q_p) == 0) echo "<p style='color: #999; text-align: center; width: 100%;'>Belum ada data.</p>";
+                                while ($p = mysqli_fetch_assoc($q_p)): ?>
+                                    <div class="pengurus-card" data-id="<?= $p['id'] ?>"><input type="checkbox" name="selected_ids[]" value="<?= $p['id'] ?>" class="card-checkbox" onchange="updateMultiDeleteButton()"><i class="fas fa-grip-vertical drag-handle-icon"></i><img src="../Gambar/<?= $p['foto'] ?>">
                                         <h6 title="<?= htmlspecialchars($p['nama']) ?>"><?= htmlspecialchars($p['nama']) ?></h6><small><?= htmlspecialchars($p['jabatan']) ?></small>
-                                        <div class="card-actions"><button type="button" class="btn btn-sm btn-outline-secondary" onclick='openEditModal(<?= json_encode($p) ?>)'><i class="fas fa-edit"></i></button><a href="?tab=pengurus&hapus_pengurus=<?= $p['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus?')"><i class="fas fa-trash"></i></a></div>
-                                    </div><?php endwhile; ?></div>
+                                        <div class="card-actions"><button type="button" class="btn btn-sm btn-outline-secondary" onclick='openEditModal(<?= json_encode($p) ?>)'><i class="fas fa-edit"></i></button><a href="?tab=pengurus&hapus_pengurus=<?= $p['id'] ?>" class="btn btn-sm btn-outline-danger btn-hapus-pengurus"><i class="fas fa-trash"></i></a></div>
+                                    </div>
+                                <?php endwhile; ?>
+                            </div>
                         </form>
                     </div>
 
-                    <!-- ================== TAB GALERI (MODIFIED) ================== -->
                 <?php elseif ($active_tab == 'galeri'): ?>
                     <div class="sub-tabs" style="margin-bottom: 20px; display: flex; gap: 10px;">
-                        <a href="?tab=galeri&sub=konten1" class="btn btn-sm <?= ($sub_galeri == 'konten1') ? 'btn-primary' : 'btn-outline-secondary' ?>">konten1</a>
-                        <a href="?tab=galeri&sub=konten2" class="btn btn-sm <?= ($sub_galeri == 'konten2') ? 'btn-primary' : 'btn-outline-secondary' ?>">konten2</a>
+                        <a href="?tab=galeri&sub=konten1" class="btn btn-sm <?= ($sub_galeri == 'konten1') ? 'btn-primary' : 'btn-outline-secondary' ?>">Konten 1</a>
+                        <a href="?tab=galeri&sub=konten2" class="btn btn-sm <?= ($sub_galeri == 'konten2') ? 'btn-primary' : 'btn-outline-secondary' ?>">Konten 2</a>
                     </div>
-
                     <div class="split-row">
                         <div style="flex: 3;">
-                            <!-- Form untuk Multiple Delete -->
-                            <form method="POST" onsubmit="return confirm('Yakin hapus galeri terpilih?')" id="form-multi-galeri">
+                            <form method="POST" id="form-multi-galeri">
                                 <input type="hidden" name="jenis_galeri" value="<?= $sub_galeri ?>">
-
-                                <!-- Toolbar Galeri -->
                                 <div class="toolbar-pengurus" style="background: #fff; padding: 15px; border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 20px;">
-                                    <div class="select-all-wrapper">
-                                        <input type="checkbox" id="select_all_galeri" onclick="toggleSelectAllGaleri(this)">
-                                        <label for="select_all_galeri">Pilih Semua</label>
-                                    </div>
-                                    <button type="submit" name="hapus_multiple_galeri" class="btn btn-sm btn-danger" id="btn-multi-delete-galeri" style="display:none;">
-                                        <i class="fas fa-trash"></i> Hapus Terpilih (<span id="count-selected-galeri">0</span>)
-                                    </button>
+                                    <div class="select-all-wrapper"><input type="checkbox" id="select_all_galeri" onclick="toggleSelectAllGaleri(this)"><label for="select_all_galeri">Pilih Semua</label></div>
+                                    <button type="button" name="hapus_multiple_galeri" class="btn btn-sm btn-danger" id="btn-multi-delete-galeri" style="display:none;"><i class="fas fa-trash"></i> Hapus Terpilih (<span id="count-selected-galeri">0</span>)</button>
                                 </div>
-
-                                <!-- Grid Galeri -->
                                 <div class="galeri-grid">
-                                    <?php
-                                    $table = ($sub_galeri == 'konten1') ? 'konten1' : 'konten2';
+                                    <?php $table = ($sub_galeri == 'konten1') ? 'konten1' : 'konten2';
                                     $q_g = mysqli_query($koneksi, "SELECT * FROM $table ORDER BY id DESC");
                                     if (mysqli_num_rows($q_g) == 0) echo "<p style='text-align:center; width:100%; color:#999;'>Kosong</p>";
-                                    while ($g = mysqli_fetch_assoc($q_g)):
-                                    ?>
-                                        <div class="galeri-item">
-                                            <!-- Checkbox di pojok kiri atas -->
-                                            <input type="checkbox" name="selected_ids[]" value="<?= $g['id'] ?>" class="card-checkbox" onchange="updateMultiDeleteGaleri()">
-
-                                            <!-- Tombol Hapus Satuan di pojok kanan atas -->
-                                            <a href="?tab=galeri&sub=<?= $sub_galeri ?>&hapus_galeri=<?= $g['id'] ?>&jenis=<?= $sub_galeri ?>" onclick="return confirm('Hapus?')" class="delete-link">
-                                                <i class="fas fa-times"></i>
-                                            </a>
-                                            <img src="../Gambar/<?= $g['gambar'] ?>">
+                                    while ($g = mysqli_fetch_assoc($q_g)): ?>
+                                        <div class="galeri-item"><input type="checkbox" name="selected_ids[]" value="<?= $g['id'] ?>" class="card-checkbox" onchange="updateMultiDeleteGaleri()"><a href="?tab=galeri&sub=<?= $sub_galeri ?>&hapus_galeri=<?= $g['id'] ?>&jenis=<?= $sub_galeri ?>" class="delete-link btn-hapus-galeri"><i class="fas fa-times"></i></a><img src="../Gambar/<?= $g['gambar'] ?>">
                                             <div style="padding: 12px;"><strong><?= htmlspecialchars($g['judul']) ?></strong></div>
                                         </div>
                                     <?php endwhile; ?>
                                 </div>
                             </form>
                         </div>
-
-                        <!-- Form Tambah Galeri -->
                         <div style="flex: 1; min-width: 280px;">
                             <div class="content-card">
                                 <h5 style="margin-bottom: 15px;">Tambah <?= ucfirst($sub_galeri) ?></h5>
                                 <form method="POST" enctype="multipart/form-data">
                                     <input type="hidden" name="kategori" value="<?= $sub_galeri ?>">
+                                    <div class="form-group"><input type="text" name="judul" class="form-control" placeholder="Judul" required></div>
+                                    <div class="form-group"><textarea name="deskripsi" class="form-control" rows="2" placeholder="Deskripsi" required></textarea></div>
                                     <div class="form-group">
-                                        <input type="text" name="judul" class="form-control" placeholder="Judul" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <textarea name="deskripsi" class="form-control" rows="2" placeholder="Deskripsi" required></textarea>
-                                    </div>
-                                    <div class="form-group">
-                                        <div class="custom-file-upload" style="padding: 15px;">
-                                            <input type="file" name="gambar_galeri" required id="galeri_input">
+                                        <div class="custom-file-upload" style="padding: 15px;"><input type="file" name="gambar_galeri" required id="galeri_input">
                                             <div id="galeri_label">Pilih Gambar</div>
                                         </div>
                                     </div>
@@ -1218,7 +1238,7 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
                                                 <td><img src="../Gambar/<?= htmlspecialchars($s['icon_url']) ?>" style="width:24px; height:24px; object-fit:contain;"></td>
                                                 <td><?= htmlspecialchars($s['platform']) ?></td>
                                                 <td><a href="<?= $s['url'] ?>" target="_blank" style="color: var(--primary-color); font-size: 0.85rem;"><?= substr($s['url'], 0, 20) ?>...</a></td>
-                                                <td><button onclick='openEditSosmedModal(<?= json_encode($s) ?>)' class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i></button> <a href="?tab=footer&hapus_sosmed=<?= $s['id'] ?>" onclick="return confirm('Hapus?')" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></a></td>
+                                                <td><button onclick='openEditSosmedModal(<?= json_encode($s) ?>)' class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i></button> <a href="?tab=footer&hapus_sosmed=<?= $s['id'] ?>" class="btn btn-sm btn-outline-danger btn-hapus-sosmed"><i class="fas fa-trash"></i></a></td>
                                             </tr><?php endwhile; ?></tbody>
                                 </table>
                             </div>
@@ -1229,12 +1249,15 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
                                 <form method="POST">
                                     <div class="form-group"><label>Platform</label><input type="text" name="platform" class="form-control" required></div>
                                     <div class="form-group"><label>URL</label><input type="url" name="url" class="form-control" required></div>
-                                    <div class="form-group"><label>Icon</label><select name="icon_file" class="form-control"><?php foreach ($icon_list as $name => $file): ?><option value="<?= $file ?>"><?= $name ?></option><?php endforeach; ?></select></div><button type="submit" name="tambah_sosmed" class="btn btn-primary w-100">Tambahkan</button>
+                                    <div class="form-group"><label>Icon</label><select name="icon_file" class="form-control"><?php foreach ($icon_list as $name => $file): ?><option value="<?= $file ?>"><?= $name ?></option><?php endforeach; ?></select></div>
+                                    <button type="submit" name="tambah_sosmed" class="btn btn-primary w-100">Tambahkan</button>
                                 </form>
                             </div>
                             <div class="content-card">
-                                <h3 style="margin-bottom: 15px;"><i class="fas fa-copyright"></i> Copyright</h3><?php $cpy = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT setting_value FROM settings WHERE setting_key='footer_copyright'")); ?><form method="POST">
-                                    <div class="form-group"><textarea name="copyright_text" class="form-control" rows="2" required><?= htmlspecialchars($cpy['setting_value'] ?? '') ?></textarea></div><button type="submit" name="update_copyright" class="btn btn-primary w-100">Update</button>
+                                <h3 style="margin-bottom: 15px;"><i class="fas fa-copyright"></i> Copyright</h3><?php $cpy = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT setting_value FROM settings WHERE setting_key='footer_copyright'")); ?>
+                                <form method="POST">
+                                    <div class="form-group"><textarea name="copyright_text" class="form-control" rows="2" required><?= htmlspecialchars($cpy['setting_value'] ?? '') ?></textarea></div>
+                                    <button type="submit" name="update_copyright" class="btn btn-primary w-100">Update</button>
                                 </form>
                             </div>
                         </div>
@@ -1244,11 +1267,28 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
         </main>
     </div>
 
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
+        // Cek Flash Message dari PHP Session
+        <?php if (isset($_SESSION['swal_message'])): ?>
+            Swal.fire({
+                icon: '<?= $_SESSION['swal_message']['icon'] ?>',
+                title: '<?= $_SESSION['swal_message']['title'] ?>',
+                text: '<?= $_SESSION['swal_message']['text'] ?>',
+                showConfirmButton: false,
+                timer: 2000
+            });
+            <?php unset($_SESSION['swal_message']); // Hapus session agar tidak muncul lagi saat F5 
+            ?>
+        <?php endif; ?>
+
         // Interactions
         const menuToggle = document.querySelector('.menu-toggle');
         const sidebar = document.getElementById('sidebar');
         if (menuToggle) menuToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
+
         const profileBtn = document.getElementById('profileBtn');
         const profileDropdown = document.getElementById('profileDropdown');
         if (profileBtn) profileBtn.addEventListener('click', (e) => {
@@ -1325,66 +1365,63 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
         initSortable('sortable-banner', 'banner');
         initSortable('sortable-pengurus', 'pengurus');
 
-        // Multi Delete Logic Banner
+        // Multi Delete Logic
         function toggleSelectAllBanner(source) {
             document.querySelectorAll('.banner-card .card-checkbox').forEach(cb => cb.checked = source.checked);
             updateMultiDeleteBanner();
         }
 
         function updateMultiDeleteBanner() {
-            const checked = document.querySelectorAll('.banner-card .card-checkbox:checked').length;
-            const btn = document.getElementById('btn-multi-delete-banner');
-            const countSpan = document.getElementById('count-selected-banner');
-            if (checked > 0) {
-                btn.style.display = 'inline-flex';
-                countSpan.innerText = checked;
+            const c = document.querySelectorAll('.banner-card .card-checkbox:checked').length;
+            const b = document.getElementById('btn-multi-delete-banner');
+            const s = document.getElementById('count-selected-banner');
+            if (c > 0) {
+                b.style.display = 'inline-flex';
+                s.innerText = c;
             } else {
-                btn.style.display = 'none';
+                b.style.display = 'none';
             }
         }
 
-        // Multi Delete Logic Pengurus
         function toggleSelectAll(source) {
             document.querySelectorAll('.pengurus-card .card-checkbox').forEach(cb => cb.checked = source.checked);
             updateMultiDeleteButton();
         }
 
         function updateMultiDeleteButton() {
-            const checked = document.querySelectorAll('.pengurus-card .card-checkbox:checked').length;
-            const btn = document.getElementById('btn-multi-delete');
-            const countSpan = document.getElementById('count-selected');
-            if (checked > 0) {
-                btn.style.display = 'inline-flex';
-                countSpan.innerText = checked;
+            const c = document.querySelectorAll('.pengurus-card .card-checkbox:checked').length;
+            const b = document.getElementById('btn-multi-delete');
+            const s = document.getElementById('count-selected');
+            if (c > 0) {
+                b.style.display = 'inline-flex';
+                s.innerText = c;
             } else {
-                btn.style.display = 'none';
+                b.style.display = 'none';
             }
         }
 
-        // [BARU] Multi Delete Logic Galeri
         function toggleSelectAllGaleri(source) {
             document.querySelectorAll('.galeri-item .card-checkbox').forEach(cb => cb.checked = source.checked);
             updateMultiDeleteGaleri();
         }
 
         function updateMultiDeleteGaleri() {
-            const checked = document.querySelectorAll('.galeri-item .card-checkbox:checked').length;
-            const btn = document.getElementById('btn-multi-delete-galeri');
-            const countSpan = document.getElementById('count-selected-galeri');
-            if (checked > 0) {
-                btn.style.display = 'inline-flex';
-                countSpan.innerText = checked;
+            const c = document.querySelectorAll('.galeri-item .card-checkbox:checked').length;
+            const b = document.getElementById('btn-multi-delete-galeri');
+            const s = document.getElementById('count-selected-galeri');
+            if (c > 0) {
+                b.style.display = 'inline-flex';
+                s.innerText = c;
             } else {
-                btn.style.display = 'none';
+                b.style.display = 'none';
             }
         }
 
-        // File Input Display - Supports Multiple
+        // File Input Display
         function setupFileInput(inputId, labelId, selectedId = null) {
             const input = document.getElementById(inputId);
             const label = document.getElementById(labelId);
             const selected = selectedId ? document.getElementById(selectedId) : null;
-
             if (input) {
                 input.addEventListener('change', function(e) {
                     if (this.files && this.files.length > 0) {
@@ -1393,7 +1430,6 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
                             names.push(this.files[i].name);
                         }
                         const text = names.join(', ');
-
                         if (selected) {
                             label.style.display = 'none';
                             selected.style.display = 'block';
@@ -1417,6 +1453,56 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
         setupFileInput('edit_foto_input', 'edit_foto_label');
         setupFileInput('add_pengurus_foto', 'add_pengurus_label');
         setupFileInput('galeri_input', 'galeri_label');
+
+        // SweetAlert2 for Single Delete Buttons
+        document.addEventListener('click', function(e) {
+            const targetBtn = e.target.closest('.btn-hapus-banner, .btn-hapus-pengurus, .btn-hapus-galeri, .btn-hapus-sosmed');
+            if (targetBtn) {
+                e.preventDefault();
+                const href = targetBtn.getAttribute('href');
+                Swal.fire({
+                    title: 'Apakah Anda yakin?',
+                    text: "Data yang sudah dihapus tidak bisa dikembalikan!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d90429',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Ya, Hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = href;
+                    }
+                });
+            }
+        });
+
+        // SweetAlert2 for Multiple Delete Buttons
+        function setupMultiDeleteBtn(btnId, formId, titleText) {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: titleText,
+                        text: "Semua data yang dicentang akan dihapus.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d90429',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: 'Ya, Hapus!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            document.getElementById(formId).submit();
+                        }
+                    });
+                });
+            }
+        }
+        setupMultiDeleteBtn('btn-multi-delete-banner', 'form-multi-banner', 'Hapus Banner Terpilih?');
+        setupMultiDeleteBtn('btn-multi-delete', 'form-multi-delete', 'Hapus Pengurus Terpilih?');
+        setupMultiDeleteBtn('btn-multi-delete-galeri', 'form-multi-galeri', 'Hapus Galeri Terpilih?');
     </script>
 </body>
 

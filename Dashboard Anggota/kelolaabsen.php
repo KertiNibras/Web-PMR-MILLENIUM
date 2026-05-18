@@ -12,10 +12,10 @@ if ($_SESSION['role'] != 'pengurus') {
   exit;
 }
 
- $nama_user = htmlspecialchars($_SESSION['nama']);
- $role = $_SESSION['role'];
- $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
- $foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
+$nama_user = htmlspecialchars($_SESSION['nama']);
+$role = $_SESSION['role'];
+$foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
+$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
 
 if (!empty($foto_session)) {
   $path_foto = "../uploads/foto_profil/" . $foto_session;
@@ -26,100 +26,144 @@ if (!empty($foto_session)) {
 
 // --- LOGIC HANDLE TAMBAH JADWAL ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tambah_jadwal'])) {
-    $tanggal_raw = $_POST['tanggal'] ?? '';
-    $waktu_mulai_raw = $_POST['waktu_mulai'] ?? '';
-    $waktu_selesai_raw = $_POST['waktu_selesai'] ?? '';
+  $tanggal_raw = $_POST['tanggal'] ?? '';
+  $waktu_mulai_raw = $_POST['waktu_mulai'] ?? '';
+  $waktu_selesai_raw = $_POST['waktu_selesai'] ?? '';
 
-    if (empty($tanggal_raw) || empty($waktu_mulai_raw) || empty($waktu_selesai_raw)) {
-        echo "<script>alert('GAGAL! Semua field wajib diisi.'); history.back();</script>";
-        exit;
-    }
+  if (empty($tanggal_raw) || empty($waktu_mulai_raw) || empty($waktu_selesai_raw)) {
+    echo "<script>alert('GAGAL! Semua field wajib diisi.'); history.back();</script>";
+    exit;
+  }
 
-    $tanggal = date('Y-m-d', strtotime($tanggal_raw));
-    $waktu_mulai = (strlen($waktu_mulai_raw) == 5) ? $waktu_mulai_raw . ':00' : $waktu_mulai_raw;
-    $waktu_selesai = (strlen($waktu_selesai_raw) == 5) ? $waktu_selesai_raw . ':00' : $waktu_selesai_raw;
+  $tanggal = date('Y-m-d', strtotime($tanggal_raw));
+  $waktu_mulai = (strlen($waktu_mulai_raw) == 5) ? $waktu_mulai_raw . ':00' : $waktu_mulai_raw;
+  $waktu_selesai = (strlen($waktu_selesai_raw) == 5) ? $waktu_selesai_raw . ':00' : $waktu_selesai_raw;
 
-    if ($tanggal == '1970-01-01') {
-        echo "<script>alert('Format tanggal tidak valid!'); history.back();</script>";
-        exit;
-    }
+  if ($tanggal == '1970-01-01') {
+    echo "<script>alert('Format tanggal tidak valid!'); history.back();</script>";
+    exit;
+  }
 
-    // Cek duplikat tanggal
-    $cek_tgl = mysqli_query($koneksi, "SELECT id FROM pengaturan_absensi WHERE tanggal = '$tanggal'");
-    if (mysqli_num_rows($cek_tgl) > 0) {
-        echo "<script>alert('GAGAL! Tanggal tersebut sudah memiliki jadwal.'); history.back();</script>";
-        exit;
-    }
+  // Cek duplikat tanggal
+  $cek_tgl = mysqli_query($koneksi, "SELECT id FROM pengaturan_absensi WHERE tanggal = '$tanggal'");
+  if (mysqli_num_rows($cek_tgl) > 0) {
+    echo "<script>alert('GAGAL! Tanggal tersebut sudah memiliki jadwal.'); history.back();</script>";
+    exit;
+  }
 
-    $stmt = mysqli_prepare($koneksi, "INSERT INTO pengaturan_absensi (tanggal, waktu_mulai, waktu_selesai) VALUES (?, ?, ?)");
-    mysqli_stmt_bind_param($stmt, "sss", $tanggal, $waktu_mulai, $waktu_selesai);
+  $stmt = mysqli_prepare($koneksi, "INSERT INTO pengaturan_absensi (tanggal, waktu_mulai, waktu_selesai) VALUES (?, ?, ?)");
+  mysqli_stmt_bind_param($stmt, "sss", $tanggal, $waktu_mulai, $waktu_selesai);
 
-    if (mysqli_stmt_execute($stmt)) {
-        echo "<script>alert('Jadwal berhasil ditambahkan!'); window.location.href='kelolaabsen.php';</script>";
-        exit;
-    } else {
-        echo "<script>alert('GAGAL DB: " . addslashes(mysqli_error($koneksi)) . "'); history.back();</script>";
-        exit;
-    }
+  if (mysqli_stmt_execute($stmt)) {
+    echo "<script>alert('Jadwal berhasil ditambahkan!'); window.location.href='kelolaabsen.php';</script>";
+    exit;
+  } else {
+    echo "<script>alert('GAGAL DB: " . addslashes(mysqli_error($koneksi)) . "'); history.back();</script>";
+    exit;
+  }
 }
 
 // --- LOGIC HANDLE HAPUS JADWAL ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus_jadwal'])) {
-    $id_hapus = intval($_POST['id_jadwal']);
-    $stmt = mysqli_prepare($koneksi, "DELETE FROM pengaturan_absensi WHERE id = ?");
-    mysqli_stmt_bind_param($stmt, "i", $id_hapus);
-    if (mysqli_stmt_execute($stmt)) {
-        echo "<script>alert('Jadwal berhasil dihapus!'); window.location.href='kelolaabsen.php';</script>";
-        exit;
-    } else {
-        echo "<script>alert('GAGAL menghapus jadwal!'); history.back();</script>";
-        exit;
+  $id_hapus = intval($_POST['id_jadwal']);
+  $stmt = mysqli_prepare($koneksi, "DELETE FROM pengaturan_absensi WHERE id = ?");
+  mysqli_stmt_bind_param($stmt, "i", $id_hapus);
+  if (mysqli_stmt_execute($stmt)) {
+    echo "<script>alert('Jadwal berhasil dihapus!'); window.location.href='kelolaabsen.php';</script>";
+    exit;
+  } else {
+    echo "<script>alert('GAGAL menghapus jadwal!'); history.back();</script>";
+    exit;
+  }
+}
+
+// --- LOGIC HANDLE HAPUS DATA ABSEN LAMA ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus_data_lama'])) {
+  $sebelum_tanggal = $_POST['sebelum_tanggal'] ?? '';
+
+  if (empty($sebelum_tanggal)) {
+    echo "<script>alert('Pilih tanggal batas penghapusan!'); history.back();</script>";
+    exit;
+  }
+
+  $tanggal_batas = date('Y-m-d', strtotime($sebelum_tanggal));
+  if ($tanggal_batas == '1970-01-01') {
+    echo "<script>alert('Format tanggal tidak valid!'); history.back();</script>";
+    exit;
+  }
+
+  // PERBAIKAN: Tambah jam 23:59:59 karena tipe data kolom 'tanggal' di tabel absensi adalah DATETIME
+  $tanggal_batas_datetime = $tanggal_batas . ' 23:59:59';
+
+  // 1. Hapus file foto bukti absensi dari folder server
+  $sql_get_foto = "SELECT foto FROM absensi WHERE tanggal <= ? AND foto IS NOT NULL AND foto != ''";
+  $stmt_foto = mysqli_prepare($koneksi, $sql_get_foto);
+  mysqli_stmt_bind_param($stmt_foto, "s", $tanggal_batas_datetime);
+  mysqli_stmt_execute($stmt_foto);
+  $res_foto = mysqli_stmt_get_result($stmt_foto);
+  while ($row_foto = mysqli_fetch_assoc($res_foto)) {
+    $file_path = "../uploads/absensi/" . $row_foto['foto'];
+    if (file_exists($file_path)) {
+      unlink($file_path);
     }
+  }
+
+  // 2. Hapus data di database menggunakan <= dan format DATETIME
+  $stmt_hapus = mysqli_prepare($koneksi, "DELETE FROM absensi WHERE tanggal <= ?");
+  mysqli_stmt_bind_param($stmt_hapus, "s", $tanggal_batas_datetime);
+
+  if (mysqli_stmt_execute($stmt_hapus)) {
+    $jumlah_dihapus = mysqli_stmt_affected_rows($stmt_hapus);
+    echo "<script>alert('Berhasil menghapus $jumlah_dihapus data absensi lama!'); window.location.href='kelolaabsen.php';</script>";
+    exit;
+  } else {
+    echo "<script>alert('GAGAL menghapus data!'); history.back();</script>";
+    exit;
+  }
 }
 
 // Ambil Semua Jadwal
- $jadwal_list = [];
- $jadwal_query = mysqli_query($koneksi, "SELECT * FROM pengaturan_absensi ORDER BY tanggal ASC");
+$jadwal_list = [];
+$jadwal_query = mysqli_query($koneksi, "SELECT * FROM pengaturan_absensi ORDER BY tanggal ASC");
 while ($j = mysqli_fetch_assoc($jadwal_query)) {
   $jadwal_list[] = $j;
 }
 
 // Ambil data kalender
- $month = isset($_GET['m']) ? intval($_GET['m']) : date('m');
- $year = isset($_GET['y']) ? intval($_GET['y']) : date('Y');
+$month = isset($_GET['m']) ? intval($_GET['m']) : date('m');
+$year = isset($_GET['y']) ? intval($_GET['y']) : date('Y');
 
- $rekap_harian = [];
- $sql_rekap = "SELECT tanggal, COUNT(*) as total FROM absensi WHERE MONTH(tanggal) = ? AND YEAR(tanggal) = ? GROUP BY tanggal";
- $stmt_rekap = mysqli_prepare($koneksi, $sql_rekap);
+$rekap_harian = [];
+$sql_rekap = "SELECT tanggal, COUNT(*) as total FROM absensi WHERE MONTH(tanggal) = ? AND YEAR(tanggal) = ? GROUP BY tanggal";
+$stmt_rekap = mysqli_prepare($koneksi, $sql_rekap);
 mysqli_stmt_bind_param($stmt_rekap, "ii", $month, $year);
 mysqli_stmt_execute($stmt_rekap);
- $res_rekap = mysqli_stmt_get_result($stmt_rekap);
+$res_rekap = mysqli_stmt_get_result($stmt_rekap);
 while ($r = mysqli_fetch_assoc($res_rekap)) {
   $rekap_harian[$r['tanggal']] = $r['total'];
 }
 
 // Ambil Tanggal Jadwal di Bulan Ini untuk Kalender
- $jadwal_bulan_ini = [];
- $sql_jcal = "SELECT tanggal FROM pengaturan_absensi WHERE MONTH(tanggal) = ? AND YEAR(tanggal) = ?";
- $stmt_jcal = mysqli_prepare($koneksi, $sql_jcal);
+$jadwal_bulan_ini = [];
+$sql_jcal = "SELECT tanggal FROM pengaturan_absensi WHERE MONTH(tanggal) = ? AND YEAR(tanggal) = ?";
+$stmt_jcal = mysqli_prepare($koneksi, $sql_jcal);
 mysqli_stmt_bind_param($stmt_jcal, "ii", $month, $year);
 mysqli_stmt_execute($stmt_jcal);
- $res_jcal = mysqli_stmt_get_result($stmt_jcal);
+$res_jcal = mysqli_stmt_get_result($stmt_jcal);
 while ($rj = mysqli_fetch_assoc($res_jcal)) {
   $jadwal_bulan_ini[$rj['tanggal']] = true;
 }
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kelola Absensi | PMR Millenium</title>
-  
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
-  
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
   <style>
     :root {
@@ -136,125 +180,726 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
       --sidebar-width: 250px;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); line-height: 1.6; }
-    a { text-decoration: none; color: inherit; }
-    ul { list-style: none; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-    header { background: #fff; box-shadow: var(--shadow-sm); position: fixed; width: 100%; top: 0; z-index: 1000; height: var(--header-height); }
-    .navbar { display: flex; justify-content: space-between; align-items: center; height: 100%; padding: 0 20px; max-width: 100%; }
-    .nav-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; }
-    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #000; }
-    .logo img { height: 40px; }
-    .nav-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 15px; position: relative; }
-    .profile-btn { display: flex; align-items: center; cursor: pointer; padding: 5px; border-radius: 50px; }
-    .profile-btn:hover { background-color: #f1f5f9; }
-    .profile-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); }
+    body {
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+    }
 
-    .profile-dropdown { position: absolute; top: 100%; right: 0; margin-top: 10px; background: #fff; border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); width: 220px; z-index: 1001; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.2s ease; border: 1px solid var(--border-color); overflow: hidden; }
-    .profile-dropdown.active { opacity: 1; visibility: visible; transform: translateY(0); }
-    .dropdown-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid var(--border-color); }
-    .dropdown-header p { font-weight: 600; font-size: 0.9rem; }
-    .dropdown-header small { color: var(--text-muted); font-size: 0.75rem; }
-    .profile-dropdown ul li a { display: flex; align-items: center; gap: 10px; padding: 12px 15px; font-size: 0.9rem; transition: 0.2s; }
-    .profile-dropdown ul li a:hover { background-color: #fff1f1; color: var(--primary-color); }
-    .menu-toggle { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--primary-color); z-index: 1001; }
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
 
-    .dashboard-container { display: flex; min-height: 100vh; padding-top: var(--header-height); }
-    .sidebar { width: var(--sidebar-width); background: #fff; border-right: 1px solid var(--border-color); position: sticky; top: var(--header-height); height: calc(100vh - var(--header-height)); overflow-y: auto; z-index: 900; flex-shrink: 0; }
-    .sidebar li { padding: 14px 25px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 12px; border-left: 4px solid transparent; transition: all 0.2s; }
-    .sidebar li:hover, .sidebar li.active { background-color: #fff1f1; color: var(--primary-color); border-left-color: var(--primary-color); }
-    .sidebar a { display: flex; align-items: center; gap: 10px; width: 100%; }
-    .main-content { flex: 1; padding: 30px; width: 100%; }
+    ul {
+      list-style: none;
+    }
 
-    .page-title h1 { font-size: 1.75rem; color: var(--primary-color); margin-bottom: 5px; }
-    .page-title p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px; }
+    header {
+      background: #fff;
+      box-shadow: var(--shadow-sm);
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 1000;
+      height: var(--header-height);
+    }
 
-    .control-box { background: white; padding: 25px; border-radius: var(--radius); box-shadow: var(--shadow-sm); margin-bottom: 25px; border: 1px solid var(--border-color); }
-    .control-box h3 { margin-bottom: 20px; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
-    .control-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; align-items: end; }
-    .form-group { display: flex; flex-direction: column; gap: 8px; }
-    .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
-    .form-control { width: 100%; padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; }
-    .form-control:focus { border-color: var(--primary-color); outline: none; }
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 100%;
+      padding: 0 20px;
+      max-width: 100%;
+    }
 
-    .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease; font-size: 0.9rem; color: white; }
-    .btn-primary { background-color: var(--primary-color); }
-    .btn-primary:hover { background-color: var(--primary-hover); }
-    .btn-success { background-color: var(--success-color); }
-    .btn-danger { background-color: #ef4444; }
-    .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+    .nav-left {
+      flex: 1;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+    }
 
-    .status-display { padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-top: 10px; font-size: 0.9rem; }
-    .status-open { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-    .status-closed { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-    .status-error { background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; } /* Tambahan style error */
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 18px;
+      color: #000;
+    }
 
-    .calendar-container { background: white; border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 20px; border: 1px solid var(--border-color); }
-    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
-    .calendar-header h2 { font-size: 1.2rem; }
-    .calendar-nav { display: flex; gap: 10px; }
-    .calendar-nav a { padding: 8px 15px; background: var(--bg-color); border-radius: 6px; font-weight: 600; }
+    .logo img {
+      height: 40px;
+    }
 
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-    .calendar-day-name { text-align: center; font-weight: 600; color: var(--text-muted); font-size: 0.85rem; padding: 10px; }
-    .calendar-day { border: 1px solid var(--border-color); border-radius: 8px; min-height: 80px; padding: 8px; position: relative; background: #fff; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; }
-    .calendar-day:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
-    .calendar-day.empty { background: #f8f9fa; border-color: transparent; cursor: default; }
-    .calendar-day.today { border-color: var(--primary-color); border-width: 2px; }
-    .day-number { font-weight: 600; color: var(--text-muted); font-size: 0.9rem; margin-bottom: auto; }
-    .calendar-day.today .day-number { color: var(--primary-color); }
+    .nav-right {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 15px;
+      position: relative;
+    }
 
-    .bg-hadir { background-color: #dcfce7 !important; border-color: #16a34a !important; }
-    .bg-hadir .day-number { color: #166534; }
-    
-    .bg-jadwal { background-color: #f0f9ff !important; border-color: #38bdf8 !important; }
-    .bg-jadwal .day-number { color: #0369a1; }
+    .profile-btn {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 50px;
+    }
 
-    .attendance-count { font-size: 0.8rem; background: rgba(0, 0, 0, 0.05); color: #166534; padding: 4px 8px; border-radius: 4px; margin-top: 5px; text-align: center; font-weight: 600; }
+    .profile-btn:hover {
+      background-color: #f1f5f9;
+    }
 
-    .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    .data-table th, .data-table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; vertical-align: middle; }
-    .data-table th { background-color: #f8f9fa; font-weight: 600; }
+    .profile-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--primary-color);
+    }
 
-    /* Modal Styles */
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
-    .modal-content { background: white; border-radius: var(--radius); max-width: 900px; width: 100%; overflow: hidden; animation: fadeIn 0.3s ease; display: flex; flex-direction: column; max-height: 90vh; }
-    .modal-header { padding: 15px 20px; background: var(--primary-color); color: white; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-    .close-modal { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
-    .modal-body { padding: 20px; overflow-y: auto; }
-    
-    .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: #dcfce7; color: #166534; text-transform: capitalize; }
-    .photo-thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #eee; }
-    .modal-img-content { background: transparent; max-width: 90vw; max-height: 90vh; display: flex; align-items: center; justify-content: center; position: relative; }
-    .modal-img-content img { max-width: 100%; max-height: 85vh; border-radius: 8px; }
-    .close-img-modal { position: absolute; top: -10px; right: -10px; background: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); z-index: 10; }
+    .profile-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 10px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      width: 220px;
+      z-index: 1001;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.2s ease;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
 
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; visibility: hidden; transition: all 0.3s ease; }
-    .modal-overlay.active { opacity: 1; visibility: visible; }
-    .modal-box { background: white; padding: 30px; border-radius: 16px; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); transform: scale(0.9); transition: transform 0.3s ease; border: 1px solid var(--border-color); }
-    .modal-overlay.active .modal-box { transform: scale(1); }
-    .modal-icon { width: 60px; height: 60px; background: #fee2e2; color: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px; }
-    .modal-box h3 { margin-bottom: 10px; font-size: 1.25rem; }
-    .modal-box p { color: var(--text-muted); margin-bottom: 25px; font-size: 0.95rem; }
-    .modal-actions { display: flex; gap: 10px; justify-content: center; }
-    .btn-modal { padding: 12px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s ease; font-size: 0.95rem; flex: 1; }
-    .btn-cancel { background-color: #f1f5f9; color: var(--text-muted); }
-    .btn-cancel:hover { background-color: #e2e8f0; color: var(--text-color); }
-    .btn-logout { background-color: var(--primary-color); color: white; }
-    .btn-logout:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
+    .profile-dropdown.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
 
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .dropdown-header {
+      padding: 15px;
+      background: #f8f9fa;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .dropdown-header p {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .dropdown-header small {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .profile-dropdown ul li a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 15px;
+      font-size: 0.9rem;
+      transition: 0.2s;
+    }
+
+    .profile-dropdown ul li a:hover {
+      background-color: #fff1f1;
+      color: var(--primary-color);
+    }
+
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--primary-color);
+      z-index: 1001;
+    }
+
+    .dashboard-container {
+      display: flex;
+      min-height: 100vh;
+      padding-top: var(--header-height);
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      background: #fff;
+      border-right: 1px solid var(--border-color);
+      position: sticky;
+      top: var(--header-height);
+      height: calc(100vh - var(--header-height));
+      overflow-y: auto;
+      z-index: 900;
+      flex-shrink: 0;
+    }
+
+    .sidebar li {
+      padding: 14px 25px;
+      cursor: pointer;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-left: 4px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .sidebar li:hover,
+    .sidebar li.active {
+      background-color: #fff1f1;
+      color: var(--primary-color);
+      border-left-color: var(--primary-color);
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 30px;
+      width: 100%;
+    }
+
+    .page-title h1 {
+      font-size: 1.75rem;
+      color: var(--primary-color);
+      margin-bottom: 5px;
+    }
+
+    .page-title p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 25px;
+    }
+
+    .control-box {
+      background: white;
+      padding: 25px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 25px;
+      border: 1px solid var(--border-color);
+    }
+
+    .control-box h3 {
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      align-items: end;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary-color);
+      outline: none;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+      color: white;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-success {
+      background-color: var(--success-color);
+    }
+
+    .btn-danger {
+      background-color: #ef4444;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--primary-color);
+      border: 1px solid var(--primary-color);
+      width: 100%;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .btn-outline:hover {
+      background: #fff1f1;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+    }
+
+    .status-display {
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+
+    .status-open {
+      background-color: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .status-closed {
+      background-color: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .status-error {
+      background-color: #fef08a;
+      color: #854d0e;
+      border: 1px solid #fde047;
+    }
+
+    .calendar-container {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 20px;
+      border: 1px solid var(--border-color);
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .calendar-header h2 {
+      font-size: 1.2rem;
+    }
+
+    .calendar-nav {
+      display: flex;
+      gap: 10px;
+    }
+
+    .calendar-nav a {
+      padding: 8px 15px;
+      background: var(--bg-color);
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+
+    .calendar-day-name {
+      text-align: center;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 10px;
+    }
+
+    .calendar-day {
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      min-height: 80px;
+      padding: 8px;
+      position: relative;
+      background: #fff;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .calendar-day:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .calendar-day.empty {
+      background: #f8f9fa;
+      border-color: transparent;
+      cursor: default;
+    }
+
+    .calendar-day.today {
+      border-color: var(--primary-color);
+      border-width: 2px;
+    }
+
+    .day-number {
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: auto;
+    }
+
+    .calendar-day.today .day-number {
+      color: var(--primary-color);
+    }
+
+    .bg-hadir {
+      background-color: #dcfce7 !important;
+      border-color: #16a34a !important;
+    }
+
+    .bg-hadir .day-number {
+      color: #166534;
+    }
+
+    .bg-jadwal {
+      background-color: #f0f9ff !important;
+      border-color: #38bdf8 !important;
+    }
+
+    .bg-jadwal .day-number {
+      color: #0369a1;
+    }
+
+    .attendance-count {
+      font-size: 0.8rem;
+      background: rgba(0, 0, 0, 0.05);
+      color: #166534;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-top: 5px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-color);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .data-table th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+
+    .hidden-row {
+      display: none;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: var(--radius);
+      max-width: 900px;
+      width: 100%;
+      overflow: hidden;
+      animation: fadeIn 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      max-height: 90vh;
+    }
+
+    .modal-header {
+      padding: 15px 20px;
+      background: var(--primary-color);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: #dcfce7;
+      color: #166534;
+      text-transform: capitalize;
+    }
+
+    .photo-thumb {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid #eee;
+    }
+
+    .modal-img-content {
+      background: transparent;
+      max-width: 90vw;
+      max-height: 90vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .modal-img-content img {
+      max-width: 100%;
+      max-height: 85vh;
+      border-radius: 8px;
+    }
+
+    .close-img-modal {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: white;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      z-index: 10;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-box {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+      border: 1px solid var(--border-color);
+    }
+
+    .modal-overlay.active .modal-box {
+      transform: scale(1);
+    }
+
+    .modal-icon {
+      width: 60px;
+      height: 60px;
+      background: #fee2e2;
+      color: var(--primary-color);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 24px;
+    }
+
+    .modal-box h3 {
+      margin-bottom: 10px;
+      font-size: 1.25rem;
+    }
+
+    .modal-box p {
+      color: var(--text-muted);
+      margin-bottom: 25px;
+      font-size: 0.95rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .btn-modal {
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      font-size: 0.95rem;
+      flex: 1;
+    }
+
+    .btn-cancel {
+      background-color: #f1f5f9;
+      color: var(--text-muted);
+    }
+
+    .btn-cancel:hover {
+      background-color: #e2e8f0;
+      color: var(--text-color);
+    }
+
+    .btn-logout {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    .btn-logout:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
     @media (max-width: 992px) {
-      .sidebar { position: fixed; top: var(--header-height); left: auto; right: -260px; transition: right 0.3s ease; z-index: 999; }
-      .sidebar.active { right: 0; }
-      .menu-toggle { display: block; }
-      .logo span { display: none; }
-      .control-grid { grid-template-columns: 1fr; }
+      .sidebar {
+        position: fixed;
+        top: var(--header-height);
+        left: auto;
+        right: -260px;
+        transition: right 0.3s ease;
+        z-index: 999;
+      }
+
+      .sidebar.active {
+        right: 0;
+      }
+
+      .menu-toggle {
+        display: block;
+      }
+
+      .logo span {
+        display: none;
+      }
+
+      .control-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
+
 <body>
   <header>
     <nav class="navbar">
@@ -351,13 +996,18 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
               </tr>
             </thead>
             <tbody>
-              <?php if(empty($jadwal_list)): ?>
+              <?php
+              $limit_tampil = 3;
+              if (empty($jadwal_list)): ?>
                 <tr>
                   <td colspan="5" style="text-align:center; color:#999;">Belum ada jadwal latihan.</td>
                 </tr>
               <?php else: ?>
-                <?php $no=1; foreach($jadwal_list as $j): ?>
-                  <tr>
+                <?php $no = 1;
+                foreach ($jadwal_list as $index => $j):
+                  $row_class = ($index >= $limit_tampil) ? 'hidden-row' : '';
+                ?>
+                  <tr class="<?= $row_class ?>">
                     <td><?= $no++ ?></td>
                     <td><?= date('d F Y', strtotime($j['tanggal'])) ?></td>
                     <td><?= date('H:i', strtotime($j['waktu_mulai'])) ?></td>
@@ -373,6 +1023,12 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
               <?php endif; ?>
             </tbody>
           </table>
+
+          <?php if (count($jadwal_list) > $limit_tampil): ?>
+            <button id="toggleJadwalBtn" class="btn btn-outline" onclick="toggleJadwal()">
+              <i class="fas fa-chevron-down"></i> Tampilkan Semua (<?= count($jadwal_list) - $limit_tampil ?> Lagi)
+            </button>
+          <?php endif; ?>
         </div>
       </section>
 
@@ -390,17 +1046,46 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
         </div>
       </section>
 
-      <section class="calendar-container">
+      <section class="control-box" style="border-left: 4px solid #ef4444;">
+        <h3><i class="fas fa-trash-alt"></i> Bersihkan Data Absensi Lama</h3>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">
+          Hapus data absensi lama untuk menghemat ruang penyimpanan. <strong>Data jadwal latihan tidak akan terhapus</strong>, hanya data kehadiran anggota pada tanggal tersebut beserta foto buktinya.
+        </p>
+        <form method="POST" action="" onsubmit="return confirm('PERHATIAN!\nSemua data absensi SEBELUM tanggal yang dipilih akan dihapus permanen dan tidak bisa dikembalikan.\nLanjutkan?');">
+          <div class="control-grid">
+            <div class="form-group">
+              <label>Hapus Data Sebelum Tanggal</label>
+              <input type="date" name="sebelum_tanggal" class="form-control" required>
+            </div>
+            <div class="form-group" style="align-self: end;">
+              <button type="submit" name="hapus_data_lama" class="btn btn-danger" style="width: 100%;"><i class="fas fa-broom"></i> Hapus Data Permanen</button>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <section class="calendar-container" id="calendarSection">
         <div class="calendar-header">
           <h2><?= date('F Y', strtotime("$year-$month-01")) ?></h2>
           <div class="calendar-nav">
             <?php
-            $prev_month = $month - 1; $prev_year = $year; if ($prev_month == 0) { $prev_month = 12; $prev_year--; }
-            $next_month = $month + 1; $next_year = $year; if ($next_month == 13) { $next_month = 1; $next_year++; }
+            $prev_month = $month - 1;
+            $prev_year = $year;
+            if ($prev_month == 0) {
+              $prev_month = 12;
+              $prev_year--;
+            }
+            $next_month = $month + 1;
+            $next_year = $year;
+            if ($next_month == 13) {
+              $next_month = 1;
+              $next_year++;
+            }
             ?>
-            <a href="?m=<?= $prev_month ?>&y=<?= $prev_year ?>"><i class="fas fa-chevron-left"></i></a>
-            <a href="?m=<?= date('m') ?>&y=<?= date('Y') ?>">Hari Ini</a>
-            <a href="?m=<?= $next_month ?>&y=<?= $next_year ?>"><i class="fas fa-chevron-right"></i></a>
+            <!-- PERBAIKAN: Tambah event.preventDefault() agar tidak lompat ke atas -->
+            <a href="?m=<?= $prev_month ?>&y=<?= $prev_year ?>" onclick="event.preventDefault(); window.location.href=this.href + '#calendarSection';"><i class="fas fa-chevron-left"></i></a>
+            <a href="?m=<?= date('m') ?>&y=<?= date('Y') ?>#calendarSection" onclick="event.preventDefault(); window.location.href=this.href;">Hari Ini</a>
+            <a href="?m=<?= $next_month ?>&y=<?= $next_year ?>#calendarSection" onclick="event.preventDefault(); window.location.href=this.href;"><i class="fas fa-chevron-right"></i></a>
           </div>
         </div>
 
@@ -426,9 +1111,9 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
             $date_val = sprintf("%04d-%02d-%02d", $year, $month, $day);
             $classes = ['calendar-day'];
             $content = "";
-            
+
             if ($date_val == $today) $classes[] = 'today';
-            
+
             $is_scheduled = isset($jadwal_bulan_ini[$date_val]);
             $has_attendance = isset($rekap_harian[$date_val]);
 
@@ -442,7 +1127,7 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
             } else {
               $content = "<div class='day-number'>$day</div>";
             }
-            
+
             echo "<div class='" . implode(' ', $classes) . "' onclick=\"openDateDetail('$date_val')\">";
             echo $content;
             echo "</div>";
@@ -490,107 +1175,128 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
 
   <script>
-    // Memastikan seluruh HTML selesai dimuat sebelum JS jalan
     document.addEventListener("DOMContentLoaded", function() {
-        
-        // 1. INISIALISASI JAM (DIBUNGKUS TRY-CATCH)
-        try {
-            if (typeof flatpickr !== 'undefined') {
-                flatpickr("#waktu_mulai", {
-                    enableTime: true,
-                    noCalendar: true,
-                    dateFormat: "H:i",
-                    time_24hr: true
-                });
 
-                flatpickr("#waktu_selesai", {
-                    enableTime: true,
-                    noCalendar: true,
-                    dateFormat: "H:i",
-                    time_24hr: true
-                });
-            } else {
-                console.warn("Library Flatpickr tidak terdeteksi!");
+      try {
+        if (typeof flatpickr !== 'undefined') {
+          flatpickr("#waktu_mulai", {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i",
+            time_24hr: true
+          });
+
+          flatpickr("#waktu_selesai", {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i",
+            time_24hr: true
+          });
+        }
+      } catch (e) {
+        console.error("Gagal meload dropdown jam:", e);
+      }
+
+      function checkLiveStatus() {
+        fetch('get_status_absen.php')
+          .then(res => {
+            if (!res.ok) throw new Error("Gagal terhubung ke get_status_absen.php");
+            return res.text();
+          })
+          .then(text => {
+            const statusDiv = document.getElementById('liveStatus');
+            try {
+              const data = JSON.parse(text);
+              if (data.is_open) {
+                statusDiv.className = 'status-display status-open';
+                statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> STATUS: DIBUKA';
+              } else {
+                statusDiv.className = 'status-display status-closed';
+                statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> STATUS: DITUTUP (' + (data.message || 'Di luar jadwal') + ')';
+              }
+            } catch (err) {
+              console.error("File get_status_absen.php bermasalah. Balasan server:", text);
+              statusDiv.className = 'status-display status-error';
+              statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ERROR: Cek tab Console untuk detailnya!';
             }
-        } catch (e) {
-            console.error("Gagal meload dropdown jam:", e);
-        }
+          })
+          .catch(err => {
+            console.error("Error Fetch:", err);
+          });
+      }
 
-        // 2. CEK STATUS ABSEN (DIKUATKAN LOGIKANYA)
-        function checkLiveStatus() {
-            fetch('get_status_absen.php')
-                .then(res => {
-                    if (!res.ok) throw new Error("Gagal terhubung ke get_status_absen.php");
-                    return res.text(); // Ambil sebagai teks biasa dulu
-                })
-                .then(text => {
-                    const statusDiv = document.getElementById('liveStatus');
-                    try {
-                        // Coba ubah teks jadi JSON
-                        const data = JSON.parse(text); 
-                        if (data.is_open) {
-                            statusDiv.className = 'status-display status-open';
-                            statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> STATUS: DIBUKA';
-                        } else {
-                            statusDiv.className = 'status-display status-closed';
-                            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> STATUS: DITUTUP (' + (data.message || 'Di luar jadwal') + ')';
-                        }
-                    } catch (err) {
-                        // Kalau gagal jadi JSON (berarti file PHP-nya ada error syntax/database)
-                        console.error("File get_status_absen.php bermasalah. Balasan server:", text);
-                        statusDiv.className = 'status-display status-error';
-                        statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ERROR: Cek tab Console untuk detailnya!';
-                    }
-                })
-                .catch(err => {
-                    console.error("Error Fetch:", err);
-                });
-        }
+      checkLiveStatus();
+      setInterval(checkLiveStatus, 5000);
 
-        checkLiveStatus();
-        setInterval(checkLiveStatus, 5000);
+      const menuToggle = document.querySelector('.menu-toggle');
+      const sidebar = document.querySelector('.sidebar');
+      const profileBtn = document.getElementById('profileBtn');
+      const profileDropdown = document.getElementById('profileDropdown');
 
-        // 3. UI SCRIPTS (Dropdown, Sidebar, Modal)
-        const menuToggle = document.querySelector('.menu-toggle');
-        const sidebar = document.querySelector('.sidebar');
-        const profileBtn = document.getElementById('profileBtn');
-        const profileDropdown = document.getElementById('profileDropdown');
-
-        if(menuToggle) {
-            menuToggle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                sidebar.classList.toggle('active');
-                if(profileDropdown) profileDropdown.classList.remove('active');
-            });
-        }
-        
-        if(profileBtn) {
-            profileBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                profileDropdown.classList.toggle('active');
-                if(sidebar) sidebar.classList.remove('active');
-            });
-        }
-        
-        document.addEventListener('click', (e) => {
-            if (window.innerWidth <= 992) {
-                if (sidebar && !sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active');
-            }
-            if (profileDropdown && profileBtn && !profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
+      if (menuToggle) {
+        menuToggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          sidebar.classList.toggle('active');
+          if (profileDropdown) profileDropdown.classList.remove('active');
         });
-    }); // Akhir DOMContentLoaded
+      }
 
-    // Fungsi Modal Keluar & Foto (Dibiarkan di luar agar bisa dipanggil HTML)
-    function openLogoutModal() { document.getElementById('logoutModal').classList.add('active'); }
-    function closeLogoutModal() { document.getElementById('logoutModal').classList.remove('active'); }
-    function proceedLogout() { window.location.href = "../logout.php"; }
-    
+      if (profileBtn) {
+        profileBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          profileDropdown.classList.toggle('active');
+          if (sidebar) sidebar.classList.remove('active');
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 992) {
+          if (sidebar && !sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active');
+        }
+        if (profileDropdown && profileBtn && !profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
+      });
+    });
+
+    function toggleJadwal() {
+      const hiddenRows = document.querySelectorAll('.hidden-row');
+      const btn = document.getElementById('toggleJadwalBtn');
+      const isHidden = hiddenRows[0].style.display === 'none' || hiddenRows[0].style.display === '';
+
+      hiddenRows.forEach(row => {
+        row.style.display = isHidden ? 'table-row' : 'none';
+      });
+
+      if (isHidden) {
+        btn.innerHTML = '<i class="fas fa-chevron-up"></i> Sembunyikan';
+      } else {
+        btn.innerHTML = '<i class="fas fa-chevron-down"></i> Tampilkan Semua';
+      }
+    }
+
+    function openLogoutModal() {
+      document.getElementById('logoutModal').classList.add('active');
+    }
+
+    function closeLogoutModal() {
+      document.getElementById('logoutModal').classList.remove('active');
+    }
+
+    function proceedLogout() {
+      window.location.href = "../logout.php";
+    }
+
     const logoutModal = document.getElementById('logoutModal');
-    if(logoutModal) logoutModal.addEventListener('click', function(e) { if (e.target === this) closeLogoutModal(); });
+    if (logoutModal) logoutModal.addEventListener('click', function(e) {
+      if (e.target === this) closeLogoutModal();
+    });
 
-    // Calendar Detail Logic
     function openDateDetail(dateStr) {
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const options = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      };
       const dateObj = new Date(dateStr);
       document.getElementById('modalTitle').innerText = "Kehadiran: " + dateObj.toLocaleDateString('id-ID', options);
       fetch(`get_absensi_detail.php?tanggal=${dateStr}`)
@@ -628,18 +1334,26 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
       modal.style.display = 'flex';
     }
 
-    // Export Logic
     function exportRange(type) {
       const start = document.getElementById('exportStart').value;
       const end = document.getElementById('exportEnd').value;
-      if (!start || !end) { alert("Silakan pilih rentang tanggal."); return; }
+      if (!start || !end) {
+        alert("Silakan pilih rentang tanggal.");
+        return;
+      }
 
       fetch(`get_absensi_detail.php?start=${start}&end=${end}`)
         .then(res => res.json())
         .then(data => {
-          if (data.length === 0) { alert("Tidak ada data."); return; }
+          if (data.length === 0) {
+            alert("Tidak ada data.");
+            return;
+          }
           if (type === 'excel') exportToExcel(data, start, end);
-          else if (type === 'pdf') { window.open(`export_pdf.php?start=${start}&end=${end}`, '_blank'); return; }
+          else if (type === 'pdf') {
+            window.open(`export_pdf.php?start=${start}&end=${end}`, '_blank');
+            return;
+          }
         }).catch(err => {
           console.error("Error Export:", err);
           alert("Gagal export data.");
@@ -647,7 +1361,9 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
     }
 
     function exportToExcel(data, start, end) {
-      const ws_data = [["No", "Nama", "Kelas", "Tanggal", "Jam", "Status"]];
+      const ws_data = [
+        ["No", "Nama", "Kelas", "Tanggal", "Jam", "Status"]
+      ];
       data.forEach((item, index) => {
         ws_data.push([index + 1, item.nama, item.kelas || '-', item.tanggal, item.jam, item.status]);
       });
@@ -658,4 +1374,5 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
     }
   </script>
 </body>
+
 </html>

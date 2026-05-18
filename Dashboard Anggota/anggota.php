@@ -67,7 +67,8 @@ try {
       $stat_total_buku = $d_buku['total'] ?? 0;
     }
 
-    $q_daftar = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM users WHERE role='anggota' AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)");
+    // PERBAIKAN: Cek dari tabel 'pendaftaran' yang statusnya PENDING
+    $q_daftar = mysqli_query($koneksi, "SELECT COUNT(*) as total FROM pendaftaran WHERE status='PENDING'");
     if ($q_daftar) {
       $d_daftar = mysqli_fetch_assoc($q_daftar);
       $stat_pendaftaran_baru = $d_daftar['total'] ?? 0;
@@ -395,6 +396,79 @@ try {
     .stat-card:hover {
       transform: translateY(-3px);
     }
+
+    /* HIGHLIGHT UNTUK PENDAFTARAN BARU */
+    .stat-card.highlight-new {
+      animation: pulseGlow 2s infinite;
+      border-color: var(--stat-purple);
+    }
+
+    @keyframes pulseGlow {
+      0% {
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 0 15px 5px rgba(139, 92, 246, 0.2);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+      }
+    }
+
+    @keyframes shake {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      25% {
+        transform: rotate(-10deg);
+      }
+
+      50% {
+        transform: rotate(10deg);
+      }
+
+      75% {
+        transform: rotate(-10deg);
+      }
+
+      100% {
+        transform: rotate(0deg);
+      }
+    }
+
+    .stat-card.highlight-new .stat-icon {
+      animation: shake 1.5s ease-in-out infinite;
+    }
+
+    .notif-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #d90429;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .stat-icon-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* END HIGHLIGHT */
 
     .stat-icon {
       width: 56px;
@@ -1011,6 +1085,158 @@ try {
         padding: 0 20px 25px;
       }
     }
+
+    /* STYLE NOTIFIKASI ABSENSI */
+    .absen-notification {
+      position: fixed;
+      top: 85px;
+      right: -450px;
+      /* Disembunyikan di luar layar kanan */
+      width: 380px;
+      background: linear-gradient(135deg, #d90429, #ef4444);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(217, 4, 41, 0.4);
+      z-index: 1500;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      transition: right 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      /* Efek bounce */
+      animation: pulse-box 2s infinite;
+    }
+
+    .absen-notification.show {
+      right: 20px;
+      /* Muncul ke dalam layar */
+    }
+
+    .absen-notif-icon {
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+
+    .absen-notif-content h4 {
+      font-size: 1.1rem;
+      margin-bottom: 5px;
+    }
+
+    .absen-notif-content p {
+      font-size: 0.85rem;
+      opacity: 0.9;
+      line-height: 1.4;
+    }
+
+    .absen-notif-close {
+      position: absolute;
+      top: 5px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    .absen-notif-close:hover {
+      opacity: 1;
+    }
+
+    /* Banner untuk di dashboard (statik) */
+    .dashboard-absen-banner {
+      background: #fff1f1;
+      border: 2px solid #fecaca;
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      animation: fadeIn 0.5s ease;
+      /* PERBAIKAN MOBILE: Biar item turun otomatis kalai sempit */
+      flex-wrap: wrap;
+    }
+
+    .dashboard-absen-banner i {
+      font-size: 2.5rem;
+      color: var(--primary-color);
+      /* PERBAIKAN MOBILE: Ikon gak nyesain layar */
+      flex-shrink: 0;
+    }
+
+    .dashboard-absen-banner .banner-text {
+      /* PERBAIKAN MOBILE: Biar teks nge-fill sisa ruang ikon */
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .dashboard-absen-banner .banner-text h3 {
+      color: var(--primary-color);
+      font-size: 1.1rem;
+      margin-bottom: 5px;
+    }
+
+    .dashboard-absen-banner .banner-text p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .dashboard-absen-banner .btn {
+      /* PERBAIKAN MOBILE: Biar tombol bisa pindah ke bawah dan gak nyeplak */
+      margin-left: auto;
+      flex-shrink: 0;
+      text-align: center;
+    }
+
+    @keyframes pulse-box {
+      0% {
+        box-shadow: 0 10px 30px rgba(217, 4, 41, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 10px 40px rgba(217, 4, 41, 0.7);
+      }
+
+      100% {
+        box-shadow: 0 10px 30px rgba(217, 4, 41, 0.4);
+      }
+    }
+
+    @media (max-width: 992px) {
+      .absen-notification {
+        width: calc(100% - 40px);
+        left: 20px;
+        right: -100%;
+      }
+
+      .absen-notification.show {
+        right: 0;
+      }
+
+      /* PERBAIKAN MOBILE: Susun ulang banner biar mirip card */
+      .dashboard-absen-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        /* Semua item rata kiri */
+        text-align: left;
+        gap: 10px;
+      }
+
+      .dashboard-absen-banner i {
+        font-size: 2rem;
+        /* Perkecil ikon dikit */
+      }
+
+      .dashboard-absen-banner .btn {
+        margin-left: 0;
+        /* Tombol rata kiri */
+        width: 100%;
+        /* Tombol full width biar gampang ditekan */
+        justify-content: center;
+      }
+    }
   </style>
 </head>
 
@@ -1159,6 +1385,26 @@ try {
 
     <!-- KONTEN UTAMA -->
     <main class="main-content">
+      <!-- BANNER STATIS DI DASHBOARD -->
+      <div id="dashboardBanner" class="dashboard-absen-banner" style="display: none;">
+        <i class="fas fa-exclamation-circle"></i>
+        <div class="banner-text">
+          <h3>Absensi Sedang Dibuka!</h3>
+          <p id="bannerJam">Segera lakukan absensi sebelum waktu berakhir.</p>
+        </div>
+        <a href="absensi.php" class="btn btn-primary"><i class="fas fa-camera"></i> Absen Sekarang</a>
+      </div>
+      <!-- NOTIFIKASI ABSENSI SLIDE-IN -->
+      <div id="absenNotif" class="absen-notification" style="display: none;">
+        <div class="absen-notif-icon">
+          <i class="fas fa-bell fa-shake"></i>
+        </div>
+        <div class="absen-notif-content">
+          <h4>Waktunya Absensi!</h4>
+          <p id="absenNotifText">Jadwal absensi sedang dibuka. Jangan lupa absen ya!</p>
+        </div>
+        <button class="absen-notif-close" onclick="tutupNotif()">&times;</button>
+      </div>
       <div class="dashboard-welcome">
         <h1>Dashboard <?php echo ucfirst($role); ?></h1>
         <p>Halo, <b><?= $nama_user ?></b>! Selamat datang di portal.</p>
@@ -1187,13 +1433,26 @@ try {
               <p>Total Materi</p>
             </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon bg-purple"><i class="fa-solid fa-user-plus"></i></div>
+
+          <!-- KARTU PENDAFTARAN BARU DENGAN HIGHLIGHT -->
+          <div class="stat-card <?php if ($stat_pendaftaran_baru > 0) echo 'highlight-new'; ?>">
+            <div class="stat-icon bg-purple stat-icon-wrapper">
+              <i class="fa-solid fa-user-plus"></i>
+              <?php if ($stat_pendaftaran_baru > 0): ?>
+                <span class="notif-badge"><?= $stat_pendaftaran_baru ?></span>
+              <?php endif; ?>
+            </div>
             <div class="stat-info">
               <h2><?= $stat_pendaftaran_baru ?></h2>
               <p>Pendaftaran Baru</p>
+              <?php if ($stat_pendaftaran_baru > 0): ?>
+                <small style="color: var(--stat-purple); font-weight: 700; font-size: 0.75rem;">
+                  ⚠️ Perlu ditinjau!
+                </small>
+              <?php endif; ?>
             </div>
           </div>
+
         <?php else: ?>
           <div class="stat-card">
             <div class="stat-icon bg-green"><i class="fa-solid fa-check-circle"></i></div>
@@ -1307,7 +1566,7 @@ try {
       const welcomeOverlay = document.getElementById('welcomeOverlay');
       if (welcomeOverlay) {
         let currentStep = 1;
-        const totalSteps = 5; // Diubah jadi 5 step
+        const totalSteps = 5;
 
         setTimeout(() => {
           welcomeOverlay.classList.add('active');
@@ -1401,6 +1660,89 @@ try {
     document.getElementById('logoutModal').addEventListener('click', function(e) {
       if (e.target === this) closeLogoutModal();
     });
+    // --- LOGIC NOTIFIKASI ABSENSI ---
+    let notifSudahMuncul = false; // Biar gak muncul terus menerus
+
+    // Ambil role dari PHP ke JavaScript
+    const userRole = '<?= isset($_SESSION["role"]) ? $_SESSION["role"] : "anggota"; ?>';
+
+    async function cekNotifAbsen() {
+      // ✅ FIX: Jangan tampilkan notif sama sekali kalau role-nya Pengurus
+      if (userRole === 'pengurus') return;
+
+      try {
+        const res = await fetch('get_status_absen.php');
+        const data = await res.json();
+
+        const notifSlide = document.getElementById('absenNotif');
+        const bannerStatik = document.getElementById('dashboardBanner');
+
+        // Kalau absensi dibuka DAN user belum absen
+        if (data.is_open && !data.sudah_absen) {
+
+          // 1. Tampilkan Banner Statik di Dashboard
+          bannerStatik.style.display = 'flex';
+          document.getElementById('bannerJam').innerHTML = `<strong>Waktu:</strong> ${data.jam_mulai} - ${data.jam_selesai} WIB`;
+
+          // 2. Tampilkan Notifikasi Slide-in (hanya sekali saat pertama kali load)
+          if (!notifSudahMuncul) {
+            document.getElementById('absenNotifText').innerText = `Jadwal absensi dibuka (${data.jam_mulai} - ${data.jam_selesai}). Jangan lupa absen!`;
+
+            // Delay 1 detik setelah halaman load baru muncul notif (biar efeknya kerasa)
+            setTimeout(() => {
+              notifSlide.style.display = 'flex';
+              setTimeout(() => notifSlide.classList.add('show'), 100);
+            }, 1000);
+
+            // Auto-hide notif slide setelah 8 detik
+            setTimeout(() => {
+              tutupNotif();
+            }, 8000);
+
+            notifSudahMuncul = true;
+          }
+
+        } else {
+          // Sembunyikan jika sudah absen atau jadwal ditutup
+          bannerStatik.style.display = 'none';
+          tutupNotif();
+        }
+      } catch (err) {
+        console.error("Gagal cek notif absen:", err);
+      }
+    }
+
+    function tutupNotif() {
+      const notifSlide = document.getElementById('absenNotif');
+      notifSlide.classList.remove('show');
+      // Tunggu animasi selesai baru dihilangkan
+      setTimeout(() => {
+        if (!notifSlide.classList.contains('show')) {
+          notifSlide.style.display = 'none';
+        }
+      }, 500);
+    }
+
+    // Panggil saat halaman pertama kali dibuka
+    cekNotifAbsen();
+    // Cek ulang setiap 30 detik (jaga-jaga kalau pengurus baru buka jadwal)
+    setInterval(cekNotifAbsen, 30000);
+
+    function tutupNotif() {
+      const notifSlide = document.getElementById('absenNotif');
+      notifSlide.classList.remove('show');
+      // Tunggu animasi selesai baru dihilangkan
+      setTimeout(() => {
+        if (!notifSlide.classList.contains('show')) {
+          notifSlide.style.display = 'none';
+        }
+      }, 500);
+    }
+
+    // Panggil saat halaman pertama kali dibuka
+    cekNotifAbsen();
+    // Cek ulang setiap 30 detik (jaga-jaga kalau pengurus baru buka jadwal)
+    setInterval(cekNotifAbsen, 30000);
   </script>
 </body>
 
