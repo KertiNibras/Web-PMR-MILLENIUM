@@ -7,73 +7,62 @@ ini_set('display_errors', 0);
 
 header('Content-Type: application/json');
 
-// Pastikan session ID user ada berdasarkan struktur tabel users
+// 1. Cek Sesi
 if (!isset($_SESSION['id'])) {
-    echo json_encode(['status' => 'error', 'message' => 'Sesi login tidak ditemukan. Silakan login ulang.']);
+    echo json_encode(['status' => 'error', 'message' => 'Sesi habis. Silakan login ulang.']);
     exit;
 }
 
- $id_user = $_SESSION['id'];
+$id_user = $_SESSION['id'];
 
- $json = file_get_contents('php://input');
- $data = json_decode($json, true);
-
-if (!isset($data['foto']) || empty($data['foto'])) {
-    echo json_encode(['status' => 'error', 'message' => 'Data foto tidak diterima oleh server.']);
+// 2. Terima File menggunakan $_FILES (BUKAN json_decode)
+if (!isset($_FILES['foto']) || $_FILES['foto']['error'] !== UPLOAD_ERR_OK) {
+    echo json_encode(['status' => 'error', 'message' => 'Gagal menerima file foto dari browser.']);
     exit;
 }
 
- $foto_base64 = $data['foto'];
- $keterangan = isset($data['keterangan']) ? mysqli_real_escape_string($koneksi, $data['keterangan']) : '-';
-
-// Folder simpan foto (SESUAIKAN DENGAN STRUCTURE PROJECT KALIAN)
- $folder = __DIR__ . "/../uploads/absensi/"; 
+// 3. Siapkan Folder
+$folder = __DIR__ . "/../uploads/absensi/"; 
 if (!is_dir($folder)) {
-    mkdir($folder, 0777, true);
+    @mkdir($folder, 0755, true); 
 }
 
- $nama_file = "absen_" . $id_user . "_" . time() . ".png";
- $image_parts = explode(";base64,", $foto_base64);
+$nama_file = "absen_" . $id_user . "_" . time() . ".jpg";
+$file_path = $folder . $nama_file;
 
-if (count($image_parts) < 2) {
-    echo json_encode(['status' => 'error', 'message' => 'Format base64 gambar tidak valid.']);
+// 4. Pindahkan File Fisik ke Folder
+if (!@move_uploaded_file($_FILES['foto']['tmp_name'], $file_path)) {
+    echo json_encode(['status' => 'error', 'message' => 'Gagal menyimpan gambar ke folder server.']);
     exit;
 }
 
- $image_base64 = base64_decode($image_parts[1]);
- $file_path = $folder . $nama_file;
+$tanggal = date('Y-m-d');
+$jam = date('H:i:s');
+$status = 'hadir';
+$keterangan = '-'; 
 
-if (!file_put_contents($file_path, $image_base64)) {
-    echo json_encode(['status' => 'error', 'message' => 'Gagal menyimpan gambar ke server. Cek permission folder.']);
-    exit;
-}
-
- $tanggal = date('Y-m-d');
- $jam = date('H:i:s');
- $status = 'hadir';
-
-// Cek duplikat absensi
- $cek_query = "SELECT id FROM absensi WHERE user_id = ? AND tanggal = ?";
- $stmt_cek = mysqli_prepare($koneksi, $cek_query);
+// 5. Cek Duplikat
+$cek_query = "SELECT id FROM absensi WHERE user_id = ? AND tanggal = ?";
+$stmt_cek = mysqli_prepare($koneksi, $cek_query);
 mysqli_stmt_bind_param($stmt_cek, "is", $id_user, $tanggal);
 mysqli_stmt_execute($stmt_cek);
 mysqli_stmt_store_result($stmt_cek);
 
 if (mysqli_stmt_num_rows($stmt_cek) > 0) {
-    unlink($file_path); 
-    echo json_encode(['status' => 'error', 'message' => 'Anda sudah melakukan absensi hari ini.']);
+    @unlink($file_path); 
+    echo json_encode(['status' => 'error', 'message' => 'Anda sudah absensi hari ini.']);
     exit;
 }
 
-// Insert ke database
- $query = "INSERT INTO absensi (user_id, tanggal, jam, foto, status, keterangan) VALUES (?, ?, ?, ?, ?, ?)";
- $stmt = mysqli_prepare($koneksi, $query);
+// 6. Simpan ke Database
+$query = "INSERT INTO absensi (user_id, tanggal, jam, foto, status, keterangan) VALUES (?, ?, ?, ?, ?, ?)";
+$stmt = mysqli_prepare($koneksi, $query);
 mysqli_stmt_bind_param($stmt, "isssss", $id_user, $tanggal, $jam, $nama_file, $status, $keterangan);
 
 if (mysqli_stmt_execute($stmt)) {
-    echo json_encode(['status' => 'success', 'message' => 'Absensi berhasil dicatat!']);
+    echo json_encode(['status' => 'success', 'message' => 'Absensi sukses!']);
 } else {
-    unlink($file_path); 
-    echo json_encode(['status' => 'error', 'message' => 'Gagal menyimpan ke database: ' . mysqli_error($koneksi)]);
+    @unlink($file_path); 
+    echo json_encode(['status' => 'error', 'message' => 'Gagal Database: ' . mysqli_error($koneksi)]);
 }
 ?>

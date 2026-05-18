@@ -115,7 +115,11 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kelola Absensi | PMR Millenium</title>
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+  
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
   <style>
     :root {
@@ -184,6 +188,7 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
     .status-display { padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-top: 10px; font-size: 0.9rem; }
     .status-open { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
     .status-closed { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .status-error { background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; } /* Tambahan style error */
 
     .calendar-container { background: white; border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 20px; border: 1px solid var(--border-color); }
     .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
@@ -208,7 +213,6 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
 
     .attendance-count { font-size: 0.8rem; background: rgba(0, 0, 0, 0.05); color: #166534; padding: 4px 8px; border-radius: 4px; margin-top: 5px; text-align: center; font-weight: 600; }
 
-    /* Tabel Jadwal */
     .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     .data-table th, .data-table td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; vertical-align: middle; }
     .data-table th { background-color: #f8f9fa; font-weight: 600; }
@@ -411,7 +415,7 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
 
           <?php
           $first_day = date('w', strtotime("$year-$month-01"));
-          $days_in_month = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+          $days_in_month = date('t', strtotime(sprintf("%04d-%02d-01", $year, $month)));
           $today = date('Y-m-d');
 
           for ($i = 0; $i < $first_day; $i++) {
@@ -483,53 +487,106 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
 
   <script>
-    // UI Scripts
-    const menuToggle = document.querySelector('.menu-toggle');
-    const sidebar = document.querySelector('.sidebar');
-    const profileBtn = document.getElementById('profileBtn');
-    const profileDropdown = document.getElementById('profileDropdown');
+    // Memastikan seluruh HTML selesai dimuat sebelum JS jalan
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        // 1. INISIALISASI JAM (DIBUNGKUS TRY-CATCH)
+        try {
+            if (typeof flatpickr !== 'undefined') {
+                flatpickr("#waktu_mulai", {
+                    enableTime: true,
+                    noCalendar: true,
+                    dateFormat: "H:i",
+                    time_24hr: true
+                });
 
-    menuToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      sidebar.classList.toggle('active');
-      profileDropdown.classList.remove('active');
-    });
-    profileBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      profileDropdown.classList.toggle('active');
-      sidebar.classList.remove('active');
-    });
-    document.addEventListener('click', (e) => {
-      if (window.innerWidth <= 992) {
-        if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active');
-      }
-      if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
-    });
+                flatpickr("#waktu_selesai", {
+                    enableTime: true,
+                    noCalendar: true,
+                    dateFormat: "H:i",
+                    time_24hr: true
+                });
+            } else {
+                console.warn("Library Flatpickr tidak terdeteksi!");
+            }
+        } catch (e) {
+            console.error("Gagal meload dropdown jam:", e);
+        }
 
+        // 2. CEK STATUS ABSEN (DIKUATKAN LOGIKANYA)
+        function checkLiveStatus() {
+            fetch('get_status_absen.php')
+                .then(res => {
+                    if (!res.ok) throw new Error("Gagal terhubung ke get_status_absen.php");
+                    return res.text(); // Ambil sebagai teks biasa dulu
+                })
+                .then(text => {
+                    const statusDiv = document.getElementById('liveStatus');
+                    try {
+                        // Coba ubah teks jadi JSON
+                        const data = JSON.parse(text); 
+                        if (data.is_open) {
+                            statusDiv.className = 'status-display status-open';
+                            statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> STATUS: DIBUKA';
+                        } else {
+                            statusDiv.className = 'status-display status-closed';
+                            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> STATUS: DITUTUP (' + (data.message || 'Di luar jadwal') + ')';
+                        }
+                    } catch (err) {
+                        // Kalau gagal jadi JSON (berarti file PHP-nya ada error syntax/database)
+                        console.error("File get_status_absen.php bermasalah. Balasan server:", text);
+                        statusDiv.className = 'status-display status-error';
+                        statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ERROR: Cek tab Console untuk detailnya!';
+                    }
+                })
+                .catch(err => {
+                    console.error("Error Fetch:", err);
+                });
+        }
+
+        checkLiveStatus();
+        setInterval(checkLiveStatus, 5000);
+
+        // 3. UI SCRIPTS (Dropdown, Sidebar, Modal)
+        const menuToggle = document.querySelector('.menu-toggle');
+        const sidebar = document.querySelector('.sidebar');
+        const profileBtn = document.getElementById('profileBtn');
+        const profileDropdown = document.getElementById('profileDropdown');
+
+        if(menuToggle) {
+            menuToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                sidebar.classList.toggle('active');
+                if(profileDropdown) profileDropdown.classList.remove('active');
+            });
+        }
+        
+        if(profileBtn) {
+            profileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                profileDropdown.classList.toggle('active');
+                if(sidebar) sidebar.classList.remove('active');
+            });
+        }
+        
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 992) {
+                if (sidebar && !sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('active');
+            }
+            if (profileDropdown && profileBtn && !profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
+        });
+    }); // Akhir DOMContentLoaded
+
+    // Fungsi Modal Keluar & Foto (Dibiarkan di luar agar bisa dipanggil HTML)
     function openLogoutModal() { document.getElementById('logoutModal').classList.add('active'); }
     function closeLogoutModal() { document.getElementById('logoutModal').classList.remove('active'); }
     function proceedLogout() { window.location.href = "../logout.php"; }
-    document.getElementById('logoutModal').addEventListener('click', function(e) { if (e.target === this) closeLogoutModal(); });
-
-    // Live Status Check
-    function checkLiveStatus() {
-      fetch('get_status_absen.php')
-        .then(res => res.json())
-        .then(data => {
-          const statusDiv = document.getElementById('liveStatus');
-          if (data.is_open) {
-            statusDiv.className = 'status-display status-open';
-            statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> STATUS: DIBUKA';
-          } else {
-            statusDiv.className = 'status-display status-closed';
-            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> STATUS: DITUTUP (' + (data.message || 'Di luar jadwal') + ')';
-          }
-        }).catch(err => console.error("Status Error:", err));
-    }
-    checkLiveStatus();
-    setInterval(checkLiveStatus, 5000);
+    
+    const logoutModal = document.getElementById('logoutModal');
+    if(logoutModal) logoutModal.addEventListener('click', function(e) { if (e.target === this) closeLogoutModal(); });
 
     // Calendar Detail Logic
     function openDateDetail(dateStr) {
@@ -560,7 +617,7 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
           }
           document.getElementById('detailModal').style.display = 'flex';
         }).catch(err => {
-          console.error("Error:", err);
+          console.error("Error Detail:", err);
           alert("Gagal memuat data detail.");
         });
     }
@@ -584,8 +641,8 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
           if (type === 'excel') exportToExcel(data, start, end);
           else if (type === 'pdf') { window.open(`export_pdf.php?start=${start}&end=${end}`, '_blank'); return; }
         }).catch(err => {
-          console.error("Error:", err);
-          alert("Gagal export.");
+          console.error("Error Export:", err);
+          alert("Gagal export data.");
         });
     }
 
@@ -600,23 +657,5 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
       XLSX.writeFile(wb, `Rekap_Absensi_${start}_sd_${end}.xlsx`);
     }
   </script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
-<script>
-flatpickr("#waktu_mulai", {
-    enableTime: true,
-    noCalendar: true,
-    dateFormat: "H:i",
-    time_24hr: true
-});
-
-flatpickr("#waktu_selesai", {
-    enableTime: true,
-    noCalendar: true,
-    dateFormat: "H:i",
-    time_24hr: true
-});
-</script>
 </body>
 </html>

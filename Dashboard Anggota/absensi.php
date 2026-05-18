@@ -1203,7 +1203,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
           <div class="calendar-day-name">Sab</div>
           <?php
           $first_day = date('w', strtotime("$year-$month-01"));
-          $days_in_month = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+          $days_in_month = date('t', strtotime(sprintf("%04d-%02d-01", $year, $month)));
           $today = date('Y-m-d');
           for ($i = 0; $i < $first_day; $i++) echo "<div class='calendar-day empty'></div>";
           for ($day = 1; $day <= $days_in_month; $day++) {
@@ -1633,7 +1633,8 @@ function renderStatusAlreadyAttended(data) {
       }
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       if (useFrontCamera) ctx.setTransform(1, 0, 0, 1, 0, 0);
-      currentImageData = canvas.toDataURL('image/png');
+      // Ubah jadi JPEG dan kompres kualitasnya jadi 60% (0.6)
+currentImageData = canvas.toDataURL('image/jpeg', 0.6);
       capturedImage.src = currentImageData;
       video.style.display = 'none';
       overlay.style.display = 'none';
@@ -1649,6 +1650,18 @@ function renderStatusAlreadyAttended(data) {
       updateStatusBadge('found', 'Foto siap dikirim', 'fas fa-image');
     };
 
+    // Fungsi ajaib untuk mengubah base64 menjadi File betulan
+    function dataURItoBlob(dataURI) {
+      const byteString = atob(dataURI.split(',')[1]);
+      const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      return new Blob([ab], { type: mimeString });
+    }
+
     btnSubmit.onclick = () => {
       if (!currentImageData) {
         alert("Ambil foto dulu!");
@@ -1657,31 +1670,42 @@ function renderStatusAlreadyAttended(data) {
       btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
       btnSubmit.disabled = true;
 
+      // 1. Ubah teks gambar jadi File (Blob)
+      const imageBlob = dataURItoBlob(currentImageData);
+
+      // 2. Bungkus ke dalam FormData (Ini yang bikin server nggak curiga!)
+      const formData = new FormData();
+      formData.append('foto', imageBlob, 'absen.jpg');
+      formData.append('lat', currentPosition?.coords.latitude || '');
+      formData.append('lng', currentPosition?.coords.longitude || '');
+
+      // 3. Kirim tanpa JSON
       fetch('proses_absensi.php', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            foto: currentImageData,
-            lat: currentPosition?.coords.latitude,
-            lng: currentPosition?.coords.longitude
-          })
+          body: formData // <-- Langsung kirim Form-nya
         })
-        .then(res => res.json())
+        .then(async res => {
+          const text = await res.text();
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            console.error("ERROR PHP:", text);
+            throw new Error(text);
+          }
+        })
         .then(data => {
           if (data.status === 'success') {
             document.getElementById('cameraControls').style.display = 'none';
             document.getElementById('successMessage').style.display = 'block';
           } else {
-            alert('Error: ' + data.message);
+            alert('Error Sistem: ' + data.message);
             btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Absensi';
             btnSubmit.disabled = false;
           }
         })
         .catch(err => {
-          console.error(err);
-          alert('Gagal mengirim data.');
+          console.error("Detail Error:", err);
+          alert('Gagal mengirim! Cek Console (F12) untuk detailnya.');
           btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Absensi';
           btnSubmit.disabled = false;
         });

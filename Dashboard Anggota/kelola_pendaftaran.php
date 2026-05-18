@@ -536,7 +536,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                           
                           // 4. Siapkan Pesan (Diterima - Dengan Emoji & Format)
                           // 1. Ambil domain dan sesuaikan dengan nama folder utama kamu
-                          $domain = "http://" . $_SERVER['HTTP_HOST'] . "/web-pmr-millenium"; 
+                          $domain = "http://" . $_SERVER['HTTP_HOST'] . "/Web-PMR-MILLENIUM"; 
                           
                           // 2. Arahkan ke folder "Dashboard Anggota" tempat file cetak kartu berada
                           // Catatan: %20 adalah kode URL untuk spasi pada nama folder "Dashboard Anggota"
