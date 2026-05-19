@@ -39,6 +39,18 @@ $id_user = $_SESSION['id'];
 $role = isset($_SESSION['role']) ? $_SESSION['role'] : 'anggota';
 $nama_user = htmlspecialchars($_SESSION['nama']);
 
+// ========================================================
+// BLOKIR AKSES PENGURUS KE HALAMAN ANGGOTA
+// ========================================================
+if (strtolower($role) === 'pengurus') {
+  echo '<script>
+          alert("Akses Ditolak! Halaman ini khusus untuk Anggota."); 
+          window.location.href = "../Halaman Utama/index.php"; 
+        </script>';
+  exit; // Penting: Jangan hapus exit agar script di bawahnya berhenti dieksekusi
+}
+// ========================================================
+
 $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
 $foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
 if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_session)) {

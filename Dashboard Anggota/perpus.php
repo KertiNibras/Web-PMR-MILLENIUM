@@ -12,6 +12,18 @@ if (!isset($_SESSION['nama'])) {
  $role = isset($_SESSION['role']) ? $_SESSION['role'] : 'anggota';
  $nama_user = htmlspecialchars($_SESSION['nama']);
 
+// ========================================================
+// BLOKIR AKSES PENGURUS KE HALAMAN ANGGOTA
+// ========================================================
+if (strtolower($role) === 'pengurus') {
+  echo '<script>
+          alert("Akses Ditolak! Halaman ini khusus untuk Anggota."); 
+          window.location.href = "../Halaman Utama/index.php"; // Arahkan ke dashboard pengurus kalau ada
+        </script>';
+  exit; 
+}
+// ========================================================
+
 // Logika Foto Profil
  $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
  $foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
