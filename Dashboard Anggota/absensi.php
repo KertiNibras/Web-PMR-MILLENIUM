@@ -82,6 +82,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     :root {
       --primary-color: #d90429;
@@ -480,6 +481,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       box-shadow: none;
     }
 
+        /* ==================== RAPIHAN KALENDER MOBILE ANGGOTA ==================== */
     .calendar-container {
       background: white;
       border-radius: var(--radius);
@@ -495,15 +497,19 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       margin-bottom: 20px;
       padding-bottom: 15px;
       border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
     .calendar-header h2 {
       font-size: 1.2rem;
+      margin: 0;
     }
 
     .calendar-nav {
       display: flex;
-      gap: 10px;
+      gap: 8px;
+      align-items: center;
     }
 
     .calendar-nav a {
@@ -511,12 +517,40 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       background: var(--bg-color);
       border-radius: 6px;
       font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    /* Wrapper untuk scroll horizontal di mobile */
+    .calendar-scroll-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 15px;
+      -webkit-overflow-scrolling: touch; /* Smooth scroll di iOS */
+      scroll-snap-type: x mandatory;
+    }
+
+    /* Bikin Scrollbar kelihatan jelas biar user tau bisa digeser */
+    .calendar-scroll-wrapper::-webkit-scrollbar {
+      height: 8px;
+    }
+    .calendar-scroll-wrapper::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    .calendar-scroll-wrapper::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+    .calendar-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
     }
 
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 5px;
+      min-width: 600px; /* Paksa ukuran ini agar bisa di-scroll di layar < 600px */
+      scroll-snap-align: start mandatory;
     }
 
     .calendar-day-name {
@@ -524,31 +558,20 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       font-weight: 600;
       color: var(--text-muted);
       font-size: 0.85rem;
-      padding: 10px;
+      padding: 10px 5px;
     }
 
     .calendar-day {
       border: 1px solid var(--border-color);
       border-radius: 8px;
-      min-height: 80px;
-      padding: 8px;
+      min-height: 70px;
+      padding: 6px;
       position: relative;
       background: #fff;
       transition: 0.2s;
-    }
-
-    .calendar-day:hover {
-      background: #f8fafc;
-    }
-
-    .calendar-day.empty {
-      background: #f8f9fa;
-      border-color: transparent;
-    }
-
-    .calendar-day.today {
-      border-color: var(--primary-color);
-      border-width: 2px;
+      display: flex;
+      flex-direction: column;
+      scroll-snap-align: start;
     }
 
     /* PERBAIKAN: Buat ikon jadwal bisa diklik */
@@ -559,12 +582,24 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     .calendar-day.clickable:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      background: #f8fafc;
+    }
+
+    .calendar-day.empty {
+      background: #f8f9fa;
+      border-color: transparent;
+      cursor: default;
+    }
+
+    .calendar-day.today {
+      border-color: var(--primary-color);
+      border-width: 2px;
     }
 
     .day-number {
       font-weight: 600;
       color: var(--text-muted);
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       margin-bottom: 5px;
     }
 
@@ -577,7 +612,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       align-items: center;
       justify-content: center;
       height: calc(100% - 25px);
-      font-size: 2rem;
+      font-size: 1.8rem; /* Sesuaikan agar muat di kotak lebih kecil */
     }
 
     .attendance-mark.hadir {
@@ -586,7 +621,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
 
     .attendance-mark.hadir i {
       background: #dcfce7;
-      padding: 10px;
+      padding: 8px;
       border-radius: 50%;
     }
 
@@ -600,14 +635,36 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
 
     .attendance-mark.scheduled i {
       background: #ecfeff;
-      padding: 10px;
+      padding: 8px;
       border-radius: 50%;
     }
 
     .attendance-mark.missed i {
       background: #fee2e2;
-      padding: 10px;
+      padding: 8px;
       border-radius: 50%;
+    }
+
+    /* Responsive Mobile */
+    @media (max-width: 768px) {
+      .calendar-grid {
+        min-width: 500px; 
+      }
+      .calendar-day {
+        min-height: 60px;
+        padding: 4px;
+      }
+      .day-number {
+        font-size: 0.8rem;
+      }
+      .attendance-mark {
+        font-size: 1.5rem;
+      }
+      .attendance-mark.hadir i,
+      .attendance-mark.scheduled i,
+      .attendance-mark.missed i {
+        padding: 6px;
+      }
     }
 
     /* MODAL JADWAL DETAIL */
@@ -995,108 +1052,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       border: 1px solid rgba(245, 158, 11, 0.3);
     }
 
-    /* MODAL LOGOUT */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(4px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-    }
-
-    .modal-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .modal-box {
-      background: white;
-      padding: 30px;
-      border-radius: 16px;
-      text-align: center;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-      transform: scale(0.9);
-      transition: transform 0.3s ease;
-      border: 1px solid var(--border-color);
-    }
-
-    .modal-overlay.active .modal-box {
-      transform: scale(1);
-    }
-
-    .modal-icon {
-      width: 60px;
-      height: 60px;
-      background: #fee2e2;
-      color: var(--primary-color);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 20px;
-      font-size: 24px;
-    }
-
-    .modal-box h3 {
-      margin-bottom: 10px;
-      font-size: 1.25rem;
-      color: var(--text-color);
-    }
-
-    .modal-box p {
-      color: var(--text-muted);
-      margin-bottom: 25px;
-      font-size: 0.95rem;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    .btn-modal {
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s ease;
-      font-size: 0.95rem;
-      flex: 1;
-    }
-
-    .btn-cancel {
-      background-color: #f1f5f9;
-      color: var(--text-muted);
-    }
-
-    .btn-cancel:hover {
-      background-color: #e2e8f0;
-      color: var(--text-color);
-    }
-
-    .btn-logout {
-      background-color: var(--primary-color);
-      color: white;
-    }
-
-    .btn-logout:hover {
-      background-color: var(--primary-hover);
-      transform: translateY(-2px);
-    }
-
+    
     @keyframes fadeIn {
       from {
         opacity: 0;
@@ -1169,7 +1125,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
 </head>
 
 <body>
-  <!-- Header, Navbar, Modal Logout (Sama persis) -->
+  <!-- Header, Navbar, (Sama persis) -->
   <header>
     <nav class="navbar">
       <div class="nav-left">
@@ -1193,18 +1149,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
     </nav>
   </header>
 
-  <div class="modal-overlay" id="logoutModal">
-    <div class="modal-box">
-      <div class="modal-icon"><i class="fa-solid fa-right-from-bracket"></i></div>
-      <h3>Konfirmasi Keluar</h3>
-      <p>Apakah Anda yakin ingin keluar dari akun?</p>
-      <div class="modal-actions">
-        <button class="btn-modal btn-cancel" onclick="closeLogoutModal()">Batal</button>
-        <button class="btn-modal btn-logout" onclick="proceedLogout()">Ya, Keluar</button>
-      </div>
-    </div>
-  </div>
-
+  
   <!-- MODAL JADWAL DETAIL (BARU) -->
   <div class="modal-jadwal" id="modalJadwal" onclick="if(event.target===this) this.style.display='none'">
     <div class="modal-jadwal-content">
@@ -1223,7 +1168,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
         <li><a href="anggota.php"><i class="fa-solid fa-house"></i> Dashboard</a></li>
         <li class="active"><a href="absensi.php"><i class="fa-solid fa-calendar-check"></i>Absensi</a></li>
         <li><a href="perpus.php"><i class="fa-solid fa-book"></i>Materi</a></li>
-        <li style="margin-top: 20px; border-top: 1px solid #eee;"><a href="javascript:void(0)" onclick="openLogoutModal()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
+        <li style="margin-top: 20px; border-top: 1px solid #eee;"><a href="javascript:void(0)" onclick="confirmLogout()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
         <li><a href="../Halaman Utama/index.php"><i class="fa-solid fa-globe"></i>Halaman Utama</a></li>
       </ul>
     </aside>
@@ -1257,8 +1202,7 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
         <div class="status-icon"><i class="fas fa-spinner fa-spin"></i></div>
         <div class="status-title">Memeriksa status absensi...</div>
       </section>
-
-      <section class="calendar-container" id="calendarSection">
+<section class="calendar-container" id="calendarSection">
         <div class="calendar-header">
           <h2><?= date('F Y', strtotime("$year-$month-01")) ?></h2>
           <div class="calendar-nav">
@@ -1281,46 +1225,51 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
             <a href="?m=<?= $next_month ?>&y=<?= $next_year ?>#calendarSection" onclick="event.preventDefault(); window.location.href=this.href;"><i class="fas fa-chevron-right"></i></a>
           </div>
         </div>
-        <div class="calendar-grid">
-          <div class="calendar-day-name">Min</div>
-          <div class="calendar-day-name">Sen</div>
-          <div class="calendar-day-name">Sel</div>
-          <div class="calendar-day-name">Rab</div>
-          <div class="calendar-day-name">Kam</div>
-          <div class="calendar-day-name">Jum</div>
-          <div class="calendar-day-name">Sab</div>
-          <?php
-          $first_day = date('w', strtotime("$year-$month-01"));
-          $days_in_month = date('t', strtotime(sprintf("%04d-%02d-01", $year, $month)));
-          $today = date('Y-m-d');
 
-          // Siapkan data jadwal untuk JavaScript
-          $json_jadwal = json_encode($jadwal_bulan_ini);
+        <!-- Wrapper Scroll Baru -->
+        <div class="calendar-scroll-wrapper">
+          <div class="calendar-grid">
+            <div class="calendar-day-name">Min</div>
+            <div class="calendar-day-name">Sen</div>
+            <div class="calendar-day-name">Sel</div>
+            <div class="calendar-day-name">Rab</div>
+            <div class="calendar-day-name">Kam</div>
+            <div class="calendar-day-name">Jum</div>
+            <div class="calendar-day-name">Sab</div>
+            <?php
+            $first_day = date('w', strtotime("$year-$month-01"));
+            $days_in_month = date('t', strtotime(sprintf("%04d-%02d-01", $year, $month)));
+            $today = date('Y-m-d');
 
-          for ($i = 0; $i < $first_day; $i++) echo "<div class='calendar-day empty'></div>";
-          for ($day = 1; $day <= $days_in_month; $day++) {
-            $date_val = sprintf("%04d-%02d-%02d", $year, $month, $day);
-            $is_today = ($date_val == $today) ? 'today' : '';
-            $is_scheduled = isset($jadwal_bulan_ini[$date_val]);
-            $has_attended = isset($riwayat_absen[$date_val]);
+            // Siapkan data jadwal untuk JavaScript
+            $json_jadwal = json_encode($jadwal_bulan_ini);
 
-            // Tambahin class "clickable" kalau dia jadwal
-            $clickable_class = $is_scheduled ? 'clickable' : '';
-            // Tambahin fungsi onclick kalau dia jadwal
-            $click_event = $is_scheduled ? "onclick=\"showJadwalDetail('$date_val')\"" : '';
+            for ($i = 0; $i < $first_day; $i++) echo "<div class='calendar-day empty'></div>";
+            for ($day = 1; $day <= $days_in_month; $day++) {
+              $date_val = sprintf("%04d-%02d-%02d", $year, $month, $day);
+              $is_today = ($date_val == $today) ? 'today' : '';
+              $is_scheduled = isset($jadwal_bulan_ini[$date_val]);
+              $has_attended = isset($riwayat_absen[$date_val]);
 
-            echo "<div class='calendar-day $is_today $clickable_class' $click_event><div class='day-number'>$day</div>";
+              // Tambahin class "clickable" kalau dia jadwal
+              $clickable_class = $is_scheduled ? 'clickable' : '';
+              // Tambahin fungsi onclick kalau dia jadwal
+              $click_event = $is_scheduled ? "onclick=\"showJadwalDetail('$date_val')\"" : '';
 
-            if ($has_attended) {
-              echo "<div class='attendance-mark hadir' title='Hadir'><i class='fas fa-check-circle'></i></div>";
-            } elseif ($is_scheduled && $date_val < $today) {
-              echo "<div class='attendance-mark missed' title='Tidak Hadir'><i class='fas fa-times-circle'></i></div>";
-            } elseif ($is_scheduled && $date_val >= $today) {
-              echo "<div class='attendance-mark scheduled' title='Klik untuk lihat jadwal'><i class='fas fa-calendar-check'></i></div>";
+              echo "<div class='calendar-day $is_today $clickable_class' $click_event><div class='day-number'>$day</div>";
+
+              if ($has_attended) {
+                echo "<div class='attendance-mark hadir' title='Hadir'><i class='fas fa-check-circle'></i></div>";
+              } elseif ($is_scheduled && $date_val < $today) {
+                echo "<div class='attendance-mark missed' title='Tidak Hadir'><i class='fas fa-times-circle'></i></div>";
+              } elseif ($is_scheduled && $date_val >= $today) {
+                echo "<div class='attendance-mark scheduled' title='Klik untuk lihat jadwal'><i class='fas fa-calendar-check'></i></div>";
+              }
+              echo "</div>";
             }
-            echo "</div>";
-          }
-          ?>
+            ?>
+          
+      
         </div>
       </section>
     </main>
@@ -1787,20 +1736,22 @@ while ($row = mysqli_fetch_assoc($query_absen)) {
       cornerBrackets.forEach(b => b.classList.remove('active'));
     }
 
-    function openLogoutModal() {
-      document.getElementById('logoutModal').classList.add('active');
+    // --- LOGOUT ---
+    function confirmLogout() {
+      Swal.fire({
+        title: 'Keluar dari akun?',
+        text: 'Anda akan dikembalikan ke halaman login.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#d90429',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Log Out!',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) window.location.href = "../logout.php";
+      });
     }
 
-    function closeLogoutModal() {
-      document.getElementById('logoutModal').classList.remove('active');
-    }
-
-    function proceedLogout() {
-      window.location.href = "../logout.php";
-    }
-    document.getElementById('logoutModal').addEventListener('click', function(e) {
-      if (e.target === this) closeLogoutModal();
-    });
   </script>
 </body>
 

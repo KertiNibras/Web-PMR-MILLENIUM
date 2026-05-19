@@ -29,6 +29,8 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
   <title>Perpustakaan Digital | PMR Millenium</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <style>
     /* --- CSS VARIABLES --- */
     :root {
@@ -446,60 +448,6 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
       transform: translateY(-1px);
     }
 
-    /* --- STYLE MODAL LOGOUT --- */
-    .btn-modal {
-      padding: 13px;
-      border-radius: 10px;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s ease;
-      font-size: 1rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .btn-cancel {
-      background-color: #f1f5f9;
-      color: var(--text-muted);
-    }
-    .btn-cancel:hover {
-      background-color: #e2e8f0;
-      color: var(--text-color);
-    }
-
-    .btn-logout {
-      background-color: var(--primary-color);
-      color: white;
-    }
-    .btn-logout:hover {
-      background-color: var(--primary-hover);
-      transform: translateY(-2px);
-    }
-
-    .modal-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
-      display: flex; justify-content: center; align-items: center; z-index: 9999;
-      opacity: 0; visibility: hidden; transition: all 0.3s ease;
-    }
-    .modal-overlay.active { opacity: 1; visibility: visible; }
-    
-    .modal-box {
-      background: white; padding: 30px; border-radius: 16px; text-align: center;
-      width: 90%; max-width: 400px; transform: scale(0.9); transition: transform 0.3s ease;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-    .modal-overlay.active .modal-box { transform: scale(1); }
-
-    .modal-icon {
-      width: 70px; height: 70px; background: #fee2e2; color: var(--primary-color);
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 20px; font-size: 2rem;
-    }
-    .modal-box h3 { margin-bottom: 10px; color: var(--text-color); }
-    .modal-box p { color: var(--text-muted); margin-bottom: 25px; font-size: 0.95rem; }
-    .modal-actions { display: flex; gap: 15px; justify-content: center; }
-
     /* --- RESPONSIVE --- */
     @media (max-width: 992px) {
       .main-content {
@@ -588,20 +536,7 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
     </nav>
   </header>
 
-  <!-- MODAL LOGOUT -->
-  <div class="modal-overlay" id="logoutModal">
-    <div class="modal-box">
-      <div class="modal-icon">
-        <i class="fa-solid fa-right-from-bracket"></i>
-      </div>
-      <h3>Konfirmasi Keluar</h3>
-      <p>Apakah Anda yakin ingin keluar dari akun?</p>
-      <div class="modal-actions">
-        <button class="btn-modal btn-cancel" onclick="closeLogoutModal()">Batal</button>
-        <button class="btn-modal btn-logout" onclick="proceedLogout()">Ya, Keluar</button>
-      </div>
-    </div>
-  </div>
+  
 
   <div class="dashboard-container">
     <!-- SIDEBAR -->
@@ -611,7 +546,7 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
         <li><a href="absensi.php"><i class="fa-solid fa-calendar-check"></i>Absensi</a></li>
         <li class="active"><a href="perpus.php"><i class="fa-solid fa-book"></i>Materi</a></li>
         <li style="margin-top: 20px; border-top: 1px solid #eee;">
-            <a href="javascript:void(0)" onclick="openLogoutModal()">
+            <a href="javascript:void(0)" onclick="confirmLogout()">
               <i class="fa-solid fa-right-from-bracket"></i> Log Out
             </a>
           </li>
@@ -784,28 +719,22 @@ if (!empty($foto_session) && file_exists("../uploads/foto_profil/" . $foto_sessi
 
       renderMaterials(filtered);
     }
-
-    // --- FUNGSI MODAL LOGOUT ---
-    function openLogoutModal() {
-      const modal = document.getElementById('logoutModal');
-      modal.classList.add('active');
-    }
-
-    function closeLogoutModal() {
-      const modal = document.getElementById('logoutModal');
-      modal.classList.remove('active');
-    }
-
-    function proceedLogout() {
-      window.location.href = "../logout.php";
+// --- LOGOUT ---
+    function confirmLogout() {
+      Swal.fire({
+        title: 'Keluar dari akun?',
+        text: 'Anda akan dikembalikan ke halaman login.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#d90429',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Log Out!',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) window.location.href = "../logout.php";
+      });
     }
     
-    // Tutup modal jika klik overlay
-    document.getElementById('logoutModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeLogoutModal();
-        }
-    });
   </script>
 </body>
 

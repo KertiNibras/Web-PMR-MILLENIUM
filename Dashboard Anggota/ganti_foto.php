@@ -42,23 +42,26 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete_photo') {
 }
 
 // ========================================================
-// PROSES 2: UPLOAD & CROP (AJAX)
+// PROSES 2: UPLOAD & CROP (AJAX) - REVAMP PAKAI $_FILES
 // ========================================================
-if (isset($_POST['image_base64'])) {
-    $image = $_POST['image_base64'];
-    $image = str_replace('data:image/jpeg;base64,', '', $image);
-    $image = str_replace('data:image/png;base64,', '', $image);
-    $image = str_replace(' ', '+', $image);
-    $data = base64_decode($image);
+if (isset($_FILES['cropped_image'])) {
+    $file = $_FILES['cropped_image'];
+    
+    // Cek jika ada error saat upload
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        echo json_encode(['status' => 'error', 'message' => 'Gagal mengupload file. Kode Error: ' . $file['error']]);
+        exit;
+    }
 
-   
-$new_file_name = "user_" . $id_user . ".jpg"; 
-$upload_dir = __DIR__ . "/../uploads/foto_profil/";
-$destination = $upload_dir . $new_file_name;
+    $new_file_name = "user_" . $id_user . ".jpg"; 
+    $upload_dir = __DIR__ . "/../uploads/foto_profil/";
+    $destination = $upload_dir . $new_file_name;
 
-    if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+    // Buat folder jika belum ada
+    if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
 
-    if (file_put_contents($destination, $data)) {
+    // Pindahkan file dari temporary ke folder tujuan
+    if (move_uploaded_file($file['tmp_name'], $destination)) {
         $query = "UPDATE users SET foto_profil = '$new_file_name' WHERE id = $id_user";
         if (mysqli_query($koneksi, $query)) {
             $_SESSION['foto'] = $new_file_name;
@@ -67,11 +70,10 @@ $destination = $upload_dir . $new_file_name;
             echo json_encode(['status' => 'error', 'message' => 'Gagal update database.']);
         }
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Gagal menyimpan file.']);
+        echo json_encode(['status' => 'error', 'message' => 'Gagal menyimpan file ke folder. Cek permission folder uploads/foto_profil/ ke 755.']);
     }
     exit;
 }
-
 // ========================================================
 // DATA VARIABEL
 // ========================================================
@@ -360,7 +362,7 @@ if (!empty($foto_session)) {
                 }
             });
 
-            // 2. Saat tombol simpan ditekan
+                        // 2. Saat tombol simpan ditekan (REVAMP PAKAI FORMDATA BIAR GAK KENA 403 FIREWALL)
             $btnSave.on('click', function() {
                 if (!cropper) return;
 
@@ -368,26 +370,36 @@ if (!empty($foto_session)) {
                 $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
 
                 const canvas = cropper.getCroppedCanvas({ width: 400, height: 400 });
-                const imageData = canvas.toDataURL('image/jpeg', 0.9);
+                
+                // Ubah canvas jadi Blob (File asli) bukan Base64
+                canvas.toBlob(function(blob) {
+                    const formData = new FormData();
+                    formData.append('cropped_image', blob, 'upload.jpg'); // Kirim sebagai file biasa
 
-                $.ajax({
-                    url: '', type: 'POST',
-                    data: { image_base64: imageData },
-                    dataType: 'json',
-                    success: function(res) {
-                        if (res.status === 'success') {
-                            showAlert(res.message, 'success');
-                            setTimeout(() => location.reload(), 1200);
-                        } else {
-                            showAlert(res.message, 'error');
+                    $.ajax({
+                        url: '', 
+                        type: 'POST',
+                        data: formData,
+                        processData: false, // WAJIB false untuk FormData
+                        contentType: false, // WAJIB false untuk FormData
+                        dataType: 'json',
+                        success: function(res) {
+                            if (res.status === 'success') {
+                                showAlert(res.message, 'success');
+                                setTimeout(() => location.reload(), 1200);
+                            } else {
+                                showAlert(res.message, 'error');
+                                $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Simpan');
+                            }
+                        },
+                        error: function(xhr) {
+                            // Tambahan: Kalau masih error, akan nampilin alasannya di Console (F12)
+                            console.log("Error Detail:", xhr.status, xhr.responseText);
+                            showAlert('Error sistem (Cek Console F12)', 'error');
                             $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Simpan');
                         }
-                    },
-                    error: function() {
-                        showAlert('Error sistem', 'error');
-                        $btn.prop('disabled', false).html('<i class="fas fa-save"></i> Simpan');
-                    }
-                });
+                    });
+                }, 'image/jpeg', 0.9);
             });
 
             // 3. Saat tombol hapus ditekan

@@ -39,6 +39,8 @@ if (!empty($foto_session)) {
   <title>Kelola Perpustakaan | PMR Millenium</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <style>
     /* --- CSS VARIABLES --- */
     :root {
@@ -242,112 +244,7 @@ if (!empty($foto_session)) {
       padding-top: var(--header-height);
     }
 
-    /* ======================================== */
-    /* CSS TAMBAHAN UNTUK MODAL LOGOUT (FIXED) */
-    /* ======================================== */
     
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(4px);
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-    }
-
-    .modal-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .modal-box {
-      background: white;
-      padding: 30px;
-      border-radius: 16px;
-      text-align: center;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      transform: scale(0.9);
-      transition: transform 0.3s ease;
-    }
-
-    .modal-overlay.active .modal-box {
-      transform: scale(1);
-    }
-
-    .modal-icon {
-      width: 60px;
-      height: 60px;
-      background: #fee2e2;
-      color: var(--primary-color);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 20px;
-      font-size: 24px;
-    }
-
-    .modal-box h3 {
-      margin-bottom: 10px;
-      font-size: 1.25rem;
-      color: var(--text-color);
-    }
-
-    .modal-box p {
-      color: var(--text-muted);
-      margin-bottom: 25px;
-      font-size: 0.95rem;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    /* Style untuk tombol modal */
-    .btn-modal {
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s ease;
-      font-size: 0.95rem;
-      flex: 1;
-    }
-
-    /* Tombol Batal */
-    .btn-cancel {
-      background-color: #f1f5f9;
-      color: var(--text-muted);
-    }
-
-    .btn-cancel:hover {
-      background-color: #e2e8f0;
-      color: var(--text-color);
-    }
-
-    /* Tombol Logout (Merah) */
-    .btn-logout {
-      background-color: var(--primary-color);
-      color: white;
-    }
-
-    .btn-logout:hover {
-      background-color: var(--primary-hover);
-      transform: translateY(-2px);
-    }
 
     /* --- SIDEBAR --- */
     .sidebar {
@@ -902,20 +799,7 @@ if (!empty($foto_session)) {
     </nav>
   </header>
 
-<!-- MODAL LOGOUT (HTML sudah benar, CSS & JS difix) -->
-  <div class="modal-overlay" id="logoutModal">
-    <div class="modal-box">
-      <div class="modal-icon">
-        <i class="fa-solid fa-right-from-bracket"></i>
-      </div>
-      <h3>Konfirmasi Keluar</h3>
-      <p>Apakah Anda yakin ingin keluar dari akun?</p>
-      <div class="modal-actions">
-        <button class="btn-modal btn-cancel" onclick="closeLogoutModal()">Batal</button>
-        <button class="btn-modal btn-logout" onclick="proceedLogout()">Ya, Keluar</button>
-      </div>
-    </div>
-  </div>
+
 
   <div class="dashboard-container">
     <!-- SIDEBAR -->
@@ -1073,14 +957,7 @@ if (!empty($foto_session)) {
       if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
     });
 
-    function confirmLogout() { openLogoutModal(); }
-    function openLogoutModal() { document.getElementById('logoutModal').classList.add('active'); }
-    function closeLogoutModal() { document.getElementById('logoutModal').classList.remove('active'); }
-    function proceedLogout() { window.location.href = "../logout.php"; }
-    document.getElementById('logoutModal').addEventListener('click', function(e) {
-      if (e.target === this) closeLogoutModal();
-    });
-
+    
     /* ================= DATA & LOGIC ================= */
     let materials = [];
     let currentMaterialId = null;
@@ -1357,6 +1234,21 @@ if (!empty($foto_session)) {
         showToast('Terjadi kesalahan jaringan.', 'error');
       });
     };
+    // --- LOGOUT ---
+    function confirmLogout() {
+      Swal.fire({
+        title: 'Keluar dari akun?',
+        text: 'Anda akan dikembalikan ke halaman login.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#d90429',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Log Out!',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) window.location.href = "../logout.php";
+      });
+    }
 </script>
 </body>
 

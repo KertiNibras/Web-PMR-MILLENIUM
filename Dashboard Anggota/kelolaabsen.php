@@ -165,6 +165,8 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <style>
     :root {
       --primary-color: #d90429;
@@ -519,6 +521,7 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
       border: 1px solid #fde047;
     }
 
+    /* ==================== RAPIHAN KALENDER MOBILE ==================== */
     .calendar-container {
       background: white;
       border-radius: var(--radius);
@@ -534,10 +537,13 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
       margin-bottom: 20px;
       padding-bottom: 15px;
       border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
     .calendar-header h2 {
       font-size: 1.2rem;
+      margin: 0;
     }
 
     .calendar-nav {
@@ -550,12 +556,22 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
       background: var(--bg-color);
       border-radius: 6px;
       font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    /* Wrapper untuk scroll horizontal di mobile */
+    .calendar-scroll-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 10px; /* Space untuk scrollbar */
+      -webkit-overflow-scrolling: touch; /* Smooth scroll di iOS */
     }
 
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 5px;
+      min-width: 600px; /* Paksa ukuran ini agar bisa di-scroll di layar < 600px */
     }
 
     .calendar-day-name {
@@ -563,14 +579,14 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
       font-weight: 600;
       color: var(--text-muted);
       font-size: 0.85rem;
-      padding: 10px;
+      padding: 10px 5px;
     }
 
     .calendar-day {
       border: 1px solid var(--border-color);
       border-radius: 8px;
-      min-height: 80px;
-      padding: 8px;
+      min-height: 70px; /* Turunkan sedikit dari 80px */
+      padding: 6px;
       position: relative;
       background: #fff;
       cursor: pointer;
@@ -598,7 +614,7 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
     .day-number {
       font-weight: 600;
       color: var(--text-muted);
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       margin-bottom: auto;
     }
 
@@ -625,20 +641,75 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
     }
 
     .attendance-count {
-      font-size: 0.8rem;
+      font-size: 0.7rem; /* Kecilin font biar muat di hp */
       background: rgba(0, 0, 0, 0.05);
       color: #166534;
-      padding: 4px 8px;
+      padding: 3px 4px;
       border-radius: 4px;
       margin-top: 5px;
       text-align: center;
       font-weight: 600;
+      line-height: 1.2;
     }
 
+    /* ==================== RAPIHAN LAINNYA (MOBILE) ==================== */
     .data-table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-color);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .data-table th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+
+    .hidden-row {
+      display: none;
+    }
+
+    /* Tambahan responsive untuk mobile */
+    @media (max-width: 768px) {
+      .control-box h3 {
+        font-size: 1rem;
+      }
+      
+      .data-table th, .data-table td {
+        padding: 8px;
+        font-size: 0.85rem;
+      }
+
+      .modal-content {
+        max-width: 95%;
+      }
+
+      .control-grid {
+        grid-template-columns: 1fr !important; /* Paksa form 1 kolom di mobile */
+      }
+      
+      /* Kecilin font kalender kalau layar sangat kecil */
+      .calendar-grid {
+        min-width: 500px; 
+      }
+      .calendar-day {
+        min-height: 60px;
+        padding: 4px;
+      }
+      .day-number {
+        font-size: 0.8rem;
+      }
+      .attendance-count {
+        font-size: 0.65rem;
+        padding: 2px;
+      }
     }
 
     .data-table th,
@@ -849,15 +920,7 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
       color: var(--text-color);
     }
 
-    .btn-logout {
-      background-color: var(--primary-color);
-      color: white;
-    }
 
-    .btn-logout:hover {
-      background-color: var(--primary-hover);
-      transform: translateY(-2px);
-    }
 
     @keyframes fadeIn {
       from {
@@ -924,17 +987,7 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
     </nav>
   </header>
 
-  <div class="modal-overlay" id="logoutModal">
-    <div class="modal-box">
-      <div class="modal-icon"><i class="fa-solid fa-right-from-bracket"></i></div>
-      <h3>Konfirmasi Keluar</h3>
-      <p>Apakah Anda yakin ingin keluar dari akun?</p>
-      <div class="modal-actions">
-        <button class="btn-modal btn-cancel" onclick="closeLogoutModal()">Batal</button>
-        <button class="btn-modal btn-logout" onclick="proceedLogout()">Ya, Keluar</button>
-      </div>
-    </div>
-  </div>
+  
 
   <div class="dashboard-container">
     <aside class="sidebar">
@@ -944,7 +997,7 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
         <li><a href="kelolaperpus.php"><i class="fa-solid fa-book"></i> Kelola Materi</a></li>
         <li><a href="kelola_pendaftaran.php"><i class="fa-solid fa-users"></i> Kelola Pendaftaran</a></li>
         <li><a href="kelola_beranda.php"><i class="fa-solid fa-pen-to-square"></i> Edit Halaman Utama</a></li>
-        <li style="margin-top: 20px; border-top: 1px solid #eee;"><a href="javascript:void(0)" onclick="openLogoutModal()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
+        <li style="margin-top: 20px; border-top: 1px solid #eee;"><a href="javascript:void(0)" onclick="confirmLogout()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
         <li><a href="../Halaman Utama/index.php"><i class="fa-solid fa-globe"></i>Halaman Utama</a></li>
       </ul>
     </aside>
@@ -1089,14 +1142,15 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
           </div>
         </div>
 
-        <div class="calendar-grid">
-          <div class="calendar-day-name">Min</div>
-          <div class="calendar-day-name">Sen</div>
-          <div class="calendar-day-name">Sel</div>
-          <div class="calendar-day-name">Rab</div>
-          <div class="calendar-day-name">Kam</div>
-          <div class="calendar-day-name">Jum</div>
-          <div class="calendar-day-name">Sab</div>
+        <div class="calendar-scroll-wrapper">
+            <div class="calendar-grid">
+              <div class="calendar-day-name">Min</div>
+              <div class="calendar-day-name">Sen</div>
+              <div class="calendar-day-name">Sel</div>
+              <div class="calendar-day-name">Rab</div>
+              <div class="calendar-day-name">Kam</div>
+              <div class="calendar-day-name">Jum</div>
+              <div class="calendar-day-name">Sab</div>
 
           <?php
           $first_day = date('w', strtotime("$year-$month-01"));
@@ -1273,23 +1327,7 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
       }
     }
 
-    function openLogoutModal() {
-      document.getElementById('logoutModal').classList.add('active');
-    }
-
-    function closeLogoutModal() {
-      document.getElementById('logoutModal').classList.remove('active');
-    }
-
-    function proceedLogout() {
-      window.location.href = "../logout.php";
-    }
-
-    const logoutModal = document.getElementById('logoutModal');
-    if (logoutModal) logoutModal.addEventListener('click', function(e) {
-      if (e.target === this) closeLogoutModal();
-    });
-
+    
     function openDateDetail(dateStr) {
       const options = {
         weekday: 'long',
@@ -1371,6 +1409,21 @@ while ($rj = mysqli_fetch_assoc($res_jcal)) {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Rekap Absensi");
       XLSX.writeFile(wb, `Rekap_Absensi_${start}_sd_${end}.xlsx`);
+    }
+    // --- LOGOUT ---
+    function confirmLogout() {
+      Swal.fire({
+        title: 'Keluar dari akun?',
+        text: 'Anda akan dikembalikan ke halaman login.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#d90429',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Log Out!',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) window.location.href = "../logout.php";
+      });
     }
   </script>
 </body>
