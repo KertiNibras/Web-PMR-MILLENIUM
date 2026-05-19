@@ -1027,8 +1027,11 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
                 <div class="form-group"><label>Kelas</label><input type="text" name="kelas_edit" id="edit_kelas" class="form-control" required></div>
                 <div class="form-group"><label>Logo</label><select name="logo_kelas_edit" id="edit_logo" class="form-control">
                         <option value="rpl.png">RPL</option>
+                        <option value="tkj.png">TKJ</option>
                         <option value="dkv.png">DKV</option>
                         <option value="dpib.png">DPIB</option>
+                        <option value="tflm.png">TFLM</option>
+                        <option value="tkr.png">TKR</option>
                     </select></div>
                 <div class="form-group"><label>Foto</label>
                     <div class="custom-file-upload" style="padding: 15px;"><input type="file" name="foto_edit" id="edit_foto_input">
@@ -1146,8 +1149,11 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
                                 <div style="flex: 1;"><label>Kelas</label><input type="text" name="kelas" class="form-control" required></div>
                                 <div style="flex: 1;"><label>Logo</label><select name="logo_kelas" class="form-control">
                                         <option value="rpl.png">RPL</option>
+                                        <option value="tkj.png">TKJ</option>
                                         <option value="dkv.png">DKV</option>
                                         <option value="dpib.png">DPIB</option>
+                                        <option value="tflm.png">TFLM</option>
+                                        <option value="tkr.png">TKR</option>
                                     </select></div>
                                 <div style="flex: 1;"><label>Foto</label>
                                     <div class="custom-file-upload" style="padding: 9px;"><input type="file" name="foto_pengurus" id="add_pengurus_foto"><span id="add_pengurus_label" style="font-size:0.8rem; color:var(--text-muted);">Pilih</span></div>

@@ -1,5 +1,6 @@
 <?php
 session_start();
+
 require_once __DIR__ . '/../koneksi.php';
 
 // Cek Login & Role
@@ -13,10 +14,10 @@ if ($_SESSION['role'] != 'pengurus') {
 }
 
 // Ambil Data User untuk Header
-$nama_user = htmlspecialchars($_SESSION['nama']);
-$role = $_SESSION['role'];
-$foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
-$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
+ $nama_user = htmlspecialchars($_SESSION['nama']);
+ $role = $_SESSION['role'];
+ $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
+ $foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
 
 if (!empty($foto_session)) {
   $path_foto = "../uploads/foto_profil/" . $foto_session;
@@ -182,17 +183,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 }
 
 // Ambil Data
-$questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY ordering ASC");
+ $questions = mysqli_query($koneksi, "SELECT * FROM form_questions ORDER BY ordering ASC");
+
+// DIKEMBALIKAN KE NORMAL (Tanpa CONVERT_TZ)
 $pendaftar = mysqli_query($koneksi, "SELECT * FROM pendaftaran ORDER BY submission_date DESC");
 $anggota_baru = mysqli_query($koneksi, "SELECT * FROM pendaftaran WHERE status='diterima' ORDER BY id DESC");
 
-// ==========================================
-// TAMBAHAN: Hitung Statistik untuk Badge & Kartu
-// ==========================================
-$total_pending = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) as total FROM pendaftaran WHERE status='pending'"))['total'];
-$total_diterima = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) as total FROM pendaftaran WHERE status='diterima'"))['total'];
-$total_ditolak = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) as total FROM pendaftaran WHERE status='ditolak'"))['total'];
-$total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) as total FROM pendaftaran WHERE status='diterima' AND card_sent=0"))['total'];
+// Hitung Statistik untuk Badge & Kartu
+ $total_pending = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) as total FROM pendaftaran WHERE status='pending'"))['total'];
+ $total_diterima = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) as total FROM pendaftaran WHERE status='diterima'"))['total'];
+ $total_ditolak = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) as total FROM pendaftaran WHERE status='ditolak'"))['total'];
+ $total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) as total FROM pendaftaran WHERE status='diterima' AND card_sent=0"))['total'];
+
+// FUNGSI FORMAT TANGGAL SIMPLE (Langsung tampil apa adanya sesuai server)
+function formatTanggalWIB($db_datetime) {
+    if (empty($db_datetime) || $db_datetime == '0000-00-00 00:00:00') return '-';
+    return date('d M Y, H:i', strtotime($db_datetime)) . ' WIB';
+}
 ?>
 
 <!DOCTYPE html>
@@ -224,11 +231,7 @@ $total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
       --sidebar-width: 250px;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Inter', 'Segoe UI', sans-serif;
@@ -237,576 +240,190 @@ $total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
       line-height: 1.6;
     }
 
-    a {
-      text-decoration: none;
-      color: inherit;
-    }
-
-    ul {
-      list-style: none;
-    }
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
 
     header {
-      background: #fff;
-      box-shadow: var(--shadow-sm);
-      position: fixed;
-      width: 100%;
-      top: 0;
-      z-index: 1000;
-      height: var(--header-height);
+      background: #fff; box-shadow: var(--shadow-sm); position: fixed;
+      width: 100%; top: 0; z-index: 1000; height: var(--header-height);
     }
 
     .navbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      height: 100%;
-      padding: 0 20px;
-      max-width: 100%;
+      display: flex; justify-content: space-between; align-items: center;
+      height: 100%; padding: 0 20px; max-width: 100%;
     }
 
-    .nav-left {
-      flex: 1;
-      display: flex;
-      justify-content: flex-start;
-      align-items: center;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 18px;
-      color: #000;
-    }
-
-    .logo img {
-      height: 40px;
-    }
-
-    .nav-center {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .nav-right {
-      flex: 1;
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 15px;
-      position: relative;
-    }
+    .nav-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: #000; }
+    .logo img { height: 40px; }
+    .nav-center { flex: 1; display: flex; justify-content: center; align-items: center; }
+    .nav-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 15px; position: relative; }
 
     .profile-btn {
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      padding: 5px;
-      border-radius: 50px;
-      transition: background 0.2s;
+      display: flex; align-items: center; cursor: pointer; padding: 5px;
+      border-radius: 50px; transition: background 0.2s;
     }
-
-    .profile-btn:hover {
-      background-color: #f1f5f9;
-    }
+    .profile-btn:hover { background-color: #f1f5f9; }
 
     .profile-img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
+      width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
       border: 2px solid var(--primary-color);
     }
 
     .profile-dropdown {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      margin-top: 10px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-      width: 220px;
-      z-index: 1001;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(-10px);
-      transition: all 0.2s ease;
-      border: 1px solid var(--border-color);
-      overflow: hidden;
+      position: absolute; top: 100%; right: 0; margin-top: 10px; background: #fff;
+      border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); width: 220px;
+      z-index: 1001; opacity: 0; visibility: hidden; transform: translateY(-10px);
+      transition: all 0.2s ease; border: 1px solid var(--border-color); overflow: hidden;
     }
-
-    .profile-dropdown.active {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-
-    .dropdown-header {
-      padding: 15px;
-      background: #f8f9fa;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .dropdown-header p {
-      font-weight: 600;
-      color: var(--text-color);
-      font-size: 0.9rem;
-    }
-
-    .dropdown-header small {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-    }
+    .profile-dropdown.active { opacity: 1; visibility: visible; transform: translateY(0); }
+    .dropdown-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid var(--border-color); }
+    .dropdown-header p { font-weight: 600; color: var(--text-color); font-size: 0.9rem; }
+    .dropdown-header small { color: var(--text-muted); font-size: 0.75rem; }
 
     .profile-dropdown ul li a {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 15px;
-      color: var(--text-color);
-      font-size: 0.9rem;
-      transition: 0.2s;
+      display: flex; align-items: center; gap: 10px; padding: 12px 15px;
+      color: var(--text-color); font-size: 0.9rem; transition: 0.2s;
     }
-
-    .profile-dropdown ul li a:hover {
-      background-color: #fff1f1;
-      color: var(--primary-color);
-    }
-
-    .profile-dropdown ul li a i {
-      width: 20px;
-      text-align: center;
-    }
+    .profile-dropdown ul li a:hover { background-color: #fff1f1; color: var(--primary-color); }
+    .profile-dropdown ul li a i { width: 20px; text-align: center; }
 
     .menu-toggle {
-      display: none;
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      color: var(--primary-color);
-      z-index: 1001;
+      display: none; background: none; border: none; font-size: 24px;
+      cursor: pointer; color: var(--primary-color); z-index: 1001;
     }
 
-    .dashboard-container {
-      display: flex;
-      min-height: 100vh;
-      padding-top: var(--header-height);
-    }
+    .dashboard-container { display: flex; min-height: 100vh; padding-top: var(--header-height); }
 
     .sidebar {
-      width: var(--sidebar-width);
-      background: #fff;
-      border-right: 1px solid var(--border-color);
-      position: sticky;
-      top: var(--header-height);
-      height: calc(100vh - var(--header-height));
-      overflow-y: auto;
-      z-index: 900;
-      flex-shrink: 0;
+      width: var(--sidebar-width); background: #fff; border-right: 1px solid var(--border-color);
+      position: sticky; top: var(--header-height); height: calc(100vh - var(--header-height));
+      overflow-y: auto; z-index: 900; flex-shrink: 0;
     }
 
     .sidebar li {
-      padding: 14px 25px;
-      cursor: pointer;
-      color: var(--text-color);
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      border-left: 4px solid transparent;
-      transition: all 0.2s;
+      padding: 14px 25px; cursor: pointer; color: var(--text-color); font-weight: 500;
+      display: flex; align-items: center; gap: 12px; border-left: 4px solid transparent; transition: all 0.2s;
     }
-
-    .sidebar li:hover,
-    .sidebar li.active {
-      background-color: #fff1f1;
-      color: var(--primary-color);
-      border-left-color: var(--primary-color);
+    .sidebar li:hover, .sidebar li.active {
+      background-color: #fff1f1; color: var(--primary-color); border-left-color: var(--primary-color);
     }
+    .sidebar a { display: flex; align-items: center; gap: 10px; width: 100%; }
 
-    .sidebar a {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-    }
+    .main-content { flex: 1; padding: 30px; width: 100%; }
+    .page-title h1 { font-size: 1.75rem; color: var(--primary-color); margin-bottom: 5px; }
+    .page-title p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px; }
 
-    .main-content {
-      flex: 1;
-      padding: 30px;
-      width: 100%;
-    }
-
-    .page-title h1 {
-      font-size: 1.75rem;
-      color: var(--primary-color);
-      margin-bottom: 5px;
-    }
-
-    .page-title p {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      margin-bottom: 25px;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 5px;
-      margin-bottom: 20px;
-      border-bottom: 2px solid var(--border-color);
-    }
-
+    .tabs { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); }
     .tab-btn {
-      padding: 10px 20px;
-      border: none;
-      background: none;
-      cursor: pointer;
-      font-weight: 600;
-      color: var(--text-muted);
-      border-bottom: 3px solid transparent;
-      margin-bottom: -2px;
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      padding: 10px 20px; border: none; background: none; cursor: pointer; font-weight: 600;
+      color: var(--text-muted); border-bottom: 3px solid transparent; margin-bottom: -2px;
+      position: relative; display: flex; align-items: center; gap: 8px;
     }
+    .tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
 
-    .tab-btn.active {
-      color: var(--primary-color);
-      border-bottom-color: var(--primary-color);
-    }
-
-    /* Tambahan CSS Badge Notif Tab */
     .tab-badge {
-      background-color: var(--danger-color);
-      color: white;
-      font-size: 11px;
-      font-weight: 700;
-      border-radius: 50px;
-      padding: 2px 7px;
-      line-height: 1.2;
-      animation: pulse-badge 2s infinite;
+      background-color: var(--danger-color); color: white; font-size: 11px; font-weight: 700;
+      border-radius: 50px; padding: 2px 7px; line-height: 1.2; animation: pulse-badge 2s infinite;
     }
-
     @keyframes pulse-badge {
-      0% {
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
-      }
-
-      70% {
-        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
-      }
-
-      100% {
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-      }
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+      70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
     }
 
-    /* Tambahan CSS Kartu Statistik */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-bottom: 25px;
-    }
-
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
     .stat-card {
-      background: #fff;
-      padding: 20px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border-color);
-      box-shadow: var(--shadow-sm);
-      display: flex;
-      align-items: center;
-      gap: 15px;
+      background: #fff; padding: 20px; border-radius: var(--radius); border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 15px;
     }
-
     .stat-icon {
-      width: 50px;
-      height: 50px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      color: #fff;
+      width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center;
+      justify-content: center; font-size: 20px; color: #fff;
     }
-
-    .stat-icon.blue {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-    }
-
-    .stat-icon.green {
-      background: linear-gradient(135deg, #10b981, #059669);
-    }
-
-    .stat-icon.red {
-      background: linear-gradient(135deg, #ef4444, #dc2626);
-    }
-
-    .stat-icon.green1 {
-      background: linear-gradient(135deg, #25d366, #25d366);
-    }
-
-    .stat-info h3 {
-      font-size: 1.5rem;
-      margin-bottom: 2px;
-    }
-
-    .stat-info p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
+    .stat-icon.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .stat-icon.green { background: linear-gradient(135deg, #10b981, #059669); }
+    .stat-icon.red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .stat-icon.green1 { background: linear-gradient(135deg, #25d366, #25d366); }
+    .stat-info h3 { font-size: 1.5rem; margin-bottom: 2px; }
+    .stat-info p { font-size: 0.85rem; color: var(--text-muted); }
 
     .content-card {
-      background: white;
-      padding: 25px;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--border-color);
+      background: white; padding: 25px; border-radius: var(--radius);
+      box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);
     }
 
     .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s ease;
-      font-size: 0.9rem;
-      color: white;
+      padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease;
+      font-size: 0.9rem; color: white;
     }
+    .btn-primary { background-color: var(--primary-color); box-shadow: 0 4px 6px rgba(217, 4, 41, 0.2); }
+    .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+    .btn-success { background-color: var(--success-color); }
+    .btn-danger { background-color: var(--danger-color); }
+    .btn-secondary { background-color: #94a3b8; }
+    .btn-wa { background-color: #25d366; }
+    .btn-wa:hover { background-color: #128c7e; transform: translateY(-1px); }
+    .btn-disabled { background-color: #cbd5e1; color: #64748b; cursor: not-allowed; }
 
-    .btn-primary {
-      background-color: var(--primary-color);
-      box-shadow: 0 4px 6px rgba(217, 4, 41, 0.2);
-    }
-
-    .btn-primary:hover {
-      background-color: var(--primary-hover);
-      transform: translateY(-1px);
-    }
-
-    .btn-success {
-      background-color: var(--success-color);
-    }
-
-    .btn-danger {
-      background-color: var(--danger-color);
-    }
-
-    .btn-secondary {
-      background-color: #94a3b8;
-    }
-
-    .btn-wa {
-      background-color: #25d366;
-    }
-
-    .btn-wa:hover {
-      background-color: #128c7e;
-      transform: translateY(-1px);
-    }
-
-    .btn-disabled {
-      background-color: #cbd5e1;
-      color: #64748b;
-      cursor: not-allowed;
-    }
-
-    .table-container {
-      overflow-x: auto;
-    }
-
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 800px;
-    }
-
+    .table-container { overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: collapse; min-width: 800px; }
     .data-table th {
-      background-color: var(--primary-color);
-      color: white;
-      text-align: left;
-      padding: 15px;
-      font-weight: 600;
+      background-color: var(--primary-color); color: white; text-align: left;
+      padding: 15px; font-weight: 600;
     }
+    .data-table th:first-child { border-top-left-radius: var(--radius); }
+    .data-table th:last-child { border-top-right-radius: var(--radius); }
+    .data-table td { padding: 15px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover { background-color: #f8fafc; }
 
-    .data-table th:first-child {
-      border-top-left-radius: var(--radius);
-    }
+    .badge { padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .badge-diterima { background: #d1fae5; color: #065f46; }
+    .badge-ditolak { background: #fee2e2; color: #991b1b; }
 
-    .data-table th:last-child {
-      border-top-right-radius: var(--radius);
-    }
-
-    .data-table td {
-      padding: 15px;
-      border-bottom: 1px solid var(--border-color);
-      vertical-align: middle;
-    }
-
-    .data-table tr:last-child td {
-      border-bottom: none;
-    }
-
-    .data-table tr:hover {
-      background-color: #f8fafc;
-    }
-
-    .badge {
-      padding: 5px 10px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .badge-pending {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .badge-diterima {
-      background: #d1fae5;
-      color: #065f46;
-    }
-
-    .badge-ditolak {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-
-    .action-group {
-      display: flex;
-      gap: 5px;
-    }
+    .action-group { display: flex; gap: 5px; }
 
     .question-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px;
-      background: #fff;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      margin-bottom: 10px;
-      cursor: move;
+      display: flex; justify-content: space-between; align-items: center; padding: 15px;
+      background: #fff; border: 1px solid var(--border-color); border-radius: 8px;
+      margin-bottom: 10px; cursor: move;
     }
-
-    .question-item:hover {
-      border-color: var(--primary-color);
-    }
-
-    .q-info {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      flex: 1;
-    }
-
-    .q-info .drag-handle {
-      color: var(--text-muted);
-      font-size: 1.2rem;
-      cursor: grab;
-    }
+    .question-item:hover { border-color: var(--primary-color); }
+    .q-info { display: flex; align-items: center; gap: 15px; flex: 1; }
+    .q-info .drag-handle { color: var(--text-muted); font-size: 1.2rem; cursor: grab; }
 
     .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 2000;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5); z-index: 2000; align-items: center;
+      justify-content: center; padding: 20px;
     }
-
     .modal-content {
-      background: white;
-      padding: 25px;
-      border-radius: var(--radius);
-      width: 100%;
-      max-width: 500px;
-      animation: fadeIn 0.3s ease;
+      background: white; padding: 25px; border-radius: var(--radius); width: 100%;
+      max-width: 500px; animation: fadeIn 0.3s ease;
     }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .form-group {
-      margin-bottom: 15px;
-    }
-
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; }
     .form-control {
-      width: 100%;
-      padding: 10px 15px;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      font-size: 0.95rem;
-      outline: none;
+      width: 100%; padding: 10px 15px; border: 1px solid var(--border-color);
+      border-radius: 8px; font-size: 0.95rem; outline: none;
     }
-
-    .form-control:focus {
-      border-color: var(--primary-color);
-    }
+    .form-control:focus { border-color: var(--primary-color); }
 
     @media (max-width: 992px) {
-      .main-content {
-        width: 100%;
-        padding: 20px;
-      }
-
+      .main-content { width: 100%; padding: 20px; }
       .sidebar {
-        position: fixed;
-        top: var(--header-height);
-        left: auto;
-        right: -260px;
-        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-        border-right: none;
-        border-left: 1px solid var(--border-color);
-        transition: right 0.3s ease;
+        position: fixed; top: var(--header-height); left: auto; right: -260px;
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1); border-right: none;
+        border-left: 1px solid var(--border-color); transition: right 0.3s ease;
       }
-
-      .sidebar.active {
-        right: 0;
-      }
-
-      .menu-toggle {
-        display: block;
-      }
-
-      .logo span {
-        display: none;
-      }
+      .sidebar.active { right: 0; }
+      .menu-toggle { display: block; }
+      .logo span { display: none; }
     }
   </style>
 </head>
@@ -860,7 +477,7 @@ $total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
         <p>Atur formulir, verifikasi pendaftar, dan cetak kartu anggota.</p>
       </div>
 
-      <!-- TABS (Dengan Badge Notifikasi) -->
+      <!-- TABS -->
       <div class="tabs">
         <button class="tab-btn active" id="btn-builder" onclick="switchTab('builder')">
           <i class="fa-solid fa-list-check"></i> Struktur Formulir
@@ -922,6 +539,7 @@ $total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
                   <th>No</th>
                   <th>Nama</th>
                   <th>Kelas</th>
+                  <th>Tanggal Daftar</th>
                   <th>Status</th>
                   <th>Aksi</th>
                 </tr>
@@ -934,14 +552,21 @@ $total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
                 if (mysqli_num_rows($pendaftar) > 0) {
                   while ($p = mysqli_fetch_assoc($pendaftar)) {
                     $status_class = 'badge-pending';
+                    $status_text = ucfirst($p['status']);
+                    
                     if ($p['status'] == 'diterima') $status_class = 'badge-diterima';
                     if ($p['status'] == 'ditolak') $status_class = 'badge-ditolak';
+
+                    // GUNAKAN KOLOM WAKTU WIB DARI QUERY MYSQL
+                    // Tampilkan langsung dari database
+ $tgl_daftar = formatTanggalWIB($p['submission_date']);
 
                     echo "<tr>
                             <td>{$no}</td>
                             <td>{$p['nama_lengkap']}</td>
                             <td>{$p['kelas']}</td>
-                            <td><span class='badge {$status_class}'>{$p['status']}</span></td>
+                            <td style='white-space: nowrap;'>{$tgl_daftar}</td>
+                            <td><span class='badge {$status_class}'>{$status_text}</span></td>
                             <td>
                               <div class='action-group'>";
 
@@ -960,7 +585,7 @@ $total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
                     $no++;
                   }
                 } else {
-                  echo "<tr><td colspan='5' style='text-align:center'>Belum ada pendaftar.</td></tr>";
+                  echo "<tr><td colspan='6' style='text-align:center'>Belum ada pendaftar.</td></tr>";
                 }
                 ?>
               </tbody>
@@ -969,10 +594,8 @@ $total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
         </div>
       </section>
 
-      <!-- Tab 3: Data Anggota & Kartu (Dengan Statistik) -->
+      <!-- Tab 3: Data Anggota & Kartu -->
       <section id="tab-anggota" style="display: none;">
-
-        <!-- Kartu Statistik -->
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-icon blue"><i class="fas fa-users"></i></div>
@@ -1172,19 +795,14 @@ $total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
       data.append('action', 'mark_as_sent');
       data.append('id', id);
 
-      fetch('', {
-          method: 'POST',
-          body: data
-        })
+      fetch('', { method: 'POST', body: data })
         .then(res => res.json())
         .then(res => {
           if (res.status == 'success') {
             Swal.fire({
-              icon: 'success',
-              title: 'Berhasil Ditandai',
+              icon: 'success', title: 'Berhasil Ditandai',
               text: 'Status pengiriman WA telah diperbarui.',
-              timer: 1500,
-              showConfirmButton: false
+              timer: 1500, showConfirmButton: false
             }).then(() => location.reload());
           }
         });
@@ -1195,9 +813,7 @@ $total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
       const el = document.getElementById('questionsList');
       if (el && typeof Sortable !== 'undefined') {
         new Sortable(el, {
-          animation: 150,
-          handle: '.drag-handle',
-          ghostClass: 'sortable-ghost',
+          animation: 150, handle: '.drag-handle', ghostClass: 'sortable-ghost',
           onEnd: function(evt) {
             const items = el.querySelectorAll('.question-item');
             const ids = [];
@@ -1212,10 +828,7 @@ $total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
       const data = new FormData();
       data.append('action', 'update_order');
       data.append('ids', JSON.stringify(ids));
-      fetch('', {
-        method: 'POST',
-        body: data
-      });
+      fetch('', { method: 'POST', body: data });
     }
 
     // --- MODAL & CRUD QUESTIONS ---
@@ -1228,9 +841,7 @@ $total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
       modal.style.display = 'flex';
     }
 
-    function closeModal() {
-      modal.style.display = 'none';
-    }
+    function closeModal() { modal.style.display = 'none'; }
 
     function toggleOptions() {
       document.getElementById('opts-group').style.display = (document.getElementById('q_type').value === 'select' || document.getElementById('q_type').value === 'radio') ? 'block' : 'none';
@@ -1259,10 +870,7 @@ $total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
       data.append('type', document.getElementById('q_type').value);
       data.append('options', JSON.stringify(opts));
       data.append('required', document.getElementById('q_req').checked ? 1 : 0);
-      fetch('', {
-        method: 'POST',
-        body: data
-      }).then(res => res.json()).then(res => {
+      fetch('', { method: 'POST', body: data }).then(res => res.json()).then(res => {
         if (res.status === 'success') location.reload();
         else alert('Gagal menyimpan');
       });
@@ -1270,25 +878,13 @@ $total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
 
     function deleteQ(id) {
       Swal.fire({
-        title: 'Hapus Pertanyaan?',
-        text: 'Pertanyaan yang sudah dihapus tidak bisa dikembalikan.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#94a3b8',
-        confirmButtonText: 'Ya, Hapus!',
-        cancelButtonText: 'Batal'
+        title: 'Hapus Pertanyaan?', text: 'Pertanyaan yang sudah dihapus tidak bisa dikembalikan.',
+        icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Hapus!', cancelButtonText: 'Batal'
       }).then((result) => {
         if (result.isConfirmed) {
-          const data = new FormData();
-          data.append('action', 'delete_question');
-          data.append('id', id);
-          fetch('', {
-            method: 'POST',
-            body: data
-          }).then(res => res.json()).then(res => {
-            if (res.status === 'success') location.reload();
-          });
+          const data = new FormData(); data.append('action', 'delete_question'); data.append('id', id);
+          fetch('', { method: 'POST', body: data }).then(res => res.json()).then(res => { if (res.status === 'success') location.reload(); });
         }
       });
     }
@@ -1306,170 +902,90 @@ $total_belum_kirim = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) 
       Swal.fire({
         title: 'YAKIN INGIN MENGHAPUS?',
         html: 'Semua data pendaftaran, file foto, <b>serta Akun Login</b> (jika ada) akan dihapus secara permanen dari database!',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#94a3b8',
-        confirmButtonText: '<i class="fas fa-trash"></i> Ya, Hapus Semua!',
-        cancelButtonText: 'Batal'
+        icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#94a3b8',
+        confirmButtonText: '<i class="fas fa-trash"></i> Ya, Hapus Semua!', cancelButtonText: 'Batal'
       }).then((result) => {
         if (result.isConfirmed) {
-          Swal.fire({
-            title: 'Menghapus...',
-            allowOutsideClick: false,
-            didOpen: () => {
-              Swal.showLoading()
-            }
+          Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+          const data = new FormData(); data.append('action', 'delete_pendaftar'); data.append('id', id);
+          fetch('', { method: 'POST', body: data }).then(res => res.json()).then(res => {
+            if (res.status === 'success') Swal.fire('Terhapus!', 'Data dan Akun anggota berhasil dibumihanguskan.', 'success').then(() => location.reload());
+            else Swal.fire('Gagal!', 'Tidak dapat menghapus data.', 'error');
           });
-
-          const data = new FormData();
-          data.append('action', 'delete_pendaftar');
-          data.append('id', id);
-
-          fetch('', {
-              method: 'POST',
-              body: data
-            })
-            .then(res => res.json())
-            .then(res => {
-              if (res.status === 'success') {
-                Swal.fire('Terhapus!', 'Data dan Akun anggota berhasil dibumihanguskan.', 'success').then(() => location.reload());
-              } else {
-                Swal.fire('Gagal!', 'Tidak dapat menghapus data.', 'error');
-              }
-            });
         }
       });
     }
 
     function approvePendaftar(id) {
       Swal.fire({
-        title: 'Terima Pendaftar Ini?',
-        text: 'Akun login untuk anggota akan dibuatkan secara otomatis.',
-        icon: 'info',
-        showCancelButton: true,
-        confirmButtonColor: '#10b981',
-        cancelButtonColor: '#94a3b8',
-        confirmButtonText: 'Ya, Terima!',
-        cancelButtonText: 'Batal'
+        title: 'Terima Pendaftar Ini?', text: 'Akun login untuk anggota akan dibuatkan secara otomatis.',
+        icon: 'info', showCancelButton: true, confirmButtonColor: '#10b981', cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Terima!', cancelButtonText: 'Batal'
       }).then((result) => {
         if (result.isConfirmed) {
-          const data = new FormData();
-          data.append('action', 'approve_pendaftar');
-          data.append('id', id);
+          const data = new FormData(); data.append('action', 'approve_pendaftar'); data.append('id', id);
+          Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
 
-          Swal.fire({
-            title: 'Memproses...',
-            allowOutsideClick: false,
-            didOpen: () => {
-              Swal.showLoading()
-            }
-          });
-
-          fetch('', {
-              method: 'POST',
-              body: data
-            })
-            .then(res => {
-              if (!res.ok) throw new Error('Server responded with status ' + res.status);
-              return res.text();
-            })
+          fetch('', { method: 'POST', body: data })
+            .then(res => { if (!res.ok) throw new Error('Server responded with status ' + res.status); return res.text(); })
             .then(text => {
               try {
                 const res = JSON.parse(text);
                 if (res.status == 'success') {
                   Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil Diterima!',
-                    html: `
-                    <div style="text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid #e2e8f0;">
+                    icon: 'success', title: 'Berhasil Diterima!',
+                    html: `<div style="text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid #e2e8f0;">
                       <p style="margin-bottom: 5px; font-weight: bold;">Akses Login Anggota:</p>
                       <p style="margin: 5px 0;">👤 Username: <code style="background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">${res.username}</code></p>
                       <p style="margin: 5px 0;">🔑 Password: <code style="background: #fff; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">${res.password}</code></p>
                       <small style="color: #64748b; display: block; margin-top: 10px;">*Segera sampaikan akses ini kepada anggota via WhatsApp pada tab "Data Anggota & Kartu".</small>
-                    </div>
-                  `,
-                    confirmButtonColor: '#d90429',
-                    confirmButtonText: 'Oke, Mengerti'
+                    </div>`,
+                    confirmButtonColor: '#d90429', confirmButtonText: 'Oke, Mengerti'
                   }).then(() => location.reload());
-                } else {
-                  Swal.fire('Gagal!', res.msg || 'Terjadi kesalahan', 'error');
-                }
+                } else { Swal.fire('Gagal!', res.msg || 'Terjadi kesalahan', 'error'); }
               } catch (e) {
                 console.error("Respon bukan JSON:", text);
                 Swal.fire('Error Kritisan!', 'Server mengembalikan data yang tidak valid. Cek Console (F12) untuk detail.', 'error');
               }
             })
-            .catch(error => {
-              console.error('Fetch Error:', error);
-              Swal.fire('Koneksi Gagal!', 'Tidak dapat menghubungi server.', 'error');
-            });
+            .catch(error => { console.error('Fetch Error:', error); Swal.fire('Koneksi Gagal!', 'Tidak dapat menghubungi server.', 'error'); });
         }
       });
     }
 
     function rejectPendaftar(id) {
       Swal.fire({
-        title: 'Tolak Pendaftar Ini?',
-        text: 'Pendaftar akan diberi status ditolak dan tidak bisa login.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#f59e0b',
-        cancelButtonColor: '#94a3b8',
-        confirmButtonText: 'Ya, Tolak!',
-        cancelButtonText: 'Batal'
+        title: 'Tolak Pendaftar Ini?', text: 'Pendaftar akan diberi status ditolak dan tidak bisa login.',
+        icon: 'warning', showCancelButton: true, confirmButtonColor: '#f59e0b', cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Tolak!', cancelButtonText: 'Batal'
       }).then((result) => {
         if (result.isConfirmed) {
-          const data = new FormData();
-          data.append('action', 'reject_pendaftar');
-          data.append('id', id);
+          const data = new FormData(); data.append('action', 'reject_pendaftar'); data.append('id', id);
+          Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
 
-          Swal.fire({
-            title: 'Memproses...',
-            allowOutsideClick: false,
-            didOpen: () => {
-              Swal.showLoading()
-            }
-          });
-
-          fetch('', {
-              method: 'POST',
-              body: data
-            })
+          fetch('', { method: 'POST', body: data })
             .then(res => res.json())
             .then(res => {
               if (res.status == 'success') {
-                let no_tujuan = res.no_wa;
-                no_tujuan = no_tujuan.replace(/\D/g, '');
-                if (no_tujuan.startsWith('0')) {
-                  no_tujuan = '62' + no_tujuan.substring(1);
-                }
+                let no_tujuan = res.no_wa.replace(/\D/g, '');
+                if (no_tujuan.startsWith('0')) no_tujuan = '62' + no_tujuan.substring(1);
 
                 let pesanWA = `Halo *${res.nama}*! 👋😊\n\nSebelumnya, kakak-kakak pengurus PMR Millenium SMKN 1 Cibinong mengucapkan terima kasih banyak atas antusiasme luar biasa kamu mendaftar di PMR. 🙌\n\nSetelah melalui proses evaluasi dan mempertimbangkan batas kuota, dengan berat hati kami sampaikan bahwa *kamu belum bisa bergabung* bersama keluarga PMR untuk periode ini. 🥺🙏\n\nJangan patah semangat ya! Terus asah potensimu dan tebarkan kebaikan di mana pun kamu berada. Sukses selalu untukmu! 💪✨\n\nSalam Kemanusiaan! ⛑️`;
-
                 let linkWA = `https://wa.me/${no_tujuan}?text=${encodeURIComponent(pesanWA)}`;
 
                 Swal.fire({
-                  icon: 'success',
-                  title: 'Pendaftar Ditolak!',
-                  html: `
-                  <p style="margin-bottom: 15px; font-size: 14px; color: #64748b;">Status pendaftar berhasil diubah. Silakan kirimkan pesan pemberitahuan agar pendaftar tidak menunggu.</p>
+                  icon: 'success', title: 'Pendaftar Ditolak!',
+                  html: `<p style="margin-bottom: 15px; font-size: 14px; color: #64748b;">Status pendaftar berhasil diubah. Silakan kirimkan pesan pemberitahuan agar pendaftar tidak menunggu.</p>
                   <a href="${linkWA}" target="_blank" style="display: inline-block; background-color: #25d366; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none;">
                     <i class="fab fa-whatsapp"></i> Kirim Pesan Penolakan
-                  </a>
-                `,
-                  confirmButtonColor: '#94a3b8',
-                  confirmButtonText: 'Tutup & Refresh'
+                  </a>`,
+                  confirmButtonColor: '#94a3b8', confirmButtonText: 'Tutup & Refresh'
                 }).then(() => location.reload());
-
-              } else {
-                Swal.fire('Gagal!', 'Gagal menolak pendaftar.', 'error');
-              }
+              } else { Swal.fire('Gagal!', 'Gagal menolak pendaftar.', 'error'); }
             });
         }
       });
     }
   </script>
 </body>
-
 </html>
