@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: May 10, 2026 at 11:36 AM
+-- Generation Time: May 19, 2026 at 08:27 AM
 -- Server version: 8.0.30
 -- PHP Version: 8.1.10
 
@@ -32,9 +32,9 @@ CREATE TABLE `absensi` (
   `user_id` int NOT NULL,
   `tanggal` date NOT NULL,
   `jam` time NOT NULL,
-  `foto` varchar(255) DEFAULT NULL,
-  `status` enum('hadir','izin','sakit','alpha') DEFAULT 'hadir',
-  `keterangan` text,
+  `foto` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `status` enum('hadir','izin','sakit','alpha') COLLATE utf8mb4_general_ci DEFAULT 'hadir',
+  `keterangan` text COLLATE utf8mb4_general_ci,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -43,8 +43,8 @@ CREATE TABLE `absensi` (
 --
 
 INSERT INTO `absensi` (`id`, `user_id`, `tanggal`, `jam`, `foto`, `status`, `keterangan`, `created_at`) VALUES
-(2, 35, '2026-05-09', '16:54:17', 'absen_35_1778320457.png', 'hadir', '-', '2026-05-09 09:54:17'),
-(3, 38, '2026-05-10', '15:21:42', 'absen_38_1778401302.png', 'hadir', '-', '2026-05-10 08:21:42');
+(3, 38, '2026-05-10', '15:21:42', 'absen_38_1778401302.png', 'hadir', '-', '2026-05-10 08:21:42'),
+(4, 38, '2026-05-12', '08:54:20', 'absen_38_1778550860.png', 'hadir', '-', '2026-05-12 01:54:20');
 
 -- --------------------------------------------------------
 
@@ -180,7 +180,13 @@ CREATE TABLE `pengaturan_absensi` (
 --
 
 INSERT INTO `pengaturan_absensi` (`id`, `tanggal`, `waktu_mulai`, `waktu_selesai`) VALUES
-(8, '2026-05-10', '15:20:00', '18:00:00');
+(8, '2026-05-10', '15:20:00', '18:00:00'),
+(9, '2026-05-12', '08:54:00', '12:00:00'),
+(10, '2026-05-19', '12:15:00', '16:00:00'),
+(11, '2026-05-20', '06:00:00', '12:00:00'),
+(12, '2026-05-21', '07:00:00', '12:00:00'),
+(13, '2026-05-22', '08:00:00', '13:00:00'),
+(14, '2026-05-23', '06:00:00', '12:00:00');
 
 -- --------------------------------------------------------
 
@@ -309,7 +315,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `nama`, `kelas`, `password`, `foto_profil`, `role`, `first_login`) VALUES
-(2, 'pengurus', 'Naufal Hanif', NULL, '$2y$10$Cn8jB90ByPm3DsMBdyZfUuvdSSEHteMSg/IaWKUhCvv4jNc39Rgaq', NULL, 'pengurus', 0),
+(2, 'pengurus', 'Naufal Hanif', NULL, '$2y$10$Cn8jB90ByPm3DsMBdyZfUuvdSSEHteMSg/IaWKUhCvv4jNc39Rgaq', 'user_2.jpg', 'pengurus', 0),
 (38, 'bamakerti', 'Bama Kerti', 'XI RPL 1', '$2y$10$laPoNnSAPKiGR0pQzfZSvONuHPpw7IVEJTYKlhrrlDoiZOIr/6DH2', 'question_file/file_1778401061_878.png', 'anggota', 0);
 
 --
@@ -396,7 +402,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `absensi`
 --
 ALTER TABLE `absensi`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `form_questions`
@@ -408,13 +414,13 @@ ALTER TABLE `form_questions`
 -- AUTO_INCREMENT for table `hero_background`
 --
 ALTER TABLE `hero_background`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `konten1`
 --
 ALTER TABLE `konten1`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `konten2`
@@ -432,7 +438,7 @@ ALTER TABLE `pendaftaran`
 -- AUTO_INCREMENT for table `pengaturan_absensi`
 --
 ALTER TABLE `pengaturan_absensi`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `pengurus`

@@ -1,4 +1,7 @@
 <?php
+// TAMBAHAN PENTING: Mengatur timezone untuk mencegah error date() di PHP 8
+date_default_timezone_set('Asia/Jakarta');
+
 session_start();
 require_once __DIR__ . '/../koneksi.php';
 
@@ -26,7 +29,6 @@ if (!empty($foto_session)) {
 }
 
 // ================== FUNGSI HELPER ==================
-// Fungsi untuk menyiapkan pesan SweetAlert2 via Session
 function set_swal($title, $text, $icon)
 {
     $_SESSION['swal_message'] = [
@@ -34,58 +36,6 @@ function set_swal($title, $text, $icon)
         'text' => $text,
         'icon' => $icon
     ];
-}
-
-// ================== FUNGSI COMPRESS IMAGE ==================
-function compressImage($source, $destination, $quality = 80)
-{
-    $info = getimagesize($source);
-    if ($info === false) return false;
-
-    $max_width = 1200;
-    $max_height = 1200;
-
-    list($width, $height) = $info;
-
-    if ($width > $max_width || $height > $max_height) {
-        $ratio = min($max_width / $width, $max_height / $height);
-        $new_width = (int)($width * $ratio);
-        $new_height = (int)($height * $ratio);
-    } else {
-        $new_width = $width;
-        $new_height = $height;
-    }
-
-    $image_resized = imagecreatetruecolor($new_width, $new_height);
-    imagealphablending($image_resized, false);
-    imagesavealpha($image_resized, true);
-    $transparent = imagecolorallocatealpha($image_resized, 255, 255, 255, 127);
-    imagefilledrectangle($image_resized, 0, 0, $new_width, $new_height, $transparent);
-
-    if ($info['mime'] == 'image/jpeg') {
-        $image = imagecreatefromjpeg($source);
-        imagecopyresampled($image_resized, $image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
-        imagejpeg($image_resized, $destination, $quality);
-    } elseif ($info['mime'] == 'image/png') {
-        $image = imagecreatefrompng($source);
-        imagecopyresampled($image_resized, $image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
-        $png_quality = 9 - round(($quality / 100) * 9);
-        imagepng($image_resized, $destination, $png_quality);
-    } elseif ($info['mime'] == 'image/gif') {
-        $image = imagecreatefromgif($source);
-        imagecopyresampled($image_resized, $image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
-        imagegif($image_resized, $destination);
-    } elseif ($info['mime'] == 'image/webp') {
-        $image = imagecreatefromwebp($source);
-        imagecopyresampled($image_resized, $image, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
-        imagewebp($image_resized, $destination, $quality);
-    } else {
-        return false;
-    }
-
-    imagedestroy($image);
-    imagedestroy($image_resized);
-    return true;
 }
 
 // ================== BLOK PROSES LOGIC ==================
@@ -101,7 +51,8 @@ if (isset($_POST['tambah_banner'])) {
             $tmp_name = $_FILES['gambar_hero']['tmp_name'][$i];
             $dest_path = $target_dir . $file_name;
 
-            if (compressImage($tmp_name, $dest_path, 80)) {
+            // DIUBAH: Pakai move_uploaded_file biasa tanpa compress
+            if (move_uploaded_file($tmp_name, $dest_path)) {
                 mysqli_query($koneksi, "INSERT INTO hero_background (file_name) VALUES ('$file_name')");
             }
         }
@@ -185,7 +136,8 @@ if (isset($_POST['tambah_pengurus'])) {
     if (!empty($_FILES['foto_pengurus']['name'])) {
         $ext = pathinfo($_FILES['foto_pengurus']['name'], PATHINFO_EXTENSION);
         $foto = uniqid() . '.' . $ext;
-        compressImage($_FILES['foto_pengurus']['tmp_name'], "../Gambar/" . $foto, 80);
+        // DIUBAH: Pakai move_uploaded_file biasa tanpa compress
+        move_uploaded_file($_FILES['foto_pengurus']['tmp_name'], "../Gambar/" . $foto);
     }
     mysqli_query($koneksi, "INSERT INTO pengurus (nama, jabatan, kelas, logo_kelas, foto, urutan) VALUES ('$nama', '$jabatan', '$kelas', '$logo', '$foto', '$newOrder')");
     set_swal('Berhasil!', 'Pengurus ditambahkan!', 'success');
@@ -204,7 +156,8 @@ if (isset($_POST['edit_pengurus'])) {
         if ($old && $old['foto'] != 'default.jpg') unlink("../Gambar/" . $old['foto']);
         $ext = pathinfo($_FILES['foto_edit']['name'], PATHINFO_EXTENSION);
         $foto_new = uniqid() . '.' . $ext;
-        compressImage($_FILES['foto_edit']['tmp_name'], "../Gambar/" . $foto_new, 80);
+        // DIUBAH: Pakai move_uploaded_file biasa tanpa compress
+        move_uploaded_file($_FILES['foto_edit']['tmp_name'], "../Gambar/" . $foto_new);
         $query = "UPDATE pengurus SET nama='$nama', jabatan='$jabatan', kelas='$kelas', logo_kelas='$logo', foto='$foto_new' WHERE id=$id";
     }
     mysqli_query($koneksi, $query);
@@ -252,12 +205,13 @@ if (isset($_POST['tambah_galeri'])) {
     $ext = pathinfo($_FILES['gambar_galeri']['name'], PATHINFO_EXTENSION);
     $rename = uniqid() . '.' . $ext;
 
-    if (compressImage($_FILES['gambar_galeri']['tmp_name'], "../Gambar/" . $rename, 80)) {
+    // DIUBAH: Pakai move_uploaded_file biasa tanpa compress
+    if (move_uploaded_file($_FILES['gambar_galeri']['tmp_name'], "../Gambar/" . $rename)) {
         $table = ($kategori == 'konten1') ? 'konten1' : 'konten2';
         mysqli_query($koneksi, "INSERT INTO $table (judul, deskripsi, gambar) VALUES ('$judul', '$deskripsi', '$rename')");
         set_swal('Berhasil!', 'Galeri ditambahkan!', 'success');
     } else {
-        set_swal('Gagal!', 'Format gambar tidak didukung!', 'error');
+        set_swal('Gagal!', 'Gagal mengupload gambar!', 'error');
     }
     header("Location: kelola_beranda.php?tab=galeri&sub=$kategori");
     exit;
@@ -765,11 +719,21 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
             display: flex;
             gap: 30px;
             flex-wrap: wrap;
+            width: 100%; /* Tambahin ini */
+            overflow-x: hidden; /* Cegah layout utama pecah */
         }
 
         .split-col {
             flex: 1;
-            min-width: 300px;
+            min-width: 0; /* GANTI dari 300px jadi 0, ini kunci biar flex nggak nge-force lebar */
+            max-width: 100%; /* Tambahin ini */
+        }
+
+        /* PAKSA FORM TAMBAH SOSMED DI ATAS PAS DI HP */
+        @media (max-width: 768px) {
+            .split-row.footer-layout {
+                flex-direction: column-reverse; /* Ini bikin form naik ke atas, tabel turun ke bawah */
+            }
         }
 
         .sortable-grid {
@@ -917,10 +881,32 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
             opacity: 1;
         }
 
+        /* Bungkus tabel biar bisa di-swipe di mobile */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch; /* Swipe mulus di iPhone */
+            padding-bottom: 5px;
+            margin-top: 15px;
+        }
+
+        /* Custom scrollbar tabel biar kelihatan bisa digeser */
+        .table-responsive::-webkit-scrollbar {
+            height: 6px;
+        }
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
+            min-width: 500px; /* PAKSA LEBAR MINIMUM, INI RAHASIANYA BIAR BISA SCROLL */
         }
 
         th,
@@ -929,6 +915,7 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
             text-align: left;
             border-bottom: 1px solid var(--border-color);
             font-size: 0.9rem;
+            white-space: nowrap; /* Cegah teks patah ke bawah di dalam tabel */
         }
 
         th {
@@ -998,6 +985,7 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
                     </div>
                     <ul>
                         <li><a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a></li>
+                        <li><a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a></li>
                         <li><a href="ganti_password.php"><i class="fa-solid fa-key"></i> Ganti Password</a></li>
                     </ul>
                 </div>
@@ -1006,16 +994,8 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
         </nav>
     </header>
 
-    <div class="modal-overlay" id="logoutModal">
-        <div class="modal-box">
-            <div style="text-align: center;">
-                <div style="width:60px;height:60px;background:#fee2e2;color:var(--primary-color);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:24px;"><i class="fa-solid fa-right-from-bracket"></i></div>
-                <h3>Konfirmasi Keluar</h3>
-                <p style="color: var(--text-muted); margin-top: 5px;">Apakah Anda yakin ingin keluar?</p>
-                <div style="justify-content: center; margin-top: 20px; display:flex; gap:10px;"><button class="btn btn-outline-secondary" onclick="closeLogoutModal()">Batal</button><button class="btn btn-primary" onclick="proceedLogout()">Ya, Keluar</button></div>
-            </div>
-        </div>
-    </div>
+    <!-- MODAL LOGOUT HTML LAMA SUDAH DIHAPUS, MENGGUNAKAN SWEETALERT2 -->
+
     <div class="modal-overlay" id="editModal">
         <div class="modal-box">
             <div class="modal-header">
@@ -1064,7 +1044,7 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
                 <li><a href="kelolaperpus.php"><i class="fa-solid fa-book"></i> Kelola Materi</a></li>
                 <li><a href="kelola_pendaftaran.php"><i class="fa-solid fa-users"></i> Kelola Pendaftaran</a></li>
                 <li class="active"><a href="kelola_beranda.php"><i class="fa-solid fa-pen-to-square"></i> Edit Halaman Utama</a></li>
-                <li style="margin-top: 20px; border-top: 1px solid #eee;"><a href="javascript:void(0)" onclick="openLogoutModal()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
+                <li style="margin-top: 20px; border-top: 1px solid #eee;"><a href="javascript:void(0)" onclick="confirmLogout()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a></li>
                 <li><a href="../Halaman Utama/index.php"><i class="fa-solid fa-globe"></i>Halaman Utama</a></li>
             </ul>
         </aside>
@@ -1224,31 +1204,46 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
                         </div>
                     </div>
 
-                <?php elseif ($active_tab == 'footer'): ?>
-                    <div class="split-row">
+                                <?php elseif ($active_tab == 'footer'): ?>
+                    <!-- Tambah class footer-layout untuk reverse urutan di mobile -->
+                    <div class="split-row footer-layout">
+                        
+                        <!-- KOLOM 1: TABEL SOSMED -->
                         <div class="split-col">
                             <div class="content-card">
                                 <h3 style="margin-bottom: 15px;"><i class="fas fa-share-alt"></i> Link Media Sosial</h3>
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Icon</th>
-                                            <th>Platform</th>
-                                            <th>URL</th>
-                                            <th>Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody><?php $sosmed = mysqli_query($koneksi, "SELECT * FROM social_links ORDER BY urutan ASC");
-                                            if (mysqli_num_rows($sosmed) == 0) echo "<tr><td colspan='4' style='text-align:center;'>Kosong</td></tr>";
-                                            while ($s = mysqli_fetch_assoc($sosmed)): ?><tr>
-                                                <td><img src="../Gambar/<?= htmlspecialchars($s['icon_url']) ?>" style="width:24px; height:24px; object-fit:contain;"></td>
-                                                <td><?= htmlspecialchars($s['platform']) ?></td>
-                                                <td><a href="<?= $s['url'] ?>" target="_blank" style="color: var(--primary-color); font-size: 0.85rem;"><?= substr($s['url'], 0, 20) ?>...</a></td>
-                                                <td><button onclick='openEditSosmedModal(<?= json_encode($s) ?>)' class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i></button> <a href="?tab=footer&hapus_sosmed=<?= $s['id'] ?>" class="btn btn-sm btn-outline-danger btn-hapus-sosmed"><i class="fas fa-trash"></i></a></td>
-                                            </tr><?php endwhile; ?></tbody>
-                                </table>
+                                
+                                <!-- BUNGKUS TABEL DENGAN table-responsive DI SINI -->
+                                <div class="table-responsive">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Icon</th>
+                                                <th>Platform</th>
+                                                <th>URL</th>
+                                                <th>Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody><?php $sosmed = mysqli_query($koneksi, "SELECT * FROM social_links ORDER BY urutan ASC");
+                                                if (mysqli_num_rows($sosmed) == 0) echo "<tr><td colspan='4' style='text-align:center;'>Kosong</td></tr>";
+                                                while ($s = mysqli_fetch_assoc($sosmed)): ?><tr>
+                                                    <td><img src="../Gambar/<?= htmlspecialchars($s['icon_url']) ?>" style="width:24px; height:24px; object-fit:contain;"></td>
+                                                    <td><?= htmlspecialchars($s['platform']) ?></td>
+                                                    <td><a href="<?= $s['url'] ?>" target="_blank" style="color: var(--primary-color); font-size: 0.85rem;"><?= substr($s['url'], 0, 30) ?>...</a></td>
+                                                    <td>
+                                                        <div style="display: flex; gap: 5px;">
+                                                            <button onclick='openEditSosmedModal(<?= json_encode($s) ?>)' class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i></button> 
+                                                            <a href="?tab=footer&hapus_sosmed=<?= $s['id'] ?>" class="btn btn-sm btn-outline-danger btn-hapus-sosmed"><i class="fas fa-trash"></i></a>
+                                                        </div>
+                                                    </td>
+                                                </tr><?php endwhile; ?></tbody>
+                                    </table>
+                                </div> <!-- TUTUP table-responsive -->
+
                             </div>
                         </div>
+
+                        <!-- KOLOM 2: FORM TAMBAH & COPYRIGHT -->
                         <div class="split-col" style="min-width: 300px;">
                             <div class="content-card" style="border-left: 4px solid var(--primary-color);">
                                 <h3 style="margin-bottom: 15px;"><i class="fas fa-plus"></i> Tambah Sosmed</h3>
@@ -1267,6 +1262,7 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
                                 </form>
                             </div>
                         </div>
+
                     </div>
                 <?php endif; ?>
             </div>
@@ -1305,17 +1301,23 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
             if (profileDropdown && !profileBtn.contains(e.target)) profileDropdown.classList.remove('active');
         });
 
-        // Modals
-        function openLogoutModal() {
-            document.getElementById('logoutModal').classList.add('active');
-        }
-
-        function closeLogoutModal() {
-            document.getElementById('logoutModal').classList.remove('active');
-        }
-
-        function proceedLogout() {
-            window.location.href = "../logout.php";
+        // ============================================
+        // SWEETALERT2 LOGOUT (MENGGANTIKAN MODAL LAMA)
+        // ============================================
+        // --- LOGOUT ---
+        function confirmLogout() {
+            Swal.fire({
+                title: 'Keluar dari akun?',
+                text: 'Anda akan dikembalikan ke halaman login.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#d90429',
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: 'Ya, Log Out!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) window.location.href = "../logout.php";
+            });
         }
 
         function openEditModal(data) {
