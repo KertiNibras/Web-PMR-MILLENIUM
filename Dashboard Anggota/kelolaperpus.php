@@ -16,17 +16,16 @@ if ($_SESSION['role'] != 'pengurus') {
 }
 
 // Ambil Data User untuk Header
- $nama_user = htmlspecialchars($_SESSION['nama']);
- $role = $_SESSION['role'];
- $foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : ''; 
-$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff'; // Default UI Avatar
+$nama_user = htmlspecialchars($_SESSION['nama']);
+$role = $_SESSION['role'];
+$foto_session = isset($_SESSION['foto']) ? $_SESSION['foto'] : '';
+$foto_profil = 'https://ui-avatars.com/api/?name=' . urlencode($nama_user) . '&background=d90429&color=fff';
 
-// Pastikan path ke ../uploads/foto_profil/
 if (!empty($foto_session)) {
-    $path_foto = "../uploads/foto_profil/" . $foto_session;
-    if (file_exists($path_foto)) {
-        $foto_profil = $path_foto . "?t=" . time(); // Tambah timestamp supaya anti-cache
-    }
+  $path_foto = "../uploads/foto_profil/" . $foto_session;
+  if (file_exists($path_foto)) {
+    $foto_profil = $path_foto . "?t=" . time();
+  }
 }
 ?>
 
@@ -39,7 +38,7 @@ if (!empty($foto_session)) {
   <title>Kelola Perpustakaan | PMR Millenium</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="icon" href="../Gambar/logpmi.png" type="image/png">
-      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <style>
     /* --- CSS VARIABLES --- */
@@ -84,7 +83,7 @@ if (!empty($foto_session)) {
       list-style: none;
     }
 
-    /* --- HEADER (Layout 3 Kolom) --- */
+    /* --- HEADER --- */
     header {
       background: #fff;
       box-shadow: var(--shadow-sm);
@@ -104,7 +103,6 @@ if (!empty($foto_session)) {
       max-width: 100%;
     }
 
-    /* Kiri: Logo */
     .nav-left {
       flex: 1;
       display: flex;
@@ -125,7 +123,6 @@ if (!empty($foto_session)) {
       height: 40px;
     }
 
-    /* Tengah */
     .nav-center {
       flex: 1;
       display: flex;
@@ -133,7 +130,6 @@ if (!empty($foto_session)) {
       align-items: center;
     }
 
-    /* Kanan: Profil & Menu */
     .nav-right {
       flex: 1;
       display: flex;
@@ -164,7 +160,6 @@ if (!empty($foto_session)) {
       border: 2px solid var(--primary-color);
     }
 
-    /* Dropdown Profil */
     .profile-dropdown {
       position: absolute;
       top: 100%;
@@ -226,7 +221,6 @@ if (!empty($foto_session)) {
       text-align: center;
     }
 
-    /* Tombol Hamburger */
     .menu-toggle {
       display: none;
       background: none;
@@ -243,8 +237,6 @@ if (!empty($foto_session)) {
       min-height: 100vh;
       padding-top: var(--header-height);
     }
-
-    
 
     /* --- SIDEBAR --- */
     .sidebar {
@@ -483,12 +475,38 @@ if (!empty($foto_session)) {
     .card-meta {
       font-size: 0.8rem;
       color: #999;
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
 
-    /* Action Buttons */
     .card-actions {
       display: flex;
       gap: 8px;
+      align-items: center;
+    }
+
+    /* Tombol View PDF */
+    .btn-view-pdf {
+      background-color: #e0f2fe;
+      color: var(--info-color);
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+      text-decoration: none;
+      /* Karena pakai tag <a> */
+    }
+
+    .btn-view-pdf:hover {
+      background-color: #bae6fd;
+      color: #2563eb;
     }
 
     .action-btn {
@@ -521,7 +539,7 @@ if (!empty($foto_session)) {
       background-color: #f5c6cb;
     }
 
-    /* --- MODAL FORM --- */
+    /* --- MODAL FORM (TAMBAH/EDIT) --- */
     .modal {
       display: none;
       position: fixed;
@@ -624,7 +642,6 @@ if (!empty($foto_session)) {
       min-height: 100px;
     }
 
-    /* File Upload */
     .file-upload-wrapper {
       border: 2px dashed var(--border-color);
       border-radius: 8px;
@@ -657,6 +674,95 @@ if (!empty($foto_session)) {
       color: var(--success-color);
       font-weight: 600;
       margin-top: 8px;
+    }
+
+    /* --- MODAL HAPUS --- */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 3000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 420px;
+      padding: 30px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .modal-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      margin: 0 auto 20px auto;
+    }
+
+    .modal-box h3 {
+      font-size: 1.3rem;
+      margin-bottom: 10px;
+      color: var(--text-color);
+    }
+
+    .modal-box p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 25px;
+      line-height: 1.5;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .btn-modal {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .btn-cancel {
+      background-color: #e2e8f0;
+      color: #64748b;
+    }
+
+    .btn-cancel:hover {
+      background-color: #cbd5e1;
+    }
+
+    .btn-logout {
+      background-color: #ef4444;
+      color: white;
+    }
+
+    .btn-logout:hover {
+      background-color: #dc2626;
     }
 
     /* --- TOAST --- */
@@ -712,7 +818,6 @@ if (!empty($foto_session)) {
         padding: 20px;
       }
 
-      /* Sidebar Muncul dari Kanan */
       .sidebar {
         position: fixed;
         top: var(--header-height);
@@ -759,7 +864,6 @@ if (!empty($foto_session)) {
   <!-- HEADER -->
   <header>
     <nav class="navbar">
-      <!-- KOLOM KIRI: LOGO -->
       <div class="nav-left">
         <div class="logo">
           <img src="../Gambar/logpmi.png" alt="Logo PMR">
@@ -767,30 +871,22 @@ if (!empty($foto_session)) {
         </div>
       </div>
 
-      <!-- KOLOM TENGAH -->
       <div class="nav-center"></div>
 
-      <!-- KOLOM KANAN: PROFILE & MENU -->
       <div class="nav-right">
         <div class="profile-btn" id="profileBtn">
           <img src="<?= $foto_profil ?>" alt="Foto Profil" class="profile-img">
         </div>
 
-                <div class="profile-dropdown" id="profileDropdown">
+        <div class="profile-dropdown" id="profileDropdown">
           <div class="dropdown-header">
             <p><?= $nama_user ?></p>
             <small><?= ucfirst($role) ?></small>
           </div>
           <ul>
-            <li>
-              <a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a>
-            </li>
-            <li>
-              <a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a>
-            </li>
-            <li>
-              <a href="ganti_password.php"><i class="fa-solid fa-key"></i> Ganti Password</a>
-            </li>
+            <li><a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a></li>
+            <li><a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a></li>
+            <li><a href="ganti_password.php"><i class="fa-solid fa-key"></i> Ganti Password</a></li>
           </ul>
         </div>
 
@@ -798,8 +894,6 @@ if (!empty($foto_session)) {
       </div>
     </nav>
   </header>
-
-
 
   <div class="dashboard-container">
     <!-- SIDEBAR -->
@@ -811,14 +905,13 @@ if (!empty($foto_session)) {
         <li><a href="kelola_pendaftaran.php"><i class="fa-solid fa-users"></i> Kelola Pendaftaran</a></li>
         <li><a href="kelola_beranda.php"><i class="fa-solid fa-pen-to-square"></i> Edit Halaman Utama</a></li>
         <li style="margin-top: 20px; border-top: 1px solid #eee;">
-          <!-- Diubah menjadi memanggil fungsi custom -->
           <a href="javascript:void(0)" onclick="confirmLogout()">
             <i class="fa-solid fa-right-from-bracket"></i> Log Out
           </a>
         </li>
         <li>
           <a href="../Halaman Utama/index.php">
-            <i class="fa-solid fa-globe"></i>Halaman Utama
+            <i class="fa-solid fa-globe"></i> Halaman Utama
           </a>
         </li>
       </ul>
@@ -869,7 +962,7 @@ if (!empty($foto_session)) {
     </main>
   </div>
 
-  <!-- Modal Form -->
+  <!-- Modal Form Tambah/Edit -->
   <div class="modal" id="materialFormModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -914,6 +1007,7 @@ if (!empty($foto_session)) {
       </div>
     </div>
   </div>
+
   <!-- Modal Konfirmasi Hapus -->
   <div class="modal-overlay" id="deleteModal">
     <div class="modal-box">
@@ -923,11 +1017,12 @@ if (!empty($foto_session)) {
       <h3>Hapus Materi?</h3>
       <p>Materi yang sudah dihapus tidak bisa dikembalikan. Apakah Anda yakin ingin menghapusnya?</p>
       <div class="modal-actions">
-        <button class="btn-modal btn-cancel" onclick="closeDeleteModal()">Batal</button>
-        <button class="btn-modal btn-logout" id="confirmDeleteBtn" style="background-color: #ef4444;">Ya, Hapus</button>
+        <button class="btn-modal btn-cancel" id="cancelDeleteBtn">Batal</button>
+        <button class="btn-modal btn-logout" id="confirmDeleteBtn">Ya, Hapus</button>
       </div>
     </div>
   </div>
+
   <!-- Toast -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -957,7 +1052,6 @@ if (!empty($foto_session)) {
       if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) profileDropdown.classList.remove('active');
     });
 
-    
     /* ================= DATA & LOGIC ================= */
     let materials = [];
     let currentMaterialId = null;
@@ -972,36 +1066,40 @@ if (!empty($foto_session)) {
     const formModalTitle = document.getElementById('formModalTitle');
     const submitBtn = document.getElementById('submitBtn');
     const toastContainer = document.getElementById('toastContainer');
+    const deleteModal = document.getElementById('deleteModal');
 
     document.addEventListener('DOMContentLoaded', () => {
       loadMaterials();
       setupEventListeners();
     });
 
-    // --- PERBAIKAN: Ambil data dengan lebih aman ---
     function loadMaterials() {
       fetch('get_materi.php')
         .then(res => res.json())
         .then(data => {
           if (!Array.isArray(data)) {
-             console.error("Error dari server:", data);
-             showToast("Gagal memuat data dari server", "error");
-             return;
+            console.error("Error dari server:", data);
+            showToast("Gagal memuat data dari server", "error");
+            return;
           }
-          
+
           materials = data.map(m => ({
-            id: m.id, // PASTIKAN INI ADA
+            id: m.id,
             title: m.judul,
             description: m.deskripsi,
             category: m.kategori,
-            date: new Date(m.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+            date: new Date(m.created_at).toLocaleDateString('id-ID', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric'
+            }),
             fileName: m.file_pdf
           }));
           renderMaterials();
         })
         .catch(err => {
-            console.error('Gagal load:', err);
-            showToast("Gagal terhubung ke server", "error");
+          console.error('Gagal load:', err);
+          showToast("Gagal terhubung ke server", "error");
         });
     }
 
@@ -1013,11 +1111,14 @@ if (!empty($foto_session)) {
       }
 
       list.forEach(m => {
-        // Cek jika ID tidak ada, skip render
-        if (!m.id) return; 
+        if (!m.id) return;
 
         const card = document.createElement('div');
         card.className = 'material-card';
+
+        // Membuat link file PDF (pastikan folder uploads/materi sesuai dengan yang ada di server kamu)
+        const pdfUrl = `../uploads/materi/${m.fileName}`;
+
         card.innerHTML = `
             <div class="card-top">
               <div class="file-icon"><i class="fas fa-file-pdf"></i></div>
@@ -1032,14 +1133,13 @@ if (!empty($foto_session)) {
             <div class="card-footer">
               <small class="card-meta"><i class="far fa-clock"></i> ${m.date}</small>
               <div class="card-actions">
+                <a href="${pdfUrl}" target="_blank" class="btn-view-pdf" title="Lihat File PDF"><i class="fas fa-eye"></i> </a>
                 <button class="action-btn btn-edit" title="Edit"><i class="fas fa-pen"></i></button>
                 <button class="action-btn btn-delete" title="Hapus"><i class="fas fa-trash"></i></button>
               </div>
             </div>`;
 
-        // Event Listener untuk tombol Edit
         card.querySelector('.btn-edit').addEventListener('click', () => openEditModal(m.id));
-        // Event Listener untuk tombol Hapus
         card.querySelector('.btn-delete').addEventListener('click', () => openDeleteModal(m.id));
 
         materialsGrid.appendChild(card);
@@ -1065,9 +1165,11 @@ if (!empty($foto_session)) {
         e.preventDefault();
         saveMaterial();
       };
+
       document.getElementById('categoryFilter').onchange = filterMaterials;
       document.getElementById('searchFilter').oninput = filterMaterials;
       document.getElementById('sortFilter').onchange = filterMaterials;
+      document.getElementById('cancelDeleteBtn').onclick = closeDeleteModal;
     }
 
     function openAddModal() {
@@ -1088,7 +1190,7 @@ if (!empty($foto_session)) {
       }
 
       isEditMode = true;
-      currentMaterialId = id; // ID disimpan di sini
+      currentMaterialId = id;
       formModalTitle.textContent = 'Edit Materi';
       submitBtn.textContent = 'Update';
       document.getElementById('materialTitle').value = m.title;
@@ -1102,42 +1204,43 @@ if (!empty($foto_session)) {
       materialFormModal.style.display = 'none';
     }
 
-        function saveMaterial() {
+    function saveMaterial() {
       const fd = new FormData();
       fd.append('judul', document.getElementById('materialTitle').value);
       fd.append('deskripsi', document.getElementById('materialDescription').value);
       fd.append('kategori', document.getElementById('materialCategory').value);
-      
+
       if (materialFile.files[0]) {
-          fd.append('file', materialFile.files[0]);
+        fd.append('file', materialFile.files[0]);
       }
 
-      let url = 'upload_materi.php'; // Pastikan nama file ini sama persis dengan nama file fisik
+      let url = 'upload_materi.php';
       if (isEditMode) {
         if (!currentMaterialId) {
-            showToast("ID Materi tidak ditemukan.", "error");
-            return;
+          showToast("ID Materi tidak ditemukan.", "error");
+          return;
         }
         fd.append('id', currentMaterialId);
         url = 'update_materi.php';
       }
 
-      // Debugging: Tampilkan loading
       submitBtn.disabled = true;
       submitBtn.textContent = "Menyimpan...";
 
-      fetch(url, { method: 'POST', body: fd })
+      fetch(url, {
+          method: 'POST',
+          body: fd
+        })
         .then(res => res.text())
         .then(res => {
           submitBtn.disabled = false;
           submitBtn.textContent = isEditMode ? "Update" : "Simpan";
 
           let response = res.trim();
-          
-          // DEBUG: Jika bukan success, tampilkan pesan error dari server
+
           if (response !== 'success') {
-              alert("Server Error/Response:\n\n" + response); 
-              console.log("Respon mentah:", res);
+            alert("Server Error/Response:\n\n" + response);
+            console.log("Respon mentah:", res);
           }
 
           if (response === 'success') {
@@ -1149,9 +1252,9 @@ if (!empty($foto_session)) {
           }
         })
         .catch(err => {
-            submitBtn.disabled = false;
-            console.error(err);
-            showToast("Gagal mengirim data (Fetch Error)", "error");
+          submitBtn.disabled = false;
+          console.error(err);
+          showToast("Gagal mengirim data (Fetch Error)", "error");
         });
     }
 
@@ -1179,26 +1282,24 @@ if (!empty($foto_session)) {
         setTimeout(() => t.remove(), 300);
       }, 3000);
     }
-        // ================= LOGIKA HAPUS MATERI =================
+
+    // ================= LOGIKA HAPUS MATERI =================
     let materialToDelete = null;
 
     function openDeleteModal(id) {
       materialToDelete = id;
-      document.getElementById('deleteModal').classList.add('active');
+      deleteModal.classList.add('active');
     }
 
     function closeDeleteModal() {
-      document.getElementById('deleteModal').classList.remove('active');
+      deleteModal.classList.remove('active');
       materialToDelete = null;
     }
 
-    // Tutup modal jika klik area luar
-    document.getElementById('deleteModal').addEventListener('click', function(e) {
-      if (e.target === this) closeDeleteModal();
+    deleteModal.addEventListener('click', function(e) {
+      if (e.target === deleteModal) closeDeleteModal();
     });
 
-    // Aksi ketika tombol "Ya, Hapus" diklik
-        // Aksi ketika tombol "Ya, Hapus" diklik
     document.getElementById('confirmDeleteBtn').onclick = function() {
       if (!materialToDelete) return;
 
@@ -1206,34 +1307,34 @@ if (!empty($foto_session)) {
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menghapus...';
 
-      // Gunakan FormData agar $_POST di PHP bisa menangkap datanya
       const fd = new FormData();
       fd.append('id', materialToDelete);
 
       fetch('delete_materi.php', {
-        method: 'POST',
-        body: fd // Kirim menggunakan FormData, bukan JSON
-      })
-      .then(res => res.json())
-      .then(data => {
-        btn.disabled = false;
-        btn.innerHTML = 'Ya, Hapus';
-        
-        if (data.status === 'success') {
-          closeDeleteModal();
-          showToast(data.message, 'success');
-          loadMaterials(); // Refresh daftar materi
-        } else {
-          showToast(data.message || 'Gagal menghapus materi.', 'error');
-        }
-      })
-      .catch(err => {
-        btn.disabled = false;
-        btn.innerHTML = 'Ya, Hapus';
-        console.error('Error:', err);
-        showToast('Terjadi kesalahan jaringan.', 'error');
-      });
+          method: 'POST',
+          body: fd
+        })
+        .then(res => res.json())
+        .then(data => {
+          btn.disabled = false;
+          btn.innerHTML = 'Ya, Hapus';
+
+          if (data.status === 'success') {
+            closeDeleteModal();
+            showToast(data.message, 'success');
+            loadMaterials();
+          } else {
+            showToast(data.message || 'Gagal menghapus materi.', 'error');
+          }
+        })
+        .catch(err => {
+          btn.disabled = false;
+          btn.innerHTML = 'Ya, Hapus';
+          console.error('Error:', err);
+          showToast('Terjadi kesalahan jaringan.', 'error');
+        });
     };
+
     // --- LOGOUT ---
     function confirmLogout() {
       Swal.fire({
@@ -1249,7 +1350,7 @@ if (!empty($foto_session)) {
         if (result.isConfirmed) window.location.href = "../logout.php";
       });
     }
-</script>
+  </script>
 </body>
 
 </html>

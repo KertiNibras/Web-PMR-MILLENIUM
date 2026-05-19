@@ -985,6 +985,7 @@ $icon_list = ['Instagram' => 'instagram.png', 'Youtube' => 'youtube.png', 'TikTo
                     </div>
                     <ul>
                         <li><a href="ganti_foto.php"><i class="fa-solid fa-camera"></i> Ganti Foto Profil</a></li>
+                        <li><a href="ganti_nama.php"><i class="fa-solid fa-user-pen"></i> Ganti Nama</a></li>
                         <li><a href="ganti_password.php"><i class="fa-solid fa-key"></i> Ganti Password</a></li>
                     </ul>
                 </div>
